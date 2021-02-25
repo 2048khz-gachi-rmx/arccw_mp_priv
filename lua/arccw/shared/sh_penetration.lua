@@ -32,6 +32,7 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
 
     local penmult     = ArcCW.PenTable[tr.MatType] or 1
     local pentracelen = 2
+
     local curr_ent    = trent
     local startpen = penleft
 
@@ -113,7 +114,6 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
         if GetConVar("developer"):GetBool() then
             local pdeltap = penleft / bullet.Penetration
             local colorlr = m_lerp(pdeltap, 0, 255)
-
             debugoverlay.Line(endpos, endpos + (dir * pentracelen), 10, Color(255, colorlr, colorlr), true)
         end
 
@@ -180,6 +180,7 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
             abullet.Callback = function(att, btr, dmg)
                 local dist = bullet.Travelled * ArcCW.HUToM
                 bullet.Travelled = bullet.Travelled + (btr.HitPos - endpos):Length()
+
                 if alreadypenned[ptr.Entity:EntIndex()] then
                     dmg:SetDamage(0)
                 else
@@ -191,7 +192,7 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
                 ArcCW:DoPenetration(btr, damage, bullet, penleft, false, alreadypenned)
 
                 if GetConVar("developer"):GetBool() then
-                    debugoverlay.Line(endpos, endpos + dir * (btr.HitPos - endpos):Length(), 10, Color(150, 150, 150), true)
+                    debugoverlay.Line(endpos, btr.HitPos, 10, Color(150, 150, 150), true)
                 end
             end
 
@@ -208,7 +209,7 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
             supbullet.Tracer   = 0
             supbullet.Force    = 0
 
-            attacker:FireBullets(supbullet, true)
+            --attacker:FireBullets(supbullet, true)
 
         -- end
     end
