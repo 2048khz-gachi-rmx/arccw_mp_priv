@@ -126,6 +126,7 @@ function SWEP:PrimaryAttack()
         tracernum = 1
     end
 
+
     local bullet      = {}
     bullet.Attacker   = owner
     bullet.Dir        = dir
@@ -229,6 +230,8 @@ function SWEP:PrimaryAttack()
 
     local projectiledata = {}
 
+    local shouldsupp = SERVER and !game.SinglePlayer()
+
     if shpatt or shpattov or shootent then
         if shootent then
             projectiledata.ent = shootent
@@ -296,15 +299,12 @@ function SWEP:PrimaryAttack()
         end
     end
 
+
     self:DoRecoil()
 
     self:SetNthShot(self:GetNthShot() + 1)
 
     owner:DoAnimationEvent(self:GetBuff_Override("Override_AnimShoot") or self.AnimShoot)
-
-    local shouldsupp = SERVER and !game.SinglePlayer()
-
-    if shouldsupp then SuppressHostEvents(owner) end
 
     self:DoEffects()
 
@@ -315,6 +315,8 @@ function SWEP:PrimaryAttack()
     if self:HasBottomlessClip() and self:Clip1() > 0 then
         self:Unload()
     end
+
+    if shouldsupp then SuppressHostEvents(owner) end
 
     self:DoShootSound()
     self:DoPrimaryAnim()
@@ -470,6 +472,9 @@ function SWEP:DoPrimaryFire(isent, data)
 
             ArcCW:ShootPhysBullet(self, data.Src, vel, prof)
         else
+            local shouldsupp = SERVER and !game.SinglePlayer()
+            if shouldsupp then SuppressHostEvents(owner) end
+
             if owner:IsPlayer() then
                 owner:LagCompensation(true)
             end
@@ -477,6 +482,7 @@ function SWEP:DoPrimaryFire(isent, data)
             if owner:IsPlayer() then
                 owner:LagCompensation(false)
             end
+            if shouldsupp then SuppressHostEvents(nil) end
         end
     end
 end
