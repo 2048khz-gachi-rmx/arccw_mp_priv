@@ -92,13 +92,13 @@ function SWEP:Think()
         end
     end
 
-    if game.SinglePlayer() or IsFirstTimePredicted() then
-        if self:InSprint() and (!self.Sprinted or self:GetState() != ArcCW.STATE_SPRINT) then
-            self:EnterSprint()
-        elseif !self:InSprint() and (self.Sprinted or self:GetState() == ArcCW.STATE_SPRINT) then
-            self:ExitSprint()
-        end
+
+    if self:InSprint() and self:GetState() != ArcCW.STATE_SPRINT then
+        self:EnterSprint()
+    elseif !self:InSprint() and self:GetState() == ArcCW.STATE_SPRINT then
+        self:ExitSprint()
     end
+
 
     -- That seems a good way to do such things
     -- local altlaser = owner:GetInfoNum("arccw_altlaserkey", 0) == 1
@@ -151,15 +151,10 @@ function SWEP:Think()
         self:ExitSights()
     else
 
-        if game.SinglePlayer() or IsFirstTimePredicted() then
-            -- everything here has to be predicted for the first time
-            -- if owner:GetInfoNum("arccw_toggleads", 0) == 0 then
-                if owner:KeyDown(IN_ATTACK2) and (!self.Sighted or self:GetState() != ArcCW.STATE_SIGHTS) then
-                    self:EnterSights()
-                elseif !owner:KeyDown(IN_ATTACK2) and (self.Sighted or self:GetState() == ArcCW.STATE_SIGHTS) then
-                    self:ExitSights()
-                end
-            -- end
+        if owner:KeyDown(IN_ATTACK2) and self:GetState() != ArcCW.STATE_SIGHTS then
+            self:EnterSights()
+        elseif !owner:KeyDown(IN_ATTACK2) and self:GetState() == ArcCW.STATE_SIGHTS then
+            self:ExitSights()
         end
 
     end
