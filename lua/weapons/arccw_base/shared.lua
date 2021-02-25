@@ -798,7 +798,7 @@ function SWEP:IsProne()
     end
 end
 
-function SWEP:BarrelHitWall()
+function SWEP:BarrelHitWall(visual)
     if GetConVar("arccw_override_nearwall"):GetBool() then
         local offset = self.BarrelOffsetHip
 
@@ -823,17 +823,26 @@ function SWEP:BarrelHitWall()
 
         table.Add(filter, self.Shields)
 
+        local barrelLength = self.BarrelLength + self:GetBuff_Add("Add_BarrelLength")
+        local max = 0
+
+        if visual then
+            local hmin, hmax = self:GetOwner():GetHull()
+            -- it's probably guaranteed that mins are - and maxs are + but I'M NOT TAKIN ANY CHANCES
+            max = math.max(math.abs(hmin[1]), math.abs(hmin[2]), math.abs(hmax[1]), math.abs(hmax[2])) / 2
+        end
+
         local tr = util.TraceLine({
             start = src,
-            endpos = src + (dir:Forward() * (self.BarrelLength + self:GetBuff_Add("Add_BarrelLength"))),
+            endpos = src + (dir:Forward() * (barrelLength + max)),
             filter = filter,
             mask = mask
         })
 
+        
         if tr.Hit and not tr.Entity.ArcCWProjectile then
-            local l = (tr.HitPos - src):Length()
-            l = l
-            return 1 - math.Clamp(l / (self.BarrelLength + self:GetBuff_Add("Add_BarrelLength")), 0, 1)
+            local l = tr.Fraction * (barrelLength + max) - max
+            return 1 - math.max(l / barrelLength, 0)
         else
             return 0
         end

@@ -49,10 +49,18 @@ local function easeInOut(x)
         or (2 - (2 ^ (-20 * x + 10))) / 2;
 end
 
-SWEP.SightEasing = 0.2
-SWEP.CrouchEasing = 0.5
-SWEP.CrouchTime = 0.4
+-- touch:
+SWEP.VM_CrouchIn = 0.25
+SWEP.VM_CrouchOut = 0.4
 SWEP.VM_SprintRecovery = 0.5
+
+SWEP.VM_BarrelWallFrac = 0 -- don't touch
+
+SWEP.VM_LastBarrelHitFrom = 0
+SWEP.VM_LastBarrelHit = 0
+
+SWEP.VM_LastBarrelRecover = 0
+SWEP.VM_LastBarrelFrom = 0
 
 local sharedVector = Vector()
 local sharedVector2 = Vector()
@@ -63,7 +71,18 @@ local sharedEVAng = Angle()
 local sharedAngle = Angle()
 local sharedAngle2 = Angle()
 
+local b = bench("pp", 1000)
+
+--[[
+25.02:
+    "pp" took 94.639ms (avg. across 1000 calls: 0.095ms, time since last print: 1253.706ms)
+    "pp" took 92.227ms (avg. across 1000 calls: 0.092ms, time since last print: 1245.575ms)
+    "pp" took 88.247ms (avg. across 1000 calls: 0.088ms, time since last print: 1422.749ms)
+]]
+
 function SWEP:GetViewModelPosition(pos, ang)
+    --b:Open()
+
     local owner = self:GetOwner()
     local t = self:GetTable()
 
@@ -133,7 +152,7 @@ function SWEP:GetViewModelPosition(pos, ang)
         end
 
         local uncrouchedFor = UCT - self:GetNWFloat("UncrouchTime", 0)
-        local crouchFrac = easeOut( math.min( uncrouchedFor / self.CrouchTime, 1) )
+        local crouchFrac = easeOut( math.min( uncrouchedFor / self.VM_CrouchOut, 1) )
 
         target.down = Lerp(crouchFrac, 0, target.down)
 
@@ -159,7 +178,7 @@ function SWEP:GetViewModelPosition(pos, ang)
         end
 
         local crouchedFor = UCT - self:GetNWFloat("CrouchTime", UCT)
-        local crouchFrac = easeOut( math.min( crouchedFor / self.CrouchTime, 1 ) )
+        local crouchFrac = easeOut( math.min( crouchedFor / self.VM_CrouchIn, 1 ) )
 
         target.down = Lerp(crouchFrac, target.down, 0)
 
@@ -285,10 +304,14 @@ function SWEP:GetViewModelPosition(pos, ang)
         LerpSource(dlt, target.ang, irons.Ang)
 
         target.evpos = sharedEVVector
-        target.evpos:Set(irons.EVPos)
+        if irons.EVPos then
+            target.evpos:Set(irons.EVPos)
+        end
 
         target.evang = sharedEVAng
-        target.evang:Set(irons.EVAng)
+        if irons.EVAng then
+            target.evang:Set(irons.EVAng)
+        end
 
         target.down  = 0
         target.sway  = 0.1
@@ -310,15 +333,40 @@ function SWEP:GetViewModelPosition(pos, ang)
         target.ang = LerpAngle(sprd, target.ang, sang or hang)
     end
 
-    local deg = self:BarrelHitWall()
+    local deg = self:BarrelHitWall(true)
 
-    if deg > 0 then
+    local stanceRecover = self:GetSightTime() ^ 0.4 / 2     -- how fast the stance will recover
+    local stanceRuin = self:GetSightTime() ^ 0.2            -- how fast the stance will break
 
-        target.pos  = LerpVector(deg, target.pos, self.HolsterPos)
-        target.ang  = LerpAngle(deg, target.ang, self.HolsterAng)
-        target.down = 2
-        target.sway = 2
-        target.bob  = 2
+    if pred then
+        if deg > 0 then
+            self.VM_LastBarrelRecover = nil
+            self.VM_LastBarrelRecoverFrom = nil
+            self.VM_LastBarrelHit = self.VM_LastBarrelHit or UCT
+        else
+            self.VM_LastBarrelHit = nil
+            self.VM_LastBarrelRecover = self.VM_LastBarrelRecover or UCT
+            self.VM_LastBarrelRecoverFrom = self.VM_LastBarrelRecoverFrom or self.VM_BarrelWallFrac
+        end
+    end
+
+    if self.VM_LastBarrelRecover then
+        self.VM_BarrelWallFrac = self.VM_LastBarrelRecoverFrom * (1 - easeOut( (UCT - self.VM_LastBarrelRecover) / stanceRuin, 1 ))
+    else
+        self.VM_BarrelWallFrac = deg * easeOut( (UCT - self.VM_LastBarrelHit) / stanceRuin, 1 )
+    end
+
+    if self.VM_BarrelWallFrac > 0 then
+        local fr = self.VM_BarrelWallFrac
+
+        LerpSource(fr, target.pos, self.HolsterPos)
+        LerpSource(fr, target.ang, self.HolsterAng)
+
+        local int = fr * 2
+
+        target.down = target.down + int
+        target.sway = target.sway + int
+        target.bob  = target.bob + int
     end
 
     if !isangle(target.ang) then target.ang = Angle(target.ang) end
@@ -384,31 +432,28 @@ function SWEP:GetViewModelPosition(pos, ang)
         if delta == 0 then self.InProcBash = false end
     end
 
-    if self.ViewModel_Hit and !self.ViewModel_Hit:IsZero() then
-        local nap = Vector()
+    --[[ who fucking made this
 
-        nap[1] = self.ViewModel_Hit[1]
-        nap[2] = self.ViewModel_Hit[2]
-        nap[3] = self.ViewModel_Hit[3]
+    if !self.ViewModel_Hit:IsZero() then
+        local nap = Vector()
+        nap:Set(self.ViewModel_Hit)
 
         nap[1] = m_clamp(nap[2], -1, 1) * 0.25
         nap[3] = m_clamp(nap[1], -1, 1) * 1
 
-        target.pos = target.pos + nap
+        target.pos:Add(nap)
 
-        if !self.ViewModel_Hit:IsZero() then
-            local naa = Angle()
+        local naa = Angle()
 
-            naa[1] = self.ViewModel_Hit[1]
-            naa[2] = self.ViewModel_Hit[2]
-            naa[3] = self.ViewModel_Hit[3]
+        naa[1] = self.ViewModel_Hit[1]
+        naa[2] = self.ViewModel_Hit[2]
+        naa[3] = self.ViewModel_Hit[3]
 
-            naa[1] = m_clamp(naa[1], -1, 1) * 5
-            naa[2] = m_clamp(naa[2], -1, 1) * -2
-            naa[3] = m_clamp(naa[3], -1, 1) * 12.5
+        naa[1] = m_clamp(naa[1], -1, 1) * 5
+        naa[2] = m_clamp(naa[2], -1, 1) * -2
+        naa[3] = m_clamp(naa[3], -1, 1) * 12.5
 
-            target.ang = target.ang + naa
-        end
+        target.ang = target.ang + naa
 
         local nvmh = Vector()
         local spd = self.ViewModel_Hit:Length()
@@ -419,6 +464,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 
         self.ViewModel_Hit = nvmh
     end
+    ]]
 
     local randVec = VectorRand()
     randVec:Mul(self.RecoilAmount * 0.2)
@@ -517,8 +563,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 
     pos[3] = pos[3] - actual.down
 
-    -- if asight and asight.Holosight then ang = ang - self:GetOurViewPunchAngles() end
-
     ang = ang + self:GetOurViewPunchAngles() * Lerp(self:GetSightDelta(), 1, -1)
 
     self.ActualVMData = actual
@@ -541,12 +585,11 @@ function SWEP:GetViewModelPosition(pos, ang)
         attang = attang * magnitude
         attpos = attpos * magnitude
 
-        -- attang = vm:LocalToWorldAngles(attang)
-
         ang:Add(attang)
         pos:Add(attpos)
     end
 
+    --b:Close():print()
     return pos, ang
 end
 
