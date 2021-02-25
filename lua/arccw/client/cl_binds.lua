@@ -31,8 +31,6 @@ ArcCW.BindToEffect_Unique = {
     [ArcCW.KEY_MELEE]           = "melee",
 }
 
-local lastpressZ = 0
-local lastpressE = 0
 
 function ArcCW:GetBind(bind)
     local button = input.LookupBinding(bind)
@@ -50,8 +48,8 @@ local function ArcCW_TranslateBindToEffect(bind)
 end
 
 local function SendNet(string, bool)
-    net.Start(string)
-    if bool then net.WriteBool(bool) end
+    net.Start(string, true)
+        if bool ~= nil then net.WriteBool(bool) end
     net.SendToServer()
 end
 
@@ -84,29 +82,36 @@ local function ToggleAtts(wep)
     end
 end
 
-local function ArcCW_PlayerBindPress(ply, bind, pressed)
-    if !(ply:IsValid() and pressed) then return end
+local lastpressZ = 0
+local lastpressZCMD = 0
 
+local lastpressE = 0
+local lastpressECMD = 0
+
+local function processBind(ply, bind, cmdnum)
+    if !(ply:IsValid()) then return end
+
+    local pred = not IsFirstTimePredicted()
     local wep = ply:GetActiveWeapon()
 
     if !wep.ArcCW then return end
 
     local block = false
 
-    local alt
-    bind, alt = ArcCW_TranslateBindToEffect(bind)
+    local _, alt = ArcCW_TranslateBindToEffect(bind)
 
     if bind == "firemode" and (alt or !GetConVar("arccw_altfcgkey"):GetBool()) then
         if wep:GetBuff_Override("UBGL") and !alt and !GetConVar("arccw_altubglkey"):GetBool() then
-            if lastpressZ >= CurTime() - 0.25 then
+            if lastpressZ >= CurTime() - 0.25 and lastpressZCMD ~= cmdnum then
                 DoUbgl(wep)
 
                 lastpressZ = 0
+                lastpressZCMD = 0
 
                 timer.Remove("ArcCW_doubletapZ")
-            else
+            elseif !pred then
                 lastpressZ = CurTime()
-
+                lastpressZCMD = cmdnum
                 timer.Create("ArcCW_doubletapZ", 0.25, 1, function()
                     if !(IsValid(ply) and IsValid(wep)) then return end
 
@@ -120,17 +125,21 @@ local function ArcCW_PlayerBindPress(ply, bind, pressed)
                 end)
             end
         else
-            SendNet("arccw_firemode")
+            if not pred then
+                SendNet("arccw_firemode")
+            end
 
             wep:ChangeFiremode()
         end
 
         block = true
     elseif bind == "inv" and !ply:KeyDown(IN_USE) and GetConVar("arccw_enable_customization"):GetInt() >= 0 then
-
+        
         local state = wep:GetState() != ArcCW.STATE_CUSTOMIZE
 
-        SendNet("arccw_togglecustomize", state)
+        if not pred then
+            SendNet("arccw_togglecustomize", state)
+        end
 
         wep:ToggleCustomizeHUD(state)
 
@@ -167,7 +176,24 @@ local function ArcCW_PlayerBindPress(ply, bind, pressed)
     if block then return true end
 end
 
-hook.Add("PlayerBindPress", "ArcCW_PlayerBindPress", ArcCW_PlayerBindPress)
+local function ArcCW_PlayerButtonDown(ply, btn)
+    if !ply:IsValid() then return end
+
+    local wep = ply:GetActiveWeapon()
+    if !wep.ArcCW then return end
+
+    -- do actions that require prediction here
+    local bind = input.LookupKeyBinding(btn)
+
+    bind = ArcCW_TranslateBindToEffect(bind)
+
+    local ucmd = ply:GetCurrentCommand()
+
+    processBind(ply, bind, ucmd:CommandNumber())
+
+end
+
+hook.Add("PlayerButtonDown", "ArcCW_PlayerButtonDown", ArcCW_PlayerButtonDown)
 
 -- Actually register the damned things so they can be bound
 for k, v in pairs(ArcCW.BindToEffect_Unique) do
