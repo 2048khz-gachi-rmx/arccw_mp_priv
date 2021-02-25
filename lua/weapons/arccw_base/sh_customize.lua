@@ -208,31 +208,37 @@ function SWEP:ValidateAttachment(attname, attslot, i)
 end
 
 function SWEP:OpenCustomizeHUD()
-    if IsValid(ArcCW.InvHUD) then
-        ArcCW.InvHUD:Show()
-        -- ArcCW.InvHUD:RequestFocus()
-    else
-        self:CreateCustomizeHUD()
-        gui.SetMousePos(ScrW() / 2, ScrH() / 2)
+
+    if IsFirstTimePredicted() then
+
+        if IsValid(ArcCW.InvHUD) then
+            ArcCW.InvHUD:Show()
+            -- ArcCW.InvHUD:RequestFocus()
+        else
+            self:CreateCustomizeHUD()
+            gui.SetMousePos(ScrW() / 2, ScrH() / 2)
+        end
+
+        gui.EnableScreenClicker(true)
+
+        surface.PlaySound("weapons/arccw/extra.wav")
+
     end
-
-    gui.EnableScreenClicker(true)
-
-    surface.PlaySound("weapons/arccw/extra.wav")
-
 end
 
 function SWEP:CloseCustomizeHUD()
-    if IsValid(ArcCW.InvHUD) then
-        ArcCW.InvHUD:Hide()
-        ArcCW.InvHUD:Clear()
-        ArcCW.InvHUD:Remove()
-        gui.EnableScreenClicker(false)
-        if vrmod and vrmod.MenuExists( "ArcCW_Customize" ) then
-            vrmod.MenuClose( "ArcCW_Customize" )
-        end
+    if IsFirstTimePredicted() then
+        if IsValid(ArcCW.InvHUD) then
+            ArcCW.InvHUD:Hide()
+            ArcCW.InvHUD:Clear()
+            ArcCW.InvHUD:Remove()
+            gui.EnableScreenClicker(false)
+            if vrmod and vrmod.MenuExists( "ArcCW_Customize" ) then
+                vrmod.MenuClose( "ArcCW_Customize" )
+            end
 
-        surface.PlaySound("weapons/arccw/extra2.wav")
+            surface.PlaySound("weapons/arccw/extra2.wav")
+        end
     end
 end
 
