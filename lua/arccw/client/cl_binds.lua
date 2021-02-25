@@ -197,7 +197,7 @@ hook.Add("PlayerButtonDown", "ArcCW_PlayerButtonDown", ArcCW_PlayerButtonDown)
 
 -- Actually register the damned things so they can be bound
 for k, v in pairs(ArcCW.BindToEffect_Unique) do
-    concommand.Add(k, function(ply) ArcCW_PlayerBindPress(ply, k, true) end, nil, v, 0)
+    concommand.Add(k, function(ply) ArcCW_PlayerButtonDown(ply, k, true) end, nil, v, 0)
 end
 
 -- ArcCW.CaptureKeys = {
