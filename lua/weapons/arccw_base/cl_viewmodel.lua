@@ -56,11 +56,10 @@ SWEP.VM_SprintRecovery = 0.5
 
 SWEP.VM_BarrelWallFrac = 0 -- don't touch
 
-SWEP.VM_LastBarrelHitFrom = 0
 SWEP.VM_LastBarrelHit = 0
 
+SWEP.VM_LastBarrelRecoverFrom = 0
 SWEP.VM_LastBarrelRecover = 0
-SWEP.VM_LastBarrelFrom = 0
 
 local sharedVector = Vector()
 local sharedVector2 = Vector()
