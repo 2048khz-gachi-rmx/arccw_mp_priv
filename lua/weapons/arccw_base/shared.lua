@@ -120,9 +120,13 @@ SWEP.RecoilRise = 1
 SWEP.MaxRecoilBlowback = -1
 SWEP.VisualRecoilMult = 1.25
 SWEP.RecoilPunch = 1.5
+SWEP.RecoilPunchRecovery = 0.7 -- time to recover the VM punch
 
-SWEP.RecoilURecovery = 50
-SWEP.SideRecoilURecovery = 20
+-- timed recoil: recoil will kick to 100% within SWEP.RecoilTRecovery seconds
+SWEP.RecoilTRecovery = 0.5
+SWEP.RecoilTEaseOutIntensity = 1.3 -- <1 not recommended
+
+
 
 SWEP.ShotgunSpreadDispersion = false -- dispersion will cause pattern to increase instead of shifting
 SWEP.ShotgunSpreadPattern = nil

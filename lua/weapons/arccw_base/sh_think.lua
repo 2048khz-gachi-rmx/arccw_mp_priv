@@ -267,10 +267,8 @@ function SWEP:Think()
 end
 
 function SWEP:ProcessRecoil()
-    local ft = engine.TickInterval() * self.RecoilURecovery
 
-    -- this should work, ideally, due to the fact that time between ticks is a fixed number,
-    -- so we're not doing autistic shit like basing off of frametime and framerate
+    -- not doing autistic shit like basing off of frametime and framerate
 
     if not self.MaxRecoilAmount or self.MaxRecoilAmount == 0 then
         self:SetRecoil( 0 )
@@ -279,18 +277,24 @@ function SWEP:ProcessRecoil()
         return
     end
 
-    local curRec = self:GetRecoil()
-    local newRec = math.Approach(curRec, 0, ft)
+    local when = self:GetRecoiledWhen()
+    local now = CurTime()
+    local passed = now - when
+    local recFrac = 1 - math.min(passed / self.RecoilTRecovery, 1) -- linear
 
-    self:SetRecoil( newRec )  -- linearly decrease recoil; easing happens in RecalculatePunch
-    self:SetSideRecoil( 0 ) --math.Approach(self:GetSideRecoil(), 0, ft) )
+    local newRec = math.max(self:GetRecoil() * recFrac, 0)
+    local newSideRec = math.max(self:GetSideRecoil() * recFrac, 0)
+
+    self:SetRecoil( newRec )
+    self:SetSideRecoil( newSideRec )
 
     if newRec == 0 then
         self.MaxRecoilAmount = 0
     end
 
-    -- self:SetNWFloat("recoil", r - (FrameTime() * r * 50))
-    -- self:SetNWFloat("recoilside", rs - (FrameTime() * rs * 50))
+    if newSideRec == 0 then
+        self.MaxSideRecoilAmount = 0
+    end
 
     self:RecalculatePunch()
 end

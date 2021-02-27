@@ -375,11 +375,11 @@ function SWEP:GetViewModelPosition(pos, ang)
 
         local delta = m_clamp((CT - self.ProcDrawTime) / (0.25 * self:GetBuff_Mult("Mult_DrawTime")), 0, 1)
 
-        targetpos  = LerpVector(delta, Vector(0, -30, -30), target.pos)
-        targetang  = LerpAngle(delta, Angle(40, 30, 0), target.ang)
-        targetdown = target.down
-        targetsway = target.sway
-        targetbob  = target.bob
+        target.pos  = LerpVector(delta, Vector(0, -30, -30), target.pos)
+        target.ang  = LerpAngle(delta, Angle(40, 30, 0), target.ang)
+        target.down = target.down
+        target.sway = target.sway
+        target.bob  = target.bob
 
         if delta == 1 then self.InProcDraw = false end
     end
@@ -465,10 +465,10 @@ function SWEP:GetViewModelPosition(pos, ang)
     end
     ]]
 
-    --[[local randVec = VectorRand()
-    randVec:Mul(self:GetRecoil() * 0.2)
+    local randVec = VectorRand()
+    randVec:Mul(self:GetRecoil() * 0.1)
 
-    target.pos:Add(randVec)]]
+    target.pos:Add(randVec)
 
     local speed = target.speed or 3
 
@@ -540,9 +540,9 @@ function SWEP:GetViewModelPosition(pos, ang)
     self.SwayScale = (coolsway and 0) or actual.sway
     self.BobScale  = (coolsway and 0) or actual.bob
 
-    --[[pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
+    pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
     pos:Add( self.RecoilPunchSide * oldang:Right() )
-    pos:Add( self.RecoilPunchUp   * -oldang:Up() )]]
+    pos:Add( self.RecoilPunchUp   * -oldang:Up() )
 
     ang:RotateAroundAxis(oldang:Right(),   actual.ang.x)
     ang:RotateAroundAxis(oldang:Up(),      actual.ang.y)
