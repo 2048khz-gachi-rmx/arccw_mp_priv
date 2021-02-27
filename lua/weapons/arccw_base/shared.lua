@@ -121,6 +121,9 @@ SWEP.MaxRecoilBlowback = -1
 SWEP.VisualRecoilMult = 1.25
 SWEP.RecoilPunch = 1.5
 
+SWEP.RecoilURecovery = 50
+SWEP.SideRecoilURecovery = 20
+
 SWEP.ShotgunSpreadDispersion = false -- dispersion will cause pattern to increase instead of shifting
 SWEP.ShotgunSpreadPattern = nil
 SWEP.ShotgunSpreadPatternOverrun = nil
@@ -626,6 +629,7 @@ SWEP.RecoilAmountSide = 0
 SWEP.RecoilPunchBack = 0
 SWEP.RecoilPunchUp = 0
 SWEP.RecoilPunchSide = 0
+
 SWEP.HammerDown = false
 
 SWEP.LHIKTimeline = nil
@@ -727,6 +731,10 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Float", 2, "ReloadingREAL")
     self:NetworkVar("Float", 3, "MagUpIn")
     self:NetworkVar("Float", 4, "NextPrimaryFireSlowdown")
+
+    self:NetworkVar("Float", 5, "Recoil")
+    self:NetworkVar("Float", 6, "SideRecoil")
+    self:NetworkVar("Float", 7, "RecoiledWhen")
 end
 
 function SWEP:OnRestore()
@@ -736,6 +744,7 @@ function SWEP:OnRestore()
     self:SetReloadingREAL(0)
     self:SetWeaponOpDelay(0)
     self:SetMagUpIn(0)
+    self:SetNWRecoil(0)
 
     self:KillTimers()
     self:Initialize()
@@ -780,13 +789,9 @@ end
 
 function SWEP:SetState(v)
     self:SetNWState(v)
-    -- if CLIENT then
-    --     self.State = v
-    -- end
 end
 
 function SWEP:GetState(v)
-    -- if CLIENT and self.State then return self.State end
     return self:GetNWState(v)
 end
 

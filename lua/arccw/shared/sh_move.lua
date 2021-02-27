@@ -64,7 +64,7 @@ function ArcCW.CreateMove(cmd)
     local ply = LocalPlayer()
     local wpn = ply:GetActiveWeapon()
 
-    if !wpn.ArcCW then return end
+    if !wpn.ArcCW or !wpn:IsValid() then return end
 
     if wpn:GetInBipod() then
         if !wpn.BipodAngle then
@@ -100,9 +100,11 @@ function ArcCW.CreateMove(cmd)
 
     local ang2 = cmd:GetViewAngles()
 
-    -- ang2 = ang2 - (wpn.ViewPunchAngle * FrameTime() * 60)
-
-    ang2 = ang2 - (Angle(wpn.RecoilAmount, wpn.RecoilAmountSide, 0) * FrameTime() * 30)
+    local recoil, siderecoil = wpn:GetPredictedRecoil()
+    if recoil > 0 then
+        clprint("move-", recoil, siderecoil, CurTime(), IsFirstTimePredicted())
+    end
+    ang2 = ang2 - (Angle(recoil, siderecoil, 0))
 
     cmd:SetViewAngles(ang2)
 end

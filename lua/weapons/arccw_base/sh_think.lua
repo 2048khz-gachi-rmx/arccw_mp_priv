@@ -159,9 +159,9 @@ function SWEP:Think()
 
     end
 
-    if (CLIENT or game.SinglePlayer()) and (IsFirstTimePredicted() or game.SinglePlayer()) then
+    --if (CLIENT or game.SinglePlayer()) and (IsFirstTimePredicted() or game.SinglePlayer()) then
         self:ProcessRecoil()
-    end
+    --end
 
     if CLIENT and IsValid(vm) then
         local vec1 = Vector(1, 1, 1)
@@ -267,43 +267,36 @@ function SWEP:Think()
 end
 
 function SWEP:ProcessRecoil()
-    local owner = self:GetOwner()
-    local ft = FrameTime()
-    local newang = owner:EyeAngles()
-    local r = self.RecoilAmount -- self:GetNWFloat("recoil", 0)
-    local rs = self.RecoilAmountSide -- self:GetNWFloat("recoilside", 0)
+    local ft = engine.TickInterval() * self.RecoilURecovery
 
-    local ra = Angle(0, 0, 0)
+    -- this should work, ideally, due to the fact that time between ticks is a fixed number,
+    -- so we're not doing autistic shit like basing off of frametime and framerate
 
-    ra = ra + ((self:GetBuff_Override("Override_RecoilDirection") or self.RecoilDirection) * self.RecoilAmount * 0.5)
-    ra = ra + ((self:GetBuff_Override("Override_RecoilDirectionSide") or self.RecoilDirectionSide) * self.RecoilAmountSide * 0.5)
+    if not self.MaxRecoilAmount or self.MaxRecoilAmount == 0 then
+        self:SetRecoil( 0 )
+        self:SetSideRecoil( 0 )
+        self:RecalculatePunch()
+        return
+    end
 
-    newang = newang - ra
+    local curRec = self:GetRecoil()
+    local newRec = math.Approach(curRec, 0, ft)
 
-    -- self.RecoilAmount = r - math.Clamp(ft * 20, 0, r)
-    -- self.RecoilAmountSide = rs - math.Clamp(ft * 20, 0, rs)
+    self:SetRecoil( newRec )  -- linearly decrease recoil; easing happens in RecalculatePunch
+    self:SetSideRecoil( 0 ) --math.Approach(self:GetSideRecoil(), 0, ft) )
 
-    self.RecoilAmount = math.Approach(self.RecoilAmount, 0, ft * 20 * r)
-    self.RecoilAmountSide = math.Approach(self.RecoilAmountSide, 0, ft * 20 * rs)
+    if newRec == 0 then
+        self.MaxRecoilAmount = 0
+    end
 
     -- self:SetNWFloat("recoil", r - (FrameTime() * r * 50))
     -- self:SetNWFloat("recoilside", rs - (FrameTime() * rs * 50))
 
-    local rpb = self.RecoilPunchBack
-    local rps = self.RecoilPunchSide
-    local rpu = self.RecoilPunchUp
+    self:RecalculatePunch()
+end
 
-    if rpb != 0 then
-        self.RecoilPunchBack = math.Approach(rpb, 0, ft * rpb * 2.5)
-    end
+function SWEP:AddRecoil(amt)
 
-    if rps != 0 then
-        self.RecoilPunchSide = math.Approach(rps, 0, ft * rps * 5)
-    end
-
-    if rpu != 0 then
-        self.RecoilPunchUp = math.Approach(rpu, 0, ft * rpu * 5)
-    end
 end
 
 function SWEP:InSprint()

@@ -698,8 +698,7 @@ end
 
 function SWEP:DoRecoil()
     local single = game.SinglePlayer()
-
-    if !single and !IsFirstTimePredicted() then return end
+    --if !single and !IsFirstTimePredicted() then return end
 
     if single and self:GetOwner():IsValid() and SERVER then self:CallOnClient("DoRecoil") end
 
@@ -761,22 +760,66 @@ function SWEP:DoRecoil()
 
     if CLIENT then self:OurViewPunch(punch) end
 
-    if CLIENT or single then
-        recv = recv * self.VisualRecoilMult
+    local curRec = self:GetRecoil()
+    local addRec = self.Recoil * rmul * recu
 
-        self.RecoilAmount     = self.RecoilAmount + (self.Recoil * rmul * recu)
-        self.RecoilAmountSide = self.RecoilAmountSide + (self.RecoilSide * irec * recs * rmul)
-        self.RecoilPunchBack  = math.Clamp(self.RecoilAmount * recv * 5, 1, 5)
+    local curSideRec = self:GetSideRecoil()
+    local addSideRec = self.RecoilSide * irec * recs * rmul
 
-        if self.MaxRecoilBlowback > 0 then
-            self.RecoilPunchBack = math.Clamp(self.RecoilPunchBack, 0, self.MaxRecoilBlowback)
-        end
+    self.MaxSideRecoilAmount = curSideRec + addSideRec
+    self.MaxRecoilAmount = curRec + addRec
 
-        self.RecoilPunchSide = self.RecoilSide * 0.1 * irec * recv * rmul
-        self.RecoilPunchUp   = self.RecoilRise * 0.1 * recu
-    end
+    recv = recv * self.VisualRecoilMult
 
-    -- math.randomseed(CurTime() + (self:EntIndex() * 3))
+    self:SetRecoiledWhen(CurTime())     -- we'll be using this to linearly lerp recoil to 0
+                                        -- since GM:Move calls itself more than SWEP:Think (making us predict recoil incorrectly for viewpunch)
+                                        -- and we need it to be a predicted var...
+
+    self:SetRecoil( curRec + addRec )
+    self:SetSideRecoil( curSideRec + addSideRec )
+    self:RecalculatePunch(recv, irec)
+end
+    
+-- use for getting recoil calculated via CurTime() instead of using cached recoil calculation
+-- returns `recoil, siderecoil`
+function SWEP:GetPredictedRecoil()
+    local ct = CurTime()
+    local rWhen = self:GetRecoiledWhen()
+    local mxR, mxSR = self.MaxRecoilAmount, self.MaxSideRecoilAmount
+    if not mxR or not mxSR then return 0, 0 end
+
+    local recovered = (ct - rWhen) * self.RecoilURecovery
+    local recovered_side = (ct - rWhen) * self.SideRecoilURecovery
+
+    return math.max( (mxR - recovered), 0 ), math.max( (mxSR - recovered_side), 0 )
+end
+
+local function easeOut(x, intensity)
+    intensity = (intensity and -intensity * 10) or -15 -- values < 1 not recommended
+    return (x <= 0 and 0) or (x == 1 and 1) or 1 - (2 ^ (intensity * x))
+end
+
+-- happens after every recoil change due to pred - we don't need to network a purely-clientside thing
+function SWEP:RecalculatePunch(recv)
+    if not CLIENT then return end -- oye this is a client thing
+
+    recv = recv or self._RecoilLastRecv
+    self._RecoilLastRecv = recv
+
+    --[[recv = recv or self._RecoilLastDirection
+    self._RecoilLastDirection = direc]]
+
+    if not recv then return end --??
+
+    -- build an easing graph where 0 is our initial recoil, 1 is no recoil
+    -- and X is our (curent recoil - this frame's recovery)
+    local recFrac = easeOut( 1 - (self:GetRecoil() / self.MaxRecoilAmount), 0.7 )
+    -- flip that graph back so 1 is 100% recoil and 0 is none, then mul by max recoil to get our eased current recoil
+    local newRec = ( 1 - recFrac ) * self.MaxRecoilAmount
+
+    self.RecoilPunchBack  = math.Clamp(newRec * recv * 5, 1, self.MaxRecoilBlowback or 5)
+    self.RecoilPunchSide = self.RecoilSide * 0.1
+    self.RecoilPunchUp   = self.RecoilRise * 0.1
 end
 
 function SWEP:GetBurstLength()
