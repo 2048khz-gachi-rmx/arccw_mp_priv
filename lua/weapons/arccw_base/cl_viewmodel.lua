@@ -305,11 +305,15 @@ function SWEP:GetViewModelPosition(pos, ang)
         target.evpos = sharedEVVector
         if irons.EVPos then
             target.evpos:Set(irons.EVPos)
+        else
+            target.evpos:Set(vector_origin)
         end
 
         target.evang = sharedEVAng
         if irons.EVAng then
             target.evang:Set(irons.EVAng)
+        else
+            target.evang:Set(angle_zero)
         end
 
         target.down  = 0
@@ -350,7 +354,7 @@ function SWEP:GetViewModelPosition(pos, ang)
     end
 
     if self.VM_LastBarrelRecover then
-        self.VM_BarrelWallFrac = self.VM_LastBarrelRecoverFrom * (1 - easeOut( (UCT - self.VM_LastBarrelRecover) / stanceRuin, 1 ))
+        self.VM_BarrelWallFrac = self.VM_LastBarrelRecoverFrom * (1 - easeOut( (UCT - self.VM_LastBarrelRecover) / stanceRecover, 1 ))
     else
         self.VM_BarrelWallFrac = deg * easeOut( (UCT - self.VM_LastBarrelHit) / stanceRuin, 1 )
     end
@@ -375,8 +379,9 @@ function SWEP:GetViewModelPosition(pos, ang)
 
         local delta = m_clamp((CT - self.ProcDrawTime) / (0.25 * self:GetBuff_Mult("Mult_DrawTime")), 0, 1)
 
-        target.pos  = LerpVector(delta, Vector(0, -30, -30), target.pos)
-        target.ang  = LerpAngle(delta, Angle(40, 30, 0), target.ang)
+
+        LerpSource(1 - delta, target.pos, Vector(0, -30, -30))
+        LerpSource(1 - delta, target.ang, Angle(40, 30, 0))
         target.down = target.down
         target.sway = target.sway
         target.bob  = target.bob
