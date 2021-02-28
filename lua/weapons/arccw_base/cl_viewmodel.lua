@@ -354,7 +354,7 @@ function SWEP:GetViewModelPosition(pos, ang)
     end
 
     if self.VM_LastBarrelRecover then
-        self.VM_BarrelWallFrac = self.VM_LastBarrelRecoverFrom * (1 - easeOut( (UCT - self.VM_LastBarrelRecover) / stanceRecover, 1 ))
+        self.VM_BarrelWallFrac = self.VM_LastBarrelRecoverFrom * (1 - easeOut( (UCT - self.VM_LastBarrelRecover) / stanceRuin, 1 ))
     else
         self.VM_BarrelWallFrac = deg * easeOut( (UCT - self.VM_LastBarrelHit) / stanceRuin, 1 )
     end
@@ -379,9 +379,10 @@ function SWEP:GetViewModelPosition(pos, ang)
 
         local delta = m_clamp((CT - self.ProcDrawTime) / (0.25 * self:GetBuff_Mult("Mult_DrawTime")), 0, 1)
 
-
         LerpSource(1 - delta, target.pos, Vector(0, -30, -30))
         LerpSource(1 - delta, target.ang, Angle(40, 30, 0))
+        --target.pos  = LerpVector(delta, , target.pos)
+        --target.ang  = LerpAngle(delta, , target.ang)
         target.down = target.down
         target.sway = target.sway
         target.bob  = target.bob
@@ -473,7 +474,7 @@ function SWEP:GetViewModelPosition(pos, ang)
     local randVec = VectorRand()
     randVec:Mul(self:GetRecoil() * 0.1)
 
-    target.pos:Add(randVec)
+    --target.pos:Add(randVec)
 
     local speed = target.speed or 3
 
@@ -524,6 +525,12 @@ function SWEP:GetViewModelPosition(pos, ang)
     -- For some reason, in multiplayer the sighting speed is twice as fast
     speed = 1
 
+    local inSightPunch = 0.35
+    local outSightPunch = 1
+
+    local sightDelta = inSightPunch + self:GetSightDelta() * (outSightPunch - inSightPunch)    -- 0 = scoped
+    local sightDeltaEased = inSightPunch + (self:GetSightDelta() ^ 3) * (outSightPunch - inSightPunch)
+
     actual.pos:Set(target.pos)
     actual.ang   = target.ang
     actual.down  = target.down
@@ -545,9 +552,9 @@ function SWEP:GetViewModelPosition(pos, ang)
     self.SwayScale = (coolsway and 0) or actual.sway
     self.BobScale  = (coolsway and 0) or actual.bob
 
-    pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
-    pos:Add( self.RecoilPunchSide * oldang:Right() )
-    pos:Add( self.RecoilPunchUp   * -oldang:Up() )
+    pos:Add( math.min(self.RecoilPunchBack, 1) * sightDelta * -oldang:Forward() )
+    pos:Add( self.RecoilPunchSide * sightDelta * oldang:Right() )
+    --pos:Add( self.RecoilPunchUp   * sightDelta * -oldang:Up() )
 
     ang:RotateAroundAxis(oldang:Right(),   actual.ang.x)
     ang:RotateAroundAxis(oldang:Up(),      actual.ang.y)
@@ -567,14 +574,14 @@ function SWEP:GetViewModelPosition(pos, ang)
 
     pos[3] = pos[3] - actual.down
 
-    --ang = ang + self:GetOurViewPunchAngles() * Lerp(self:GetSightDelta(), 1, -1)
+    ang = ang + self:GetOurViewPunchAngles() * Lerp(sightDelta, 1, -1)
 
     self.ActualVMData = actual
 
     if coolsway then lasteyeangles = LerpAngle(m_min(FT * 100, 1), lasteyeangles, eyeangles) end
 
     if gunbone then
-        local magnitude = Lerp(self:GetSightDelta(), 0.1, 1)
+        local magnitude = Lerp(sightDelta, 0.1, 1)
         local lhik_model = self.Attachments[gbslot].VElement.Model
         local att = lhik_model:LookupAttachment(gunbone)
         local attang = lhik_model:GetAttachment(att).Ang
