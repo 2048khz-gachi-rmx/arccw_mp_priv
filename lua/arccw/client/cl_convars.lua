@@ -67,10 +67,13 @@ ArcCW.ClientConVars = {
     ["arccw_hud_embracetradition"]    = { def =  0, desc = "Use the classic customization HUD." },
     ["arccw_hud_deadzone_x"]          = { def =  0 },
     ["arccw_hud_deadzone_y"]          = { def =  0 },
+    ["arccw_hud_3dfun_decaytime"]     = { def =  3 },
     ["arccw_hud_3dfun_right"]         = { def =  2 },
     ["arccw_hud_3dfun_up"]            = { def =  1 },
     ["arccw_hud_3dfun_forward"]       = { def =  0 },
     ["arccw_hud_size"]                = { def =  1 },
+
+    ["arccw_cust_sounds"]             = { def =  1, desc = "Play sounds when opening and closing the customization menu." },
 
     ["arccw_scope_r"]                 = { def =  255 },
     ["arccw_scope_g"]                 = { def =  0 },
@@ -102,7 +105,7 @@ ArcCW.ClientConVars = {
     ["arccw_vm_sway_speedmult"]        = { def =  1 },
     ["arccw_vm_sway_rotatemult"]       = { def =  1 },
 
-    -- ["arccw_toggleads"]               = { def = 0, usri = true },
+    ["arccw_toggleads"]               = { def = 0, usri = true },
     ["arccw_altubglkey"]              = { def = 0, usri = true },
     ["arccw_altfcgkey"]               = { def = 0, usri = true },
     ["arccw_altlaserkey"]             = { def = 0, usri = true },

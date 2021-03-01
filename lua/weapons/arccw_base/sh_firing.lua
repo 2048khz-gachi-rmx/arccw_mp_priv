@@ -7,6 +7,9 @@ function SWEP:CanPrimaryAttack()
     -- Inoperable
     if self:GetReloading() then return end
 
+    -- Inoperable, but internally (burst resetting for example)
+    if self:GetWeaponOpDelay() > CurTime() then return end
+
     -- If we are an NPC, do our own little methods
     if owner:IsNPC() then self:NPC_Shoot() return end
 
@@ -323,7 +326,7 @@ function SWEP:PrimaryAttack()
 
     if self:GetCurrentFiremode().Mode < 0 and self:GetBurstCount() == self:GetBurstLength() then
         local postburst = (self:GetCurrentFiremode().PostBurstDelay or 0)
-        self:SetNextPrimaryFire(CurTime() + postburst)
+        self:SetWeaponOpDelay(CurTime() + postburst)
     end
 
     if (self:GetIsManualAction()) and !(self.NoLastCycle and self:Clip1() == 0) then
@@ -336,7 +339,7 @@ function SWEP:PrimaryAttack()
 
     self:ApplyAttachmentShootDamage()
 
-    self:AddHeat()
+    self:AddHeat(1)
 
     self:GetBuff_Hook("Hook_PostFireBullets")
 
