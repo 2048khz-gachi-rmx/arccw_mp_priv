@@ -752,7 +752,7 @@ function SWEP:OnRestore()
     self:SetReloadingREAL(0)
     self:SetWeaponOpDelay(0)
     self:SetMagUpIn(0)
-    self:SetNWRecoil(0)
+    self:SetRecoil(0)
 
     self:KillTimers()
     self:Initialize()
