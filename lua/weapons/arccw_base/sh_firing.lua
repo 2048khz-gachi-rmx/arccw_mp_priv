@@ -7,6 +7,9 @@ function SWEP:CanPrimaryAttack()
     -- Inoperable
     if self:GetReloading() then return end
 
+    -- Inoperable, but internally (burst resetting for example)
+    if self:GetWeaponOpDelay() > CurTime() then return end
+
     -- If we are an NPC, do our own little methods
     if owner:IsNPC() then self:NPC_Shoot() return end
 
@@ -323,7 +326,7 @@ function SWEP:PrimaryAttack()
 
     if self:GetCurrentFiremode().Mode < 0 and self:GetBurstCount() == self:GetBurstLength() then
         local postburst = (self:GetCurrentFiremode().PostBurstDelay or 0)
-        self:SetNextPrimaryFire(CurTime() + postburst)
+        self:SetWeaponOpDelay(CurTime() + postburst)
     end
 
     if (self:GetIsManualAction()) and !(self.NoLastCycle and self:Clip1() == 0) then
@@ -336,7 +339,7 @@ function SWEP:PrimaryAttack()
 
     self:ApplyAttachmentShootDamage()
 
-    self:AddHeat()
+    self:AddHeat(1)
 
     self:GetBuff_Hook("Hook_PostFireBullets")
 
@@ -698,8 +701,7 @@ end
 
 function SWEP:DoRecoil()
     local single = game.SinglePlayer()
-
-    if !single and !IsFirstTimePredicted() then return end
+    --if !single and !IsFirstTimePredicted() then return end
 
     if single and self:GetOwner():IsValid() and SERVER then self:CallOnClient("DoRecoil") end
 
@@ -757,26 +759,135 @@ function SWEP:DoRecoil()
     punch = punch + ((self:GetBuff_Override("Override_RecoilDirection") or self.RecoilDirection) * math.max(self.Recoil, 0.25) * recu * recv * rmul)
     punch = punch + ((self:GetBuff_Override("Override_RecoilDirectionSide") or self.RecoilDirectionSide) * math.max(self.RecoilSide, 0.25) * irec  * recv * rmul)
     punch = punch + Angle(0, 0, 90) * math.Rand(-1, 1) * math.Clamp(self.Recoil, 0.25, 1) * recv * rmul * 0.01
-    punch = punch * (self.RecoilPunch or 1) * self:GetBuff_Mult("Mult_RecoilPunch")
+    punch = punch * (self.RecoilPunch or 1) * self:GetBuff_Mult("Mult_RecoilPunch") * 0.5
 
     if CLIENT then self:OurViewPunch(punch) end
 
-    if CLIENT or single then
-        recv = recv * self.VisualRecoilMult
+    local curRec = self:GetRecoil()
+    local addRec = self.Recoil * rmul * recu
 
-        self.RecoilAmount     = self.RecoilAmount + (self.Recoil * rmul * recu)
-        self.RecoilAmountSide = self.RecoilAmountSide + (self.RecoilSide * irec * recs * rmul)
-        self.RecoilPunchBack  = math.Clamp(self.RecoilAmount * recv * 5, 1, 5)
+    local curSideRec = self:GetSideRecoil()
+    local addSideRec = self.RecoilSide * irec * recs * rmul
+
+    if CLIENT and IsFirstTimePredicted() then
+        -- don't predict any of this: working with predicted CurTime() in sh_move will be a pain
+        self.UnpredRecoiledWhen = UnPredictedCurTime()
+
+        local unpunchedVLeft = self.MaxRecoilAmount - self._LastVerticalRec - self._CarryVerticalRec
+        self._CarryVerticalRec = curRec - unpunchedVLeft
+
+        local unpunchedHLeft = self.MaxSideRecoilAmount - self._LastHorizontalRec - self._CarryHorizontalRec
+        self._CarryHorizontalRec = curSideRec - unpunchedHLeft
+    end
+
+    self.MaxSideRecoilAmount = curSideRec + addSideRec
+    self.MaxRecoilAmount = curRec + addRec
+
+    recv = recv * self.VisualRecoilMult
+
+    self:SetRecoiledWhen(CurTime())     -- we'll be using this to linearly lerp recoil to 0
+                                        -- since GM:Move calls itself more than SWEP:Think (making us predict recoil incorrectly for viewpunch)
+                                        -- and we need it to be a predicted var...
+
+    self:SetRecoil( curRec + addRec )
+    self:SetSideRecoil( curSideRec + addSideRec )
+
+    if CLIENT then
+        self.RecoilPunchBack  = math.Clamp(self:GetRecoil() * recv * 5, 1, 5)
 
         if self.MaxRecoilBlowback > 0 then
             self.RecoilPunchBack = math.Clamp(self.RecoilPunchBack, 0, self.MaxRecoilBlowback)
         end
 
-        self.RecoilPunchSide = self.RecoilSide * 0.1 * irec * recv * rmul
-        self.RecoilPunchUp   = self.RecoilRise * 0.1 * recu
-    end
+        self.RecoilPunchSide = self.RecoilSide * 0.25 * irec * recv * rmul
+        self.RecoilPunchUp   = self.RecoilRise * -1 * recu
 
-    -- math.randomseed(CurTime() + (self:EntIndex() * 3))
+        self._SourceRecoilPunch[1]  = self.RecoilPunchBack
+        self._SourceRecoilPunch[2]  = self.RecoilPunchSide
+        self._SourceRecoilPunch[3]  = self.RecoilPunchUp
+    end
+end
+
+SWEP._SourceRecoilPunch = {0, 0, 0}
+SWEP.UnpredRecoiledWhen = 0
+
+local function easeOut(x, intensity)
+    intensity = (intensity and -intensity * 10) or -15 -- values < 1 not recommended
+    return (x <= 0 and 0) or (x == 1 and 1) or 1 - (2 ^ (intensity * x))
+end
+
+-- happens after every recoil change due to pred - we don't need to network a purely-clientside thing
+function SWEP:RecalculatePunch(recv)
+    if not CLIENT then return end -- oye this is a client thing
+
+    -- build an easing graph where 0 is our initial recoil, 1 is no recoil
+    -- and X is our (curent recoil - this frame's recovery)
+    local timePassed = UnPredictedCurTime() - self.UnpredRecoiledWhen
+    local timeFrac = timePassed / self.RecoilPunchRecovery
+
+    -- ease the time
+    local recFrac = math.max(1 - easeOut( timeFrac, 0.7 ), 0)
+
+    local sb, ss, su = unpack(self._SourceRecoilPunch)
+
+    self.RecoilPunchBack    = sb * recFrac
+    self.RecoilPunchSide    = ss * recFrac
+    self.RecoilPunchUp      = su * recFrac
+end
+
+
+
+
+-- last total vert/hor recoil we punched
+SWEP._LastVerticalRec = 0
+SWEP._LastHorizontalRec = 0
+
+-- if an another recoil instance is fired, we merge _Last* into _Carry*
+SWEP._CarryVerticalRec = 0
+SWEP._CarryHorizontalRec = 0
+
+SWEP._LastPunch = 0
+
+SWEP.MaxRecoilAmount = 0
+SWEP.MaxSideRecoilAmount = 0
+
+-- use for getting punch to feed into an angle
+-- stores last punch progress so that consequent recoil adds don't fuck it up
+
+function SWEP:PunchRecoil()
+    local ct = UnPredictedCurTime()
+    local since = self._LastPunch
+
+    local rWhen = self.UnpredRecoiledWhen or 0
+    if ct < rWhen then return 0, 0 end -- not supposed to happen?
+
+    local mxR, mxSR = self.MaxRecoilAmount - self._CarryVerticalRec, self.MaxSideRecoilAmount - self._CarryHorizontalRec
+    self._LastPunch = ct
+    local passed = ct - rWhen
+    local sincePassed = since - rWhen
+
+
+    local timedMethod = true --(mxR / rec) > self.RecoilTRecovery
+
+    if timedMethod then
+        if passed > self.RecoilTRecovery then
+            self._LastVerticalRec = 0
+            self._LastHorizontalRec = 0
+            self._CarryVerticalRec = 0
+            self._CarryHorizontalRec = 0
+            return 0, 0
+        end
+
+        local curFrac = easeOut(passed / self.RecoilTRecovery, self.RecoilTEaseOutIntensity)
+        local sinceFrac = easeOut(sincePassed / self.RecoilTRecovery, self.RecoilTEaseOutIntensity)
+
+        local vRec = (mxR * (curFrac - sinceFrac))
+        local hRec = (mxSR * (curFrac - sinceFrac))
+
+        self._LastVerticalRec = mxR * curFrac
+        self._LastHorizontalRec = mxSR * curFrac
+        return vRec, hRec
+    end
 end
 
 function SWEP:GetBurstLength()

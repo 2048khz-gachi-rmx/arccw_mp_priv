@@ -5,11 +5,11 @@ local function ScreenScaleMulti(input)
 end
 
 local function CopeX()
-    return ScreenScaleMulti( GetConVar("arccw_hud_deadzone_x"):GetFloat() * 320 )
+    return GetConVar("arccw_hud_deadzone_x"):GetFloat() * ScrW()/2
 end
 
 local function CopeY()
-    return ScreenScaleMulti( GetConVar("arccw_hud_deadzone_y"):GetFloat() * 240 )
+    return GetConVar("arccw_hud_deadzone_y"):GetFloat() * ScrH()/2
 end
 
 local function MyDrawText(tbl)
@@ -19,6 +19,8 @@ local function MyDrawText(tbl)
 
     if tbl.alpha then
         tbl.col.a = tbl.alpha
+    else
+        tbl.col.a = 255
     end
 
     if tbl.align or tbl.yalign then
@@ -117,8 +119,14 @@ local t_states = {
     [4] = "STATE_CUSTOMIZE",
     [5] = "STATE_BIPOD"
 }
+
 local mr = math.Round
-local bird = Material("hud/really cool bird.png", "smooth")
+local bird = Material("hud/really cool bird.png",   "mips smooth")
+
+local bar_fill = Material("hud/fmbar_filled.png",           "mips smooth")
+local bar_outl = Material("hud/fmbar_outlined.png",         "mips smooth")
+local bar_shad = Material("hud/fmbar_shadow.png",           "mips smooth")
+local bar_shou = Material("hud/fmbar_outlined_shadow.png",  "mips smooth")
 
 function SWEP:DrawHUD()
     -- DEBUG PANEL
@@ -259,6 +267,7 @@ function SWEP:DrawHUD()
         surface.DrawText("SIGHT DELTA")
     end
 
+    if !GetConVar("cl_drawhud"):GetBool() then return false end
     if self:GetState() != ArcCW.STATE_CUSTOMIZE then
         self:GetBuff_Hook("Hook_DrawHUD")
     end
@@ -274,30 +283,6 @@ function SWEP:DrawHUD()
         h = ScreenScaleMulti(48),
     }
 
-    local bargap = ScreenScaleMulti(2)
-
-    --[[if self:CanBipod() or self:GetInBipod() then
-        local txt = "[" .. string.upper(ArcCW:GetBind("+use")) .. "]"
-
-        if self:InBipod() then
-            txt = txt .. " Retract Bipod"
-        else
-            txt = txt .. " Deploy Bipod"
-        end
-
-        local bip = {
-            shadow = true,
-            x = ScrW() / 2,
-            y = (ScrH() / 2) + ScreenScaleMulti(36),
-            font = "ArcCW_12",
-            text = txt,
-            col = col2,
-            align = 2
-        }
-
-        MyDrawText(bip)
-    end]]
-
     local data = self:GetHUDData()
 
     if data.heat_locked then
@@ -309,336 +294,114 @@ function SWEP:DrawHUD()
 
     local muzz = self:GetBuff_Override("Override_MuzzleEffectAttachment") or self.MuzzleEffectAttachment or 1
 
-    local yuriewantsbabynapnaptimewaawaawaaa = GetConVar("arccw_hud_3dfun"):GetBool()
-
-    local angpos
-
-    if self:GetOwner():ShouldDrawLocalPlayer() then
-        local bone = "ValveBiped.Bip01_R_Hand"
-        local ind = self:GetOwner():LookupBone(bone)
-
-        if ind and ind > -1 then
-            local p, a = self:GetOwner():GetBonePosition(ind)
-            angpos = {Ang = a, Pos = p}
-        end
-    else
-        local vm = self:GetOwner():GetViewModel()
-
-        if vm and vm:IsValid() then
-            angpos = vm:GetAttachment(muzz)
-        end
-    end
-
     if ArcCW:ShouldDrawHUDElement("CHudAmmo") then
+        local decaytime = GetConVar("arccw_hud_3dfun_decaytime"):GetFloat()
+        if decaytime == 0 then decaytime = math.huge end
+        local visible = (lastinfotime + decaytime + 1 > curTime or lastinfotime - 0.5 > curTime)
 
-        if yuriewantsbabynapnaptimewaawaawaaa and muzz and angpos then
-
-            local visible = (lastinfotime + 4 > curTime or lastinfotime - 0.5 > curTime)
-
-            -- Detect changes to stuff drawn in HUD
-            local curInfo = {
-                ammo = data.ammo,
-                clip = data.clip,
-                plus = data.plus,
-                ammotype = data.ammotype,
-                firemode = data.mode,
-                heat = data.heat_level,
-                self:GetInUBGL(),
-                self:GetInBipod(),
-                self:CanBipod(),
-            }
-            if GetConVar("arccw_hud_3dfun_lite"):GetBool() then
-                curInfo.clip = nil
-                curInfo.plus = nil
-                curInfo.heat = nil
+        -- Detect changes to stuff drawn in HUD
+        local curInfo = {
+            ammo = data.ammo,
+            clip = data.clip,
+            plus = data.plus,
+            ammotype = data.ammotype,
+            firemode = data.mode,
+            heat = data.heat_level,
+            self:GetInUBGL(),
+            self:GetInBipod(),
+            self:CanBipod(),
+        }
+        if GetConVar("arccw_hud_3dfun_lite"):GetBool() then
+            curInfo.clip = nil
+            curInfo.plus = nil
+            curInfo.heat = nil
+        end
+        for i, v in pairs(curInfo) do
+            if v != lastinfo[i] then
+                lastinfotime = visible and (curTime - 0.5) or curTime
+                lastinfo = curInfo
+                break
             end
-            for i, v in pairs(curInfo) do
-                if v != lastinfo[i] then
-                    lastinfotime = visible and (curTime - 0.5) or curTime
-                    lastinfo = curInfo
-                    break
+        end
+        local qss = ScreenScaleMulti(24)
+        local items = 0
+        local correct_y = 28
+        local correct_x = 0
+        if !GetConVar("arccw_hud_3dfun"):GetBool() then
+            qss = ScreenScaleMulti(-24)
+            correct_y = -36
+            correct_x = 52
+        end
+
+        -- TODO: There's an issue where this won't ping the HUD when switching in from non-ArcCW weapons
+        if LocalPlayer():KeyDown(IN_RELOAD) or lastwpn != self then lastinfotime = visible and (curTime - 0.5) or curTime end
+
+        local alpha
+        if lastinfotime + decaytime < curTime then
+            alpha = 255 - (curTime - lastinfotime - decaytime) * 255
+        elseif lastinfotime + 0.5 > curTime then
+            alpha = 255 - (lastinfotime + 0.5 - curTime) * 255
+        else
+            alpha = 255
+        end
+
+        if alpha > 0 then
+
+            local EyeAng = EyeAngles()
+
+            if GetConVar("arccw_hud_3dfun"):GetBool() then
+                local angpos
+                if self:GetOwner():ShouldDrawLocalPlayer() then
+                    local bone = "ValveBiped.Bip01_R_Hand"
+                    local ind = self:GetOwner():LookupBone(bone)
+
+                    if ind and ind > -1 then
+                        local p, a = self:GetOwner():GetBonePosition(ind)
+                        angpos = {Ang = a, Pos = p}
+                    end
+                else
+                    local vm = self:GetOwner():GetViewModel()
+
+                    if vm and vm:IsValid() then
+                        angpos = vm:GetAttachment(muzz)
+                    end
                 end
-            end
 
-            -- TODO: There's an issue where this won't ping the HUD when switching in from non-ArcCW weapons
-            if LocalPlayer():KeyDown(IN_RELOAD) or lastwpn != self then lastinfotime = visible and (curTime - 0.5) or curTime end
-
-            local alpha
-            if lastinfotime + 3 < curTime then
-                alpha = 255 - (curTime - lastinfotime - 3) * 255
-            elseif lastinfotime + 0.5 > curTime then
-                alpha = 255 - (lastinfotime + 0.5 - curTime) * 255
-            else
-                alpha = 255
-            end
-
-            if alpha > 0 then
-
-                local EyeAng = EyeAngles()
                 angpos.Pos = angpos.Pos - EyeAng:Up() * GetConVar("arccw_hud_3dfun_up"):GetFloat() - EyeAng:Right() * GetConVar("arccw_hud_3dfun_right"):GetFloat() - EyeAng:Forward() * GetConVar("arccw_hud_3dfun_forward"):GetFloat()
-
                 cam.Start3D()
                     local toscreen = angpos.Pos:ToScreen()
                 cam.End3D()
 
                 apan_bg.x = toscreen.x - apan_bg.w - ScreenScaleMulti(8)
                 apan_bg.y = toscreen.y - apan_bg.h * 0.5
+            else
+                apan_bg.x = ScrW() - CopeX() - ScreenScaleMulti(128+8)
+                apan_bg.y = ScrH() - CopeY() - ScreenScaleMulti(48)
+            end
 
-                if GetConVar("arccw_hud_3dfun_ammotype"):GetBool() then
-                    local wammotype = {
-                        x = apan_bg.x + apan_bg.w - airgap,
-                        y = apan_bg.y - ScreenScaleMulti(8),
-                        text = language.GetPhrase(data.ammotype .. "_ammo"),
-                        font = "ArcCW_8",
-                        col = col2,
-                        align = 1,
-                        shadow = true,
-                        alpha = alpha,
-                    }
-                    MyDrawText(wammotype)
-                end
-
-                local wammo = {
+            if GetConVar("arccw_hud_3dfun_ammotype"):GetBool() then
+                local wammotype = {
                     x = apan_bg.x + apan_bg.w - airgap,
-                    y = apan_bg.y,
-                    text = tostring(data.clip),
-                    font = "ArcCW_26",
+                    y = apan_bg.y - ScreenScaleMulti(8),
+                    text = language.GetPhrase(data.ammotype .. "_ammo"),
+                    font = "ArcCW_8",
                     col = col2,
                     align = 1,
                     shadow = true,
                     alpha = alpha,
                 }
-
-                wammo.col = col2
-
-                if data.clip == 0 then
-                    wammo.col = col3
-                end
-
-                MyDrawText(wammo)
-                wammo.w, wammo.h = surface.GetTextSize(wammo.text)
-
-                if data.plus then
-                    local wplus = {
-                        x = wammo.x,
-                        y = wammo.y,
-                        text = "+" .. tostring(data.plus),
-                        font = "ArcCW_16",
-                        col = col2,
-                        shadow = true,
-                        alpha = alpha,
-                    }
-
-                    MyDrawText(wplus)
-                end
-
-                local wreserve = {
-                    x = wammo.x - wammo.w - ScreenScaleMulti(4),
-                    y = apan_bg.y + ScreenScaleMulti(26 - 12),
-                    text = tostring(data.ammo) .. " /",
-                    font = "ArcCW_12",
-                    col = col2,
-                    align = 1,
-                    yalign = 2,
-                    shadow = true,
-                    alpha = alpha,
-                }
-
-                if self.PrimaryBash then
-                    wreserve.text = ""
-                end
-
-                MyDrawText(wreserve)
-                wreserve.w, wreserve.h = surface.GetTextSize(wreserve.text)
-
-                local wmode = {
-                    x = apan_bg.x + apan_bg.w - airgap,
-                    y = wammo.y + wammo.h,
-                    font = "ArcCW_12",
-                    text = data.mode,
-                    col = col2,
-                    align = 1,
-                    shadow = true,
-                    alpha = alpha,
-                }
-                MyDrawText(wmode)
-
-                -- overheat bar 3d
-
-                if data.heat_enabled then
-                    local wheat = {
-                        x = apan_bg.x + apan_bg.w - airgap,
-                        y = wmode.y + ScreenScaleMulti(14),
-                        font = "ArcCW_12",
-                        text = data.heat_name .. " " .. tostring(math.ceil(100 * data.heat_level / data.heat_maxlevel)) .. "%",
-                        col = col2,
-                        align = 1,
-                        shadow = true,
-                        alpha = alpha,
-                    }
-                    MyDrawText(wheat)
-                end
-                if self:GetBuff_Override("UBGL") then
-                    local size = ScreenScaleMulti(32)
-                    local awesomematerial = Material( "hud/ubgl.png", "smooth" )
-                    local whatsthecolor = self:GetInUBGL() and  Color(255, 255, 255, alpha) or
-                                                        Color(255, 255, 255, 0)
-                    local bar = {
-                        w = size,
-                        h = size,
-                        x = apan_bg.x + apan_bg.w - airgap - size,
-                        y = wmode.y + ScreenScaleMulti(14),
-                    }
-                    surface.SetDrawColor( whatsthecolor )
-                    surface.SetMaterial( awesomematerial )
-                    surface.DrawTexturedRect( bar.x, bar.y, bar.w, bar.h )
-                end
-
-                if self:CanBipod() or self:GetInBipod() then
-                    local size = ScreenScaleMulti(32)
-                    local awesomematerial = Material( "hud/bipod.png", "smooth" )
-                    local whatsthecolor =   self:GetInBipod() and     Color(255, 255, 255, alpha) or
-                                            self:CanBipod() and   Color(255, 255, 255, alpha / 2) or
-                                                                    Color(255, 255, 255, 0)
-                    local bar = {
-                        w = size,
-                        h = size,
-                        x = apan_bg.x + apan_bg.w - airgap - ScreenScaleMulti(32) - (self:GetInUBGL() and ScreenScaleMulti(32) or 0),
-                        y = wmode.y + ScreenScaleMulti(14),
-                    }
-                    surface.SetDrawColor( whatsthecolor )
-                    surface.SetMaterial( awesomematerial )
-                    surface.DrawTexturedRect( bar.x, bar.y, bar.w, bar.h )
-
-                    local txt = string.upper(ArcCW:GetBind("+use"))
-
-                    local bip = {
-                        shadow = true,
-                        x = apan_bg.x + apan_bg.w - airgap - ScreenScaleMulti(32) - (self:GetInUBGL() and ScreenScaleMulti(32) or 0),
-                        y = wmode.y + ScreenScaleMulti(14),
-                        font = "ArcCW_12",
-                        text = txt,
-                        col = whatsthecolor,
-                        alpha = alpha,
-                    }
-
-                    MyDrawText(bip)
-                end
-            end
-        else
-
-            apan_bg.x = ScrW() - apan_bg.w - airgap - CopeX()
-            apan_bg.y = ScrH() - apan_bg.h - airgap - CopeY()
-
-            surface.SetDrawColor(col1)
-            surface.DrawRect(apan_bg.x, apan_bg.y, apan_bg.w, apan_bg.h)
-
-            local segcount = string.len( self:GetFiremodeBars() or "-----" )
-
-            local bar = {
-                w = (apan_bg.w - ((segcount + 1) * bargap)) / segcount,
-                h = ScreenScaleMulti(3),
-                x = apan_bg.x + bargap,
-                y = apan_bg.y + ScreenScaleMulti(14)
-            }
-
-            for i = 1, segcount do
-                local c = data.bars[i]
-
-                if c == "-" then
-                    surface.SetDrawColor(col2)
-                    surface.DrawRect(bar.x, bar.y, bar.w, bar.h)
-                elseif c == "#" then
-                    --surface.SetDrawColor(col2)
-                    --surface.DrawRect(bar.x, bar.y, bar.w, bar.h)
-                elseif c == "!" then
-                    surface.SetDrawColor(col3)
-                    surface.DrawRect(bar.x, bar.y, bar.w, bar.h)
-                    surface.SetDrawColor(col2)
-                    surface.DrawOutlinedRect(bar.x, bar.y, bar.w, bar.h)
-                else
-                    surface.SetDrawColor(col2)
-                    surface.DrawOutlinedRect(bar.x, bar.y, bar.w, bar.h)
-                end
-
-                bar.x = bar.x + bar.w + bargap
+                MyDrawText(wammotype)
             end
 
-            surface.SetFont("ArcCW_12")
-            local wname = {
-                x = apan_bg.x + ScreenScaleMulti(4),
-                y = apan_bg.y,
-                font = "ArcCW_12",
-                text = self.PrintName,
-                col = col2
-            }
-
-            MyDrawText(wname)
-
-            surface.SetFont("ArcCW_12")
-            local wmode = {
-                x = apan_bg.x + apan_bg.w - ScreenScaleMulti(4) - surface.GetTextSize(mode),
-                y = apan_bg.y,
-                font = "ArcCW_12",
-                text = data.mode,
-                col = col2
-            }
-
-            MyDrawText(wmode)
-
-            if self:GetBuff_Override("UBGL") then
-                local size = ScreenScaleMulti(32)
-                local awesomematerial = Material( "hud/ubgl.png", "smooth" )
-                local whatsthecolor = self:GetInUBGL() and  Color(255, 255, 255, 255) or
-                                                       Color(255, 255, 255, 0)
-                local bar2 = {
-                    w = size,
-                    h = size,
-                    x = apan_bg.x - size - ScreenScaleMulti(8),
-                    y = apan_bg.y + apan_bg.h - size,
-                }
-                surface.SetDrawColor( whatsthecolor )
-                surface.SetMaterial( awesomematerial )
-                surface.DrawTexturedRect( bar2.x, bar2.y, bar2.w, bar2.h )
-            end
-
-            if self:CanBipod() or self:GetInBipod() then
-                local size = ScreenScaleMulti(32)
-                local awesomematerial = Material( "hud/bipod.png", "smooth" )
-                local whatsthecolor =   self:GetInBipod() and   Color(255, 255, 255, 255) or
-                                        self:CanBipod() and     Color(255, 255, 255, 127) or
-                                                                Color(255, 255, 255, 0)
-                local bar2 = {
-                    w = size,
-                    h = size,
-                    x = apan_bg.x - size - ScreenScaleMulti(8) - (self:GetInUBGL() and ScreenScaleMulti(32) or 0),
-                    y = apan_bg.y + apan_bg.h - size,
-                }
-                surface.SetDrawColor( whatsthecolor )
-                surface.SetMaterial( awesomematerial )
-                surface.DrawTexturedRect( bar2.x, bar2.y, bar2.w, bar2.h )
-
-                local txt = string.upper(ArcCW:GetBind("+use"))
-
-                local bip = {
-                    shadow = true,
-                    x = apan_bg.x - size - ScreenScaleMulti(8) - (self:GetInUBGL() and ScreenScaleMulti(32) or 0),
-                    y = apan_bg.y + apan_bg.h - size,
-                    font = "ArcCW_12",
-                    text = txt,
-                    col = whatsthecolor,
-                }
-
-                MyDrawText(bip)
-            end
-
-            surface.SetFont("ArcCW_26")
             local wammo = {
-                x = apan_bg.x + airgap,
-                y = bar.y + ScreenScaleMulti(4),
+                x = apan_bg.x + apan_bg.w - airgap,
+                y = apan_bg.y - ScreenScaleMulti(4),
                 text = tostring(data.clip),
                 font = "ArcCW_26",
-                col = col2
+                col = col2,
+                align = 1,
+                shadow = true,
+                alpha = alpha,
             }
 
             wammo.col = col2
@@ -648,125 +411,162 @@ function SWEP:DrawHUD()
             end
 
             MyDrawText(wammo)
+            wammo.w, wammo.h = surface.GetTextSize(wammo.text)
 
-            surface.SetFont("ArcCW_26")
-            local wreserve = {
-                x = apan_bg.x + ScreenScaleMulti(64) - airgap,
-                y = bar.y + ScreenScaleMulti(4),
-                text = "/ " .. tostring(data.ammo),
-                font = "ArcCW_26",
-                col = col2,
-            }
-
-            MyDrawText(wreserve)
-
-            wammo.w = surface.GetTextSize(tostring(data.clip))
-
-            surface.SetFont("ArcCW_16")
             if data.plus then
                 local wplus = {
-                    x = wammo.x + bargap + wammo.w,
+                    x = wammo.x,
                     y = wammo.y,
                     text = "+" .. tostring(data.plus),
                     font = "ArcCW_16",
-                    col = col2
+                    col = col2,
+                    shadow = true,
+                    alpha = alpha,
                 }
 
                 MyDrawText(wplus)
             end
 
-            if data.heat_enabled then
-                local heat_bg = {
-                    x = apan_bg.x,
-                    w = apan_bg.w,
-                    h = ScreenScaleMulti(14)
-                }
+            local wreserve = {
+                x = wammo.x - wammo.w - ScreenScaleMulti(4),
+                y = apan_bg.y + ScreenScaleMulti(10),
+                text = tostring(data.ammo) .. " /",
+                font = "ArcCW_12",
+                col = col2,
+                align = 1,
+                yalign = 2,
+                shadow = true,
+                alpha = alpha,
+            }
 
-                heat_bg.y = apan_bg.y - heat_bg.h - ScreenScaleMulti(2)
-                surface.SetDrawColor(col1)
-                surface.DrawRect(heat_bg.x, heat_bg.y, heat_bg.w, heat_bg.h)
-
-                local theat = {
-                    x = heat_bg.x + ScreenScaleMulti(2),
-                    y = heat_bg.y,
-                    text = data.heat_name .. " [",
-                    font = "ArcCW_12",
-                    col = col2
-                }
-
-                MyDrawText(theat)
-
-                local eheat = {
-                    x = heat_bg.x + heat_bg.w - ScreenScaleMulti(4),
-                    y = heat_bg.y,
-                    text = "]",
-                    font = "ArcCW_12",
-                    col = col2
-                }
-
-                MyDrawText(eheat)
-
-                local heat_bar = {
-                    x = heat_bg.x + ScreenScaleMulti(33),
-                    y = heat_bg.y + ScreenScaleMulti(4),
-                    h = heat_bg.h - ScreenScaleMulti(8),
-                    w = heat_bg.w - ScreenScaleMulti(38)
-                }
-
-                local perc = data.heat_level / data.heat_maxlevel
-
-                heat_bar.w = heat_bar.w * perc
-
-                surface.SetDrawColor(col2)
-                surface.DrawRect(heat_bar.x, heat_bar.y, heat_bar.w, heat_bar.h)
+            if self.PrimaryBash then
+                wreserve.text = ""
             end
 
-        end
+            MyDrawText(wreserve)
+            wreserve.w, wreserve.h = surface.GetTextSize(wreserve.text)
 
-    elseif GetConVar("arccw_hud_minimal"):GetBool() then
-        if !GetConVar("cl_drawhud"):GetBool() then return false end
+            local wmode = {
+                x = apan_bg.x + apan_bg.w - airgap,
+                y = wammo.y + wammo.h + ScreenScaleMulti(6),
+                font = "ArcCW_12",
+                text = data.mode,
+                col = col2,
+                align = 1,
+                shadow = true,
+                alpha = alpha,
+            }
+            MyDrawText(wmode)
+
+            -- overheat bar 3d
+
+            if data.heat_enabled then
+                local wheat = {
+                    x = apan_bg.x + apan_bg.w - airgap,
+                    y = wmode.y + ScreenScaleMulti(16) * ( !GetConVar("arccw_hud_3dfun"):GetBool() and -2.5 or 1 ),
+                    font = "ArcCW_12",
+                    text = data.heat_name .. " " .. tostring(math.ceil(100 * data.heat_level / data.heat_maxlevel)) .. "%",
+                    col = col2,
+                    align = 1,
+                    shadow = true,
+                    alpha = alpha,
+                }
+                MyDrawText(wheat)
+            end
+            if self:GetInUBGL() then
+                local size = ScreenScaleMulti(32)
+                local awesomematerial = Material( "hud/ubgl.png", "smooth" )
+                local whatsthecolor = self:GetInUBGL() and  Color(255, 255, 255, alpha) or
+                                                    Color(255, 255, 255, 0)
+                local bar = {
+                    w = size,
+                    h = size,
+                    x = apan_bg.x + apan_bg.w - airgap + ScreenScaleMulti(0+correct_x) - size + qss*items,
+                    y = wmode.y + ScreenScaleMulti(correct_y),
+                }
+                surface.SetDrawColor( whatsthecolor )
+                surface.SetMaterial( awesomematerial )
+                surface.DrawTexturedRect( bar.x, bar.y, bar.w, bar.h )
+                items = items + 1
+            end
+
+            if self:CanBipod() or self:GetInBipod() then
+                local size = ScreenScaleMulti(32)
+                local awesomematerial = Material( "hud/bipod.png", "smooth" )
+                local whatsthecolor =   self:GetInBipod() and     Color(255, 255, 255, alpha) or
+                                        self:CanBipod() and   Color(255, 255, 255, alpha / 4) or Color(0, 0, 0, 0)
+                local bar = {
+                    w = size,
+                    h = size,
+                    x = apan_bg.x + apan_bg.w - airgap - ScreenScaleMulti(32+correct_x) + qss*items,
+                    y = wmode.y + ScreenScaleMulti(correct_y),
+                }
+                surface.SetDrawColor( whatsthecolor )
+                surface.SetMaterial( awesomematerial )
+                surface.DrawTexturedRect( bar.x, bar.y, bar.w, bar.h )
+
+                local txt = string.upper(ArcCW:GetBind("+use"))
+
+                local bip = {
+                    shadow = true,
+                    x = apan_bg.x + apan_bg.w - airgap - ScreenScaleMulti(32+correct_x) + qss*items,
+                    y = wmode.y + ScreenScaleMulti(correct_y),
+                    font = "ArcCW_12",
+                    text = txt,
+                    col = whatsthecolor,
+                    alpha = alpha,
+                }
+
+                MyDrawText(bip)
+                items = items + 1
+            end
 
             local segcount = string.len( self:GetFiremodeBars() or "-----" )
-
-            local bar = {
-                w = (ScreenScaleMulti(128) - ((segcount + 1) * bargap)) / segcount,
-                h = ScreenScaleMulti(3),
-                x = (ScrW() / 2) - ScreenScaleMulti(62),
-                y = ScrH() - ScreenScaleMulti(24)
+            local bargap = ScreenScaleMulti(2)
+            local bart = {
+                w = (ScreenScaleMulti(256) - ((segcount + 1) * bargap)) / segcount,
+                h = ScreenScaleMulti(12),
+                x = apan_bg.x + apan_bg.w - ScreenScaleMulti(128+16),
+                y = apan_bg.y + apan_bg.h - ScreenScaleMulti(30)
             }
 
             for i = 1, segcount do
                 local c = data.bars[i]
 
-                if c == "-" then
-                    surface.SetDrawColor(col2)
-                    surface.DrawRect(bar.x, bar.y, bar.w, bar.h)
-                elseif c == "#" then
-                    --surface.SetDrawColor(col2)
-                    --surface.DrawRect(bar.x, bar.y, bar.w, bar.h)
-                elseif c == "!" then
-                    surface.SetDrawColor(col3)
-                    surface.DrawRect(bar.x, bar.y, bar.w, bar.h)
-                    surface.SetDrawColor(col2)
-                    surface.DrawOutlinedRect(bar.x, bar.y, bar.w, bar.h)
-                else
-                    surface.SetDrawColor(col2)
-                    surface.DrawOutlinedRect(bar.x, bar.y, bar.w, bar.h)
+                if c != "#" then
+                    if c != "!" and c != "-" then
+                        surface.SetMaterial(bar_shou)
+                    else
+                        surface.SetMaterial(bar_shad)
+                    end
+                    surface.SetDrawColor(255, 255, 255, 255/5*3)
+                    surface.DrawTexturedRect(bart.x, bart.y, bart.w, bart.h)
                 end
 
-                bar.x = bar.x + bar.w + bargap
+                if c == "-" then
+                    -- good ol filled
+                    surface.SetMaterial(bar_fill)
+                    surface.SetDrawColor(col2)
+                    surface.DrawTexturedRect(bart.x, bart.y, bart.w, bart.h)
+                elseif c == "#" then
+                    -- nothing
+                elseif c == "!" then
+                    surface.SetMaterial(bar_fill)
+                    surface.SetDrawColor(col3)
+                    surface.DrawTexturedRect(bart.x, bart.y, bart.w, bart.h)
+                    surface.SetMaterial(bar_outl)
+                    surface.SetDrawColor(col2)
+                    surface.DrawTexturedRect(bart.x, bart.y, bart.w, bart.h)
+                else
+                    -- good ol outline
+                    surface.SetMaterial(bar_outl)
+                    surface.SetDrawColor(col2)
+                    surface.DrawTexturedRect(bart.x, bart.y, bart.w, bart.h)
+                end
+
+                bart.x = bart.x + bart.w/2 + bargap
             end
-
-            surface.SetFont("ArcCW_12")
-            local wmode = {
-                x = (ScrW() / 2) - (surface.GetTextSize(data.mode) / 2),
-                y = bar.y - ScreenScaleMulti(16),
-                font = "ArcCW_12",
-                text = data.mode,
-                col = col2
-            }
-
-            MyDrawText(wmode)
+    elseif GetConVar("arccw_hud_minimal"):GetBool() then
 
             if self:GetBuff_Override("UBGL") then
                 local size = ScreenScaleMulti(32)
@@ -833,7 +633,7 @@ function SWEP:DrawHUD()
 
                 MyDrawText(bip)
             end
-
+        end
     end
 
     -- health + armor
@@ -841,6 +641,21 @@ function SWEP:DrawHUD()
     if ArcCW:ShouldDrawHUDElement("CHudHealth") then
 
         local colhp = Color(255, 255, 255, 255)
+        local gotarmor = false
+
+        if LocalPlayer():Armor() > 0 then
+            gotarmor = true
+            local war = {
+                x = airgap + CopeX(),
+                y = ScrH() - ScreenScaleMulti(16) - airgap - CopeY(),
+                font = "ArcCW_16",
+                text = "AP " .. tostring(math.Round(varmor)),
+                col = Color(255, 255, 255, 255),
+                shadow = true
+            }
+
+            MyDrawText(war)
+        end
 
         if LocalPlayer():Health() <= 30 then
             colhp = col3
@@ -848,32 +663,19 @@ function SWEP:DrawHUD()
 
         local whp = {
             x = airgap + CopeX(),
-            y = ScrH() - ScreenScaleMulti(26) - ScreenScaleMulti(16) - airgap - CopeY(),
+            y = ScrH() - ScreenScaleMulti(26 + (gotarmor and 16 or 0)) - airgap - CopeY(),
             font = "ArcCW_26",
-            text =  (ArcCW.GetTranslation("hud.hp") or "HP: ") .. tostring(math.Round(vhp)),
+            text = "HP " .. tostring(math.Round(vhp)),
             col = colhp,
             shadow = true
         }
 
         MyDrawText(whp)
 
-        if LocalPlayer():Armor() > 0 then
-            local war = {
-                x = airgap + CopeX(),
-                y = ScrH() - ScreenScaleMulti(16) - airgap - CopeY(),
-                font = "ArcCW_16",
-                text = "ARMOR: " .. tostring(math.Round(varmor)),
-                col = col2,
-                shadow = true
-            }
-
-            MyDrawText(war)
-        end
-
     end
 
-    vhp = math.Approach(vhp, self:GetOwner():Health(), FrameTime() * 100)
-    varmor = math.Approach(varmor, self:GetOwner():Armor(), FrameTime() * 100)
+    vhp = self:GetOwner():Health()
+    varmor = self:GetOwner():Armor()
 
     local clipdiff = math.abs(vclip - self:Clip1())
     local reservediff = math.abs(vreserve - self:Ammo1())

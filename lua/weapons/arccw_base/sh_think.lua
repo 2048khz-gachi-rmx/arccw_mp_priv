@@ -85,8 +85,8 @@ function SWEP:Think()
         if self:GetCurrentFiremode().Mode < 0 and !self:GetCurrentFiremode().RunawayBurst then
             local postburst = self:GetCurrentFiremode().PostBurstDelay or 0
 
-            if (CurTime() + postburst) > self:GetNextPrimaryFire() then
-                self:SetNextPrimaryFire(CurTime() + postburst)
+            if (CurTime() + postburst) > self:GetWeaponOpDelay() then
+                --self:SetNextPrimaryFire(CurTime() + postburst)
                 self:SetWeaponOpDelay(CurTime() + postburst)
             end
         end
@@ -98,17 +98,6 @@ function SWEP:Think()
     elseif !self:InSprint() and self:GetState() == ArcCW.STATE_SPRINT then
         self:ExitSprint()
     end
-
-
-    -- That seems a good way to do such things
-    -- local altlaser = owner:GetInfoNum("arccw_altlaserkey", 0) == 1
-    -- local laserdown, laserpress = altlaser and IN_USE or IN_WALK, altlaser and IN_WALK or IN_USE -- Can't find good alt keys
-
-    -- if owner:KeyDown(laserdown) and owner:KeyPressed(laserpress) then
-    --     self:SetNWBool("laserenabled", !self:GetNWBool("laserenabled", true))
-    -- end
-
-    -- Yeah, this would be OP unless we can also turn off the laser stats, too.
 
     if owner and owner:GetInfoNum("arccw_automaticreload", 0) == 1 and self:Clip1() == 0 and !self:GetReloading() and CurTime() > self:GetNextPrimaryFire() + 0.2 then
         self:Reload()
@@ -151,17 +140,33 @@ function SWEP:Think()
         self:ExitSights()
     else
 
-        if owner:KeyDown(IN_ATTACK2) and self:GetState() != ArcCW.STATE_SIGHTS then
-            self:EnterSights()
-        elseif !owner:KeyDown(IN_ATTACK2) and self:GetState() == ArcCW.STATE_SIGHTS then
-            self:ExitSights()
+        -- no it really doesn't, past me
+        local sighted = self:GetState() == ArcCW.STATE_SIGHTS
+        local toggle = self:GetOwner():GetInfoNum("arccw_toggleads", 0) >= 1
+        local sp_cl = game.SinglePlayer() and CLIENT
+
+        -- if in singleplayer, client realm should be completely ignored
+        if toggle and !sp_cl then
+            if owner:KeyPressed(IN_ATTACK2) then
+                if sighted then
+                    self:ExitSights()
+                else
+                    self:EnterSights()
+                end
+            end
+        elseif !toggle then
+            if owner:KeyDown(IN_ATTACK2) and !sighted then
+                self:EnterSights()
+            elseif !owner:KeyDown(IN_ATTACK2) and sighted then
+                self:ExitSights()
+            end
         end
 
     end
 
-    if (CLIENT or game.SinglePlayer()) and (IsFirstTimePredicted() or game.SinglePlayer()) then
+    --if (CLIENT or game.SinglePlayer()) and (IsFirstTimePredicted() or game.SinglePlayer()) then
         self:ProcessRecoil()
-    end
+    --end
 
     if CLIENT and IsValid(vm) then
         local vec1 = Vector(1, 1, 1)
@@ -267,43 +272,40 @@ function SWEP:Think()
 end
 
 function SWEP:ProcessRecoil()
-    local owner = self:GetOwner()
-    local ft = FrameTime()
-    local newang = owner:EyeAngles()
-    local r = self.RecoilAmount -- self:GetNWFloat("recoil", 0)
-    local rs = self.RecoilAmountSide -- self:GetNWFloat("recoilside", 0)
 
-    local ra = Angle(0, 0, 0)
+    -- not doing autistic shit like basing off of frametime and framerate
 
-    ra = ra + ((self:GetBuff_Override("Override_RecoilDirection") or self.RecoilDirection) * self.RecoilAmount * 0.5)
-    ra = ra + ((self:GetBuff_Override("Override_RecoilDirectionSide") or self.RecoilDirectionSide) * self.RecoilAmountSide * 0.5)
-
-    newang = newang - ra
-
-    -- self.RecoilAmount = r - math.Clamp(ft * 20, 0, r)
-    -- self.RecoilAmountSide = rs - math.Clamp(ft * 20, 0, rs)
-
-    self.RecoilAmount = math.Approach(self.RecoilAmount, 0, ft * 20 * r)
-    self.RecoilAmountSide = math.Approach(self.RecoilAmountSide, 0, ft * 20 * rs)
-
-    -- self:SetNWFloat("recoil", r - (FrameTime() * r * 50))
-    -- self:SetNWFloat("recoilside", rs - (FrameTime() * rs * 50))
-
-    local rpb = self.RecoilPunchBack
-    local rps = self.RecoilPunchSide
-    local rpu = self.RecoilPunchUp
-
-    if rpb != 0 then
-        self.RecoilPunchBack = math.Approach(rpb, 0, ft * rpb * 2.5)
+    if not self.MaxRecoilAmount or self.MaxRecoilAmount == 0 then
+        self:SetRecoil( 0 )
+        self:SetSideRecoil( 0 )
+        self:RecalculatePunch()
+        return
     end
 
-    if rps != 0 then
-        self.RecoilPunchSide = math.Approach(rps, 0, ft * rps * 5)
+    local when = self:GetRecoiledWhen()
+    local now = CurTime()
+    local passed = now - when
+    local recFrac = 1 - math.min(passed / self.RecoilTRecovery, 1) -- linear
+
+    local newRec = math.max(self:GetRecoil() * recFrac, 0)
+    local newSideRec = math.max(self:GetSideRecoil() * recFrac, 0)
+
+    self:SetRecoil( newRec )
+    self:SetSideRecoil( newSideRec )
+
+    if newRec == 0 then
+        self.MaxRecoilAmount = 0
     end
 
-    if rpu != 0 then
-        self.RecoilPunchUp = math.Approach(rpu, 0, ft * rpu * 5)
+    if newSideRec == 0 then
+        self.MaxSideRecoilAmount = 0
     end
+
+    self:RecalculatePunch()
+end
+
+function SWEP:AddRecoil(amt)
+
 end
 
 function SWEP:InSprint()

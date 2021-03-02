@@ -31,6 +31,12 @@ local function LerpSource(dlt, from, to)
     from[3] = f_lerp(dlt, from[3], to[3])
 end
 
+local function LerpInto(dlt, from, to, into)
+    into[1] = f_lerp(dlt, from[1], to[1])
+    into[2] = f_lerp(dlt, from[2], to[2])
+    into[3] = f_lerp(dlt, from[3], to[3])
+end
+
 local function addElem(vec, x, y, z)
     vec[1] = vec[1] + x
     vec[2] = vec[2] + y
@@ -70,7 +76,7 @@ local sharedEVAng = Angle()
 local sharedAngle = Angle()
 local sharedAngle2 = Angle()
 
-local b = bench("pp", 1000)
+-- local b = bench("pp", 1000)
 
 --[[
 25.02:
@@ -87,30 +93,18 @@ function SWEP:GetViewModelPosition(pos, ang)
 
     if !IsValid(owner) or !owner:Alive() then return end
 
-    local proceduralRecoilMult = 1
+    -- local SP = game.SinglePlayer()
 
-    local SP = game.SinglePlayer()
-    -- local FT = m_min(FrameTime(), FrameTime())
     local CT = CurTime()
     local UCT = UnPredictedCurTime()
     local FT = FrameTime()
-	local pred = IsFirstTimePredicted()
-
-	if !SP then
-		local TargetTick = (1/FT)/66.66
-		if TargetTick < 1 then
-			local oldft = FT
-			FT = FT*TargetTick
-		end
-    end
+    local pred = IsFirstTimePredicted()
 
     local gunbone, gbslot = self:GetBuff_Override("LHIK_GunDriver")
 
-    local FT5 = FT * 5
-
     local oldpos, oldang = Vector(), Angle()
 
-    local asight = self:GetActiveSights()
+    -- local asight = self:GetActiveSights()
     local state  = self:GetState()
 
     oldpos:Set(pos)
@@ -222,10 +216,26 @@ function SWEP:GetViewModelPosition(pos, ang)
     end
 
     addElem(target.pos, vm_right, vm_forward, vm_up)
-    
-    local sighted   = t.Sighted or state == ArcCW.STATE_SIGHTS
 
-    local sprinted  = (t.Sprinted or state == ArcCW.STATE_SPRINT or 
+    local sightTime = self:GetSightTime()
+    local inSightTime, outSightTime = t.LastEnterSightTimeUnpred, t.LastExitSightTimeUnpred
+
+    local sighted   = (t.Sighted or state == ArcCW.STATE_SIGHTS or
+        (UCT - inSightTime) < sightTime)
+    local sightedFrac = 0
+
+    -- the bigger the sight time, the less intense the easing out becomes
+    -- (and the more "heavy") the weapon feels when scoping
+
+    local intensity = math.Clamp(0.8 / self:GetSightTime(), 1, 5)
+
+    if outSightTime >= inSightTime then
+        sightedFrac = 1 - easeOut( math.min(1, (UCT - outSightTime) / sightTime), intensity )
+    else
+        sightedFrac = easeOut( math.min(1, (UCT - inSightTime) / sightTime), intensity )
+    end
+
+    local sprinted  = (t.Sprinted or state == ArcCW.STATE_SPRINT or
             (not sighted and (UCT - t.LastExitSprintTimeUnpred) < t.VM_SprintRecovery)) -- sighting takes priority over sprint recovery
     local sprintFrac = 0
 
@@ -261,70 +271,73 @@ function SWEP:GetViewModelPosition(pos, ang)
         target.ang = target.ang + Angle(0, my * 2, mx * 2)
 
         if self.InAttMenu then target.ang = target.ang + Angle(0, -5, 0) end
-    elseif (sprinted and !(self:GetBuff_Override("Override_ShootWhileSprint") or t.ShootWhileSprint)) or holstered then
+    else
+        if (sprinted and !(self:GetBuff_Override("Override_ShootWhileSprint") or t.ShootWhileSprint)) or holstered then
 
-        local intensity = math.Clamp(0.8 / self:GetSightTime(), 1, 5)
-        
-        local prePos = target.pos
-        local preAng = target.ang
+            local intensity = math.Clamp(0.8 / self:GetSightTime(), 1, 5)
 
-        target.pos  = sharedVector2
-        target.ang  = sharedAngle2
-        target.down = 1
-        target.sway = GetConVar("arccw_vm_sway_sprint"):GetInt()
-        target.bob  = GetConVar("arccw_vm_bob_sprint"):GetInt()
+            local prePos = target.pos
+            local preAng = target.ang
 
-        local hpos, spos = self:GetBuff("HolsterPos", true), self:GetBuff("SprintPos", true)
-        local hang, sang = self:GetBuff("HolsterAng", true), self:GetBuff("SprintAng", true)
+            target.pos  = sharedVector2
+            target.ang  = sharedAngle2
+            target.down = 1
+            target.sway = GetConVar("arccw_vm_sway_sprint"):GetInt()
+            target.bob  = GetConVar("arccw_vm_bob_sprint"):GetInt()
 
-        target.pos:Set(holstered and (hpos or spos) or (spos or hpos))
+            local hpos, spos = self:GetBuff("HolsterPos", true), self:GetBuff("SprintPos", true)
+            local hang, sang = self:GetBuff("HolsterAng", true), self:GetBuff("SprintAng", true)
 
-        target.pos[1] = target.pos[1] + vm_right
-        target.pos[2] = target.pos[2] + vm_forward
-        target.pos[3] = target.pos[3] + vm_up
+            target.pos:Set(holstered and (hpos or spos) or (spos or hpos))
 
-        LerpSource(1 - sprintFrac, target.pos, prePos)
+            target.pos[1] = target.pos[1] + vm_right
+            target.pos[2] = target.pos[2] + vm_forward
+            target.pos[3] = target.pos[3] + vm_up
 
-        target.ang:Set(holstered and (hang or sang) or (sang or hang))
+            LerpSource(1 - sprintFrac, target.pos, prePos)
 
-        if ang.p < -15 then target.ang.p = target.ang.p + ang.p + 15 end
+            target.ang:Set(holstered and (hang or sang) or (sang or hang))
 
-        target.ang.p = m_clamp(target.ang.p, -80, 80)
-        LerpSource(1 - sprintFrac, target.ang, preAng)
+            if ang.p < -15 then target.ang.p = target.ang.p + ang.p + 15 end
 
-    elseif sighted then
-        local irons = self:GetActiveSights()
-        local intensity = math.Clamp(0.8 / self:GetSightTime(), 1, 5)   -- the bigger the sight time, the less intense the easing out becomes
-                                                                        -- (and the more "heavy") the weapon feels when scoping
-
-        local dlt = easeOut( math.min(1, (UCT - self.LastEnterSightTimeUnpred) / self:GetSightTime()), intensity )
-
-        LerpSource(dlt, target.pos, irons.Pos)
-        LerpSource(dlt, target.ang, irons.Ang)
-
-        target.evpos = sharedEVVector
-        if irons.EVPos then
-            target.evpos:Set(irons.EVPos)
+            target.ang.p = m_clamp(target.ang.p, -80, 80)
+            LerpSource(1 - sprintFrac, target.ang, preAng)
         end
 
-        target.evang = sharedEVAng
-        if irons.EVAng then
-            target.evang:Set(irons.EVAng)
+        if sightedFrac > 0 then
+            local irons = self:GetActiveSights()
+
+            LerpSource(sightedFrac, target.pos, irons.Pos)
+            LerpSource(sightedFrac, target.ang, irons.Ang)
+
+            target.evpos = sharedEVVector
+            if irons.EVPos then
+                LerpInto(sightedFrac, vector_origin, irons.EVPos, target.evpos)
+            else
+                target.evpos:Set(vector_origin)
+            end
+
+            target.evang = sharedEVAng
+            if irons.EVAng then
+                LerpInto(sightedFrac, angle_zero, irons.EVAng, target.evang)
+            else
+                target.evang:Set(angle_zero)
+            end
+
+            target.down  = Lerp(sightedFrac, target.down, 0)
+            target.sway  = Lerp(sightedFrac, target.sway, 0.1)
+            target.bob   = Lerp(sightedFrac, target.bob, 0.1)
+
+            local sightroll = self:GetBuff_Override("Override_AddSightRoll")
+
+            if sightroll then
+                LerpSource(sightedFrac, target.ang, irons.Ang)
+                target.ang.r = sightroll
+            end
         end
+    end
 
-        target.down  = 0
-        target.sway  = 0.1
-        target.bob   = 0.1
-
-        local sightroll = self:GetBuff_Override("Override_AddSightRoll")
-
-        if sightroll then
-            target.ang = Angle()
-
-            target.ang:Set(irons.Ang)
-            target.ang.r = sightroll
-        end
-    elseif sprd > 0 and !self:GetBuff("ShootWhileSprint") then
+    if sprd > 0 and !self:GetBuff("ShootWhileSprint") then
         local hpos, spos = self:GetBuff("HolsterPos", true), self:GetBuff("SprintPos", true)
         local hang, sang = self:GetBuff("HolsterAng", true), self:GetBuff("SprintAng", true)
 

@@ -120,6 +120,13 @@ SWEP.RecoilRise = 1
 SWEP.MaxRecoilBlowback = -1
 SWEP.VisualRecoilMult = 1.25
 SWEP.RecoilPunch = 1.5
+SWEP.RecoilPunchRecovery = 0.7 -- time to recover the VM punch
+
+-- timed recoil: recoil will kick to 100% within SWEP.RecoilTRecovery seconds
+SWEP.RecoilTRecovery = 0.5
+SWEP.RecoilTEaseOutIntensity = 1.3 -- <1 not recommended
+
+
 
 SWEP.ShotgunSpreadDispersion = false -- dispersion will cause pattern to increase instead of shifting
 SWEP.ShotgunSpreadPattern = nil
@@ -140,11 +147,15 @@ SWEP.Firemode = 1 -- 0: safe, 1: semi, 2: auto, negative: burst
 SWEP.Firemodes = {
     -- {
     --     Mode = 1,
-    --     CustomBars = "----_--_-_", -- custom bar setup
-                                      --  '-' for filled
-                                      --  '_' for hollow
-                                      --  '#' for empty
-                                      --  '!' for red w white outline
+    --     CustomBars = "---_#!",
+--[[ 
+                Custom bar setup
+        Colored variants        Classic
+        'a' Filled              '-' Filled
+        'b' Outline             '_' Outline
+        'd' CLR w Outline       '!' Red w Outline        
+                    '#' Empty
+]]
     --     PrintName = "PUMP",
     --     RunAwayBurst = false,
     --     AutoBurst = false, -- hold fire to continue firing bursts
@@ -191,12 +202,12 @@ SWEP.DistantShootSound = nil
 SWEP.ShootSoundSilenced = "weapons/arccw/m4a1/m4a1-1.wav"
 SWEP.ShootSoundSilencedLooping = nil
 SWEP.FiremodeSound = "weapons/arccw/firemode.wav"
-SWEP.MeleeSwingSound = "weapons/arccw/m249/m249_draw.wav"
-SWEP.MeleeMissSound = "weapons/iceaxe/iceaxe_swing1.wav"
-SWEP.MeleeHitSound = "weapons/arccw/knife/knife_hitwall1.wav"
+SWEP.MeleeSwingSound = "weapons/arccw/melee_lift.wav"
+SWEP.MeleeMissSound = "weapons/arccw/melee_miss.wav"
+SWEP.MeleeHitSound = "weapons/arccw/melee_hitworld.wav"
 SWEP.MeleeHitNPCSound = "physics/body/body_medium_break2.wav"
-SWEP.EnterBipodSound = "weapons/arccw/m249/m249_coverdown.wav"
-SWEP.ExitBipodSound = "weapons/arccw/m249/m249_coverup.wav"
+SWEP.EnterBipodSound = "weapons/arccw/bipod_down.wav"
+SWEP.ExitBipodSound = "weapons/arccw/bipod_up.wav"
 SWEP.SelectUBGLSound =  "weapons/arccw/ubgl_select.wav"
 SWEP.ExitUBGLSound = "weapons/arccw/ubgl_exit.wav"
 
@@ -626,6 +637,7 @@ SWEP.RecoilAmountSide = 0
 SWEP.RecoilPunchBack = 0
 SWEP.RecoilPunchUp = 0
 SWEP.RecoilPunchSide = 0
+
 SWEP.HammerDown = false
 
 SWEP.LHIKTimeline = nil
@@ -727,6 +739,10 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Float", 2, "ReloadingREAL")
     self:NetworkVar("Float", 3, "MagUpIn")
     self:NetworkVar("Float", 4, "NextPrimaryFireSlowdown")
+
+    self:NetworkVar("Float", 5, "Recoil")
+    self:NetworkVar("Float", 6, "SideRecoil")
+    self:NetworkVar("Float", 7, "RecoiledWhen")
 end
 
 function SWEP:OnRestore()
@@ -736,6 +752,7 @@ function SWEP:OnRestore()
     self:SetReloadingREAL(0)
     self:SetWeaponOpDelay(0)
     self:SetMagUpIn(0)
+    self:SetNWRecoil(0)
 
     self:KillTimers()
     self:Initialize()
@@ -780,13 +797,9 @@ end
 
 function SWEP:SetState(v)
     self:SetNWState(v)
-    -- if CLIENT then
-    --     self.State = v
-    -- end
 end
 
 function SWEP:GetState(v)
-    -- if CLIENT and self.State then return self.State end
     return self:GetNWState(v)
 end
 
