@@ -56,11 +56,26 @@ local function easeInOut(x)
 end
 
 -- touch:
-SWEP.VM_CrouchIn = 0.25
-SWEP.VM_CrouchOut = 0.4
-SWEP.VM_SprintRecovery = 0.5
 
-SWEP.VM_BarrelWallFrac = 0 -- don't touch
+-- if true, this will use SightTime for determining recovery speeds
+-- otherwise this will use static times
+
+SWEP.VM_UseSightTimeCrouch = true
+
+if SWEP.VM_UseSightTimeCrouch then
+    -- SightTime mults for determining times
+    SWEP.VM_CrouchIn = 0.75
+    SWEP.VM_CrouchOut = 1.2
+    SWEP.VM_SprintRecovery = 1.3
+else
+    -- static times
+    SWEP.VM_CrouchIn = 0.25
+    SWEP.VM_CrouchOut = 0.4
+    SWEP.VM_SprintRecovery = 0.5
+end
+
+-- don't touch:
+SWEP.VM_BarrelWallFrac = 0
 
 SWEP.VM_LastBarrelHit = 0
 
@@ -85,6 +100,9 @@ local sharedAngle2 = Angle()
     "pp" took 88.247ms (avg. across 1000 calls: 0.088ms, time since last print: 1422.749ms)
 ]]
 
+SWEP.VM_CrouchTime = 0
+SWEP.VM_UncrouchTime = 0
+
 function SWEP:GetViewModelPosition(pos, ang)
     --b:Open()
 
@@ -98,7 +116,7 @@ function SWEP:GetViewModelPosition(pos, ang)
     local CT = CurTime()
     local UCT = UnPredictedCurTime()
     local FT = FrameTime()
-    local pred = IsFirstTimePredicted()
+    local firstpred = IsFirstTimePredicted()
 
     local gunbone, gbslot = self:GetBuff_Override("LHIK_GunDriver")
 
@@ -106,6 +124,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 
     -- local asight = self:GetActiveSights()
     local state  = self:GetState()
+    local sightTime = self:GetSightTime()
 
     oldpos:Set(pos)
     oldang:Set(ang)
@@ -135,17 +154,21 @@ function SWEP:GetViewModelPosition(pos, ang)
     local vm_up      = GetConVar("arccw_vm_up"):GetFloat()
     local vm_forward = GetConVar("arccw_vm_forward"):GetFloat()
     local vm_fov     = GetConVar("arccw_vm_fov"):GetFloat()
-        
-    local crouching = owner:Crouching() or owner:KeyDown(IN_DUCK)
 
-    -- This is ugly but NW vars don't rewind themselves properly /shrug
+    local crouching = owner:Crouching() or owner:KeyDown(IN_DUCK)
+    local crotchTime = t.VM_CrouchTime -- lul
+    local uncrotchTime = t.VM_UncrouchTime
+
+    -- This is ugly
     if not crouching then
-        if self:GetNWFloat("CrouchTime", 0) > 0 and self:GetNWFloat("UncrouchTime", 0) == 0 then
-            self:SetNWFloat("UncrouchTime", UCT)
+        if crotchTime > 0 and uncrotchTime == 0 then
+            t.VM_UncrouchTime = UCT
+            uncrotchTime = UCT
         end
 
-        local uncrouchedFor = UCT - self:GetNWFloat("UncrouchTime", 0)
-        local crouchFrac = easeOut( math.min( uncrouchedFor / self.VM_CrouchOut, 1) )
+        local uncrouchedFor = UCT - uncrotchTime
+        local crouchOutTime = (t.VM_UseSightTimeCrouch and t.VM_CrouchOut * sightTime) or t.VM_CrouchOut
+        local crouchFrac = easeOut( math.min( uncrouchedFor / crouchOutTime, 1) )
 
         target.down = Lerp(crouchFrac, 0, target.down)
 
@@ -153,25 +176,26 @@ function SWEP:GetViewModelPosition(pos, ang)
             LerpSource(1 - crouchFrac, target.pos, t.CrouchPos)
         end
         if self:GetBuff("CrouchAng", true) then
-            LerpSource(1 - crouchFrac, target.ang, t.CrouchAng) 
+            LerpSource(1 - crouchFrac, target.ang, t.CrouchAng)
         end
 
-        if pred then
-            self:SetNWFloat("CrouchTime", 0)
+        if firstpred then
+            t.VM_CrouchTime = 0
             if crouchFrac == 1 then
-                self:SetNWFloat("UncrouchTime", 0)
+                t.VM_UncrouchTime = 0
             end
         end
 
-        
     else
 
-        if pred and self:GetNWFloat("CrouchTime", 0) == 0 then
-            self:SetNWFloat("CrouchTime", UCT)
+        if firstpred and crotchTime == 0 then
+            t.VM_CrouchTime = UCT
+            crotchTime = UCT
         end
 
-        local crouchedFor = UCT - self:GetNWFloat("CrouchTime", UCT)
-        local crouchFrac = easeOut( math.min( crouchedFor / self.VM_CrouchIn, 1 ) )
+        local crouchedFor = UCT - crotchTime
+        local crouchInTime = (t.VM_UseSightTimeCrouch and t.VM_CrouchIn * sightTime) or t.VM_CrouchIn
+        local crouchFrac = easeOut( math.min( crouchedFor / crouchInTime, 1 ) )
 
         target.down = Lerp(crouchFrac, target.down, 0)
 
@@ -179,11 +203,11 @@ function SWEP:GetViewModelPosition(pos, ang)
             LerpSource(crouchFrac, target.pos, t.CrouchPos)
         end
         if self:GetBuff("CrouchAng", true) then
-            LerpSource(crouchFrac, target.ang, t.CrouchAng) 
+            LerpSource(crouchFrac, target.ang, t.CrouchAng)
         end
 
-        if pred and owner:KeyDown(IN_DUCK) then
-            self:SetNWFloat("UncrouchTime", 0)
+        if firstpred and owner:KeyDown(IN_DUCK) then
+            t.VM_UncrouchTime = 0
         end
     end
 
@@ -217,7 +241,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 
     addElem(target.pos, vm_right, vm_forward, vm_up)
 
-    local sightTime = self:GetSightTime()
     local inSightTime, outSightTime = t.LastEnterSightTimeUnpred, t.LastExitSightTimeUnpred
 
     local sighted   = (t.Sighted or state == ArcCW.STATE_SIGHTS or
@@ -350,7 +373,7 @@ function SWEP:GetViewModelPosition(pos, ang)
     local stanceRecover = self:GetSightTime() ^ 0.4 / 2     -- how fast the stance will recover
     local stanceRuin = self:GetSightTime() ^ 0.2            -- how fast the stance will break
 
-    if pred then
+    if firstpred then
         if deg > 0 then
             self.VM_LastBarrelRecover = nil
             self.VM_LastBarrelRecoverFrom = nil
