@@ -60,12 +60,12 @@ end
 -- if true, this will use SightTime for determining recovery speeds
 -- otherwise this will use static times
 
-SWEP.VM_UseSightTimeCrouch = true
+SWEP.VM_UseSightTimeHandling = true
 
-if SWEP.VM_UseSightTimeCrouch then
+if SWEP.VM_UseSightTimeHandling then
     -- SightTime mults for determining times
     SWEP.VM_CrouchIn = 0.75
-    SWEP.VM_CrouchOut = 1.2
+    SWEP.VM_CrouchOut = 2
     SWEP.VM_SprintRecovery = 1.3
 else
     -- static times
@@ -81,6 +81,10 @@ SWEP.VM_LastBarrelHit = 0
 
 SWEP.VM_LastBarrelRecoverFrom = 0
 SWEP.VM_LastBarrelRecover = 0
+
+SWEP.VM_CrouchFrac = 0
+SWEP.VM_CrouchTime = 0
+SWEP.VM_UncrouchTime = -1
 
 local sharedVector = Vector()
 local sharedVector2 = Vector()
@@ -100,8 +104,24 @@ local sharedAngle2 = Angle()
     "pp" took 88.247ms (avg. across 1000 calls: 0.088ms, time since last print: 1422.749ms)
 ]]
 
-SWEP.VM_CrouchTime = 0
-SWEP.VM_UncrouchTime = 0
+
+local function calcCrouchFrac(t, UCT, sightTime, timeMul, out)
+    local tdelta = 0
+    local tmax = 0
+
+    if out then
+        local uncrotchTime = t.VM_UncrouchTime
+        tdelta = UCT - uncrotchTime
+        tmax = (t.VM_UseSightTimeHandling and t.VM_CrouchOut * sightTime) or t.VM_CrouchOut
+    else
+        local crotchTime = t.VM_CrouchTime -- lul
+        tdelta = UCT - crotchTime
+        tmax = (t.VM_UseSightTimeHandling and t.VM_CrouchIn * sightTime) or t.VM_CrouchIn
+    end
+
+    local crouchFrac = easeOut( math.min( tdelta / (tmax * timeMul), 1 ) )
+    return crouchFrac
+end
 
 function SWEP:GetViewModelPosition(pos, ang)
     --b:Open()
@@ -159,43 +179,43 @@ function SWEP:GetViewModelPosition(pos, ang)
     local crotchTime = t.VM_CrouchTime -- lul
     local uncrotchTime = t.VM_UncrouchTime
 
-    -- This is ugly
-    if not crouching then
-        if crotchTime > 0 and uncrotchTime == 0 then
+
+    --[[
+        This is ugly, holy fuck
+
+        Quick logic rundown:
+            * If uncrotchTime is -1, don't even calculate uncrouch frac
+
+            *   If we're crouched and this is our first predicted frame in which we are crouched:
+                    * Store when we crouched
+                    * Store how far our VM was already gone to crouch (in the event of repeated crouches)
+                        - We do this by simulating logic from the other state's `crouchFrac` calculation
+                        - Thank god we only need to do it once
+                    * Set uncrotchTime to 0 so we'll start listening for uncrouching
+
+            *   If we're uncrouched and this is our first predicted frame in which we are uncrouched:
+                    * Store when we crouched
+                    * Store how far our VM was already gone to crouch (same principle)
+
+            *   When calculating this frame's crouch fraction, we pass how far we've gone in into the calcCrouchFrac
+                function as a time multiplier; so if we've only uncrouched to 70% crouch fraction and then crouched again,
+                then it'll only take us 30% of the time to crouch back
+
+            *   If we're uncrouched and crouchFrac reached 0, that means we've uncrouched completely and we
+                don't need to recalculate crouchFrac every frame until we crouch again, so if we set uncrotchTime to -1
+                then it won't recalculate until next crouch even
+    ]]
+
+    if not crouching and uncrotchTime ~= -1 then
+        if firstpred and uncrotchTime == 0 then
+            -- calc crouch frac from which we'll start
+            t.VM_CrouchFrac = calcCrouchFrac(t, UCT, sightTime, 1 - t.VM_CrouchFrac, false) * (1 - t.VM_CrouchFrac) + t.VM_CrouchFrac
             t.VM_UncrouchTime = UCT
             uncrotchTime = UCT
         end
 
-        local uncrouchedFor = UCT - uncrotchTime
-        local crouchOutTime = (t.VM_UseSightTimeCrouch and t.VM_CrouchOut * sightTime) or t.VM_CrouchOut
-        local crouchFrac = easeOut( math.min( uncrouchedFor / crouchOutTime, 1) )
 
-        target.down = Lerp(crouchFrac, 0, target.down)
-
-        if self:GetBuff("CrouchPos", true) then
-            LerpSource(1 - crouchFrac, target.pos, t.CrouchPos)
-        end
-        if self:GetBuff("CrouchAng", true) then
-            LerpSource(1 - crouchFrac, target.ang, t.CrouchAng)
-        end
-
-        if firstpred then
-            t.VM_CrouchTime = 0
-            if crouchFrac == 1 then
-                t.VM_UncrouchTime = 0
-            end
-        end
-
-    else
-
-        if firstpred and crotchTime == 0 then
-            t.VM_CrouchTime = UCT
-            crotchTime = UCT
-        end
-
-        local crouchedFor = UCT - crotchTime
-        local crouchInTime = (t.VM_UseSightTimeCrouch and t.VM_CrouchIn * sightTime) or t.VM_CrouchIn
-        local crouchFrac = easeOut( math.min( crouchedFor / crouchInTime, 1 ) )
+        local crouchFrac = (1 - calcCrouchFrac(t, UCT, sightTime, t.VM_CrouchFrac, true)) * t.VM_CrouchFrac
 
         target.down = Lerp(crouchFrac, target.down, 0)
 
@@ -206,8 +226,32 @@ function SWEP:GetViewModelPosition(pos, ang)
             LerpSource(crouchFrac, target.ang, t.CrouchAng)
         end
 
-        if firstpred and owner:KeyDown(IN_DUCK) then
-            t.VM_UncrouchTime = 0
+        if firstpred then
+            t.VM_CrouchTime = 0
+            if crouchFrac == 0 then
+                t.VM_UncrouchTime = -1 -- don't listen to uncrouch anymore; we've uncrouched completely
+            end
+        end
+
+    elseif crouching then
+
+        if firstpred and crotchTime == 0 then
+            t.VM_CrouchFrac = (1 - calcCrouchFrac(t, UCT, sightTime, t.VM_CrouchFrac, true)) * t.VM_CrouchFrac
+            t.VM_CrouchTime = UCT
+            crotchTime = UCT
+
+            t.VM_UncrouchTime = 0 -- make us listen to the uncrouch
+        end
+
+        local crouchFrac = calcCrouchFrac(t, UCT, sightTime, 1 - t.VM_CrouchFrac, false) * (1 - t.VM_CrouchFrac) + t.VM_CrouchFrac
+
+        target.down = Lerp(crouchFrac, target.down, 0)
+
+        if self:GetBuff("CrouchPos", true) then
+            LerpSource(crouchFrac, target.pos, t.CrouchPos)
+        end
+        if self:GetBuff("CrouchAng", true) then
+            LerpSource(crouchFrac, target.ang, t.CrouchAng)
         end
     end
 
@@ -258,6 +302,7 @@ function SWEP:GetViewModelPosition(pos, ang)
         sightedFrac = easeOut( math.min(1, (UCT - inSightTime) / sightTime), intensity )
     end
 
+    local recovery = (t.VM_UseSightTime and t.VM_SprintRecovery * sightTime) or t.VM_SprintRecovery
     local sprinted  = (t.Sprinted or state == ArcCW.STATE_SPRINT or
             (not sighted and (UCT - t.LastExitSprintTimeUnpred) < t.VM_SprintRecovery)) -- sighting takes priority over sprint recovery
     local sprintFrac = 0
