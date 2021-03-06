@@ -92,10 +92,10 @@ function SWEP:GetIsManualAction()
 end
 
 -- ONE FUNCTION TO RULE THEM ALL
-function SWEP:GetBuff(buff, defaultnil)
+function SWEP:GetBuff(buff, defaultnil, defaultvar)
     local stable = self:GetTable()
 
-    local result = stable[buff]
+    local result = stable[buff] or defaultvar
     if !result and defaultnil then
         result = nil
     elseif !result then
@@ -150,7 +150,7 @@ function SWEP:GetBuff_Hook(buff, data)
             data = ret
         end
 
-        hook.Call(buff, ArcCW, self, data)
+        data = hook.Call(buff, ArcCW, self, data) or data
 
         return data
     else
@@ -236,7 +236,7 @@ function SWEP:GetBuff_Hook(buff, data)
         end
     end
 
-    hook.Call(buff, ArcCW, self, data)
+    data = hook.Call(buff, ArcCW, self, data) or data
 
     return data
 end

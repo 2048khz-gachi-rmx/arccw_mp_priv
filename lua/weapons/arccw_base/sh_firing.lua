@@ -143,6 +143,7 @@ function SWEP:PrimaryAttack()
     bullet.HullSize   = (self:GetBuff_Override("Override_HullSize") or self.HullSize or 0) + self:GetBuff_Add("Add_HullSize")
     bullet.Tracer     = game.SinglePlayer() and tracernum or 0
     bullet.TracerName = self:GetBuff_Override("Override_Tracer") or self.Tracer
+    bullet.Weapon     = self
     bullet.Callback   = function(att, tr, dmg)
         local hitpos, hitnormal = tr.HitPos, tr.HitNormal
         local trent = tr.Entity
@@ -161,6 +162,7 @@ function SWEP:PrimaryAttack()
             fx:SetStart(self:GetTracerOrigin())
             fx:SetOrigin(tr.HitPos)
             fx:SetScale(5000)
+            fx:SetEntity(self)
             util.Effect(bullet.TracerName or "tracer", fx)
         end
 
@@ -189,10 +191,8 @@ function SWEP:PrimaryAttack()
         local effect = self.ImpactEffect
         local decal  = self.ImpactDecal
 
-        if dmg:GetDamageType() == DMG_BURN and hit.range <= self.Range then
-            local dmgtype = num == 1 and DMG_BULLET or DMG_BUCKSHOT
-
-            dmg:SetDamageType(dmgtype)
+        if dmg:IsDamageType(DMG_BURN) and hit.range <= self.Range then
+            dmg:SetDamageType(dmg:GetDamageType() - DMG_BURN)
 
             effect = "arccw_incendiaryround"
             decal  = "FadingScorch"
@@ -208,7 +208,7 @@ function SWEP:PrimaryAttack()
 
         if SERVER then self:TryBustDoor(trent, dmg) end
 
-        self:DoPenetration(tr, hit.penleft, { [trent:EntIndex()] = true })
+        self:DoPenetration(tr, hit.penleft, bullet, false, { [trent:EntIndex()] = true })
 
         effect = self:GetBuff_Override("Override_ImpactEffect") or effect
 
@@ -445,7 +445,8 @@ function SWEP:DoPrimaryFire(isent, data)
     if isent then
         self:FireRocket(data.ent, data.vel, data.ang, self.PhysBulletDontInheritPlayerVelocity)
     else
-        if !game.SinglePlayer() and !IsFirstTimePredicted() then return end
+        -- if !game.SinglePlayer() and !IsFirstTimePredicted() then return end
+        if !IsFirstTimePredicted() then return end
 
         if shouldphysical then
             local vel = self:GetBuff_Override("Override_PhysBulletMuzzleVelocity") or self.PhysBulletMuzzleVelocity
