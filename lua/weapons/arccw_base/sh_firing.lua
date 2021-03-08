@@ -801,11 +801,11 @@ function SWEP:DoRecoil()
         end
 
         self.RecoilPunchSide = self.RecoilSide * 0.25 * irec * recv * rmul
-        self.RecoilPunchUp   = self.RecoilRise * -1 * recu
+        --self.RecoilPunchUp   = self.RecoilRise * -0.1 * recu
 
         self._SourceRecoilPunch[1]  = self.RecoilPunchBack
         self._SourceRecoilPunch[2]  = self.RecoilPunchSide
-        self._SourceRecoilPunch[3]  = self.RecoilPunchUp
+        --self._SourceRecoilPunch[3]  = self.RecoilPunchUp
     end
 end
 
@@ -820,20 +820,21 @@ end
 -- happens after every recoil change due to pred - we don't need to network a purely-clientside thing
 function SWEP:RecalculatePunch(recv)
     if not CLIENT then return end -- oye this is a client thing
+    local t = self:GetTable()
 
     -- build an easing graph where 0 is our initial recoil, 1 is no recoil
     -- and X is our (curent recoil - this frame's recovery)
-    local timePassed = UnPredictedCurTime() - self.UnpredRecoiledWhen
-    local timeFrac = timePassed / self.RecoilPunchRecovery
+    local timePassed = UnPredictedCurTime() - t.UnpredRecoiledWhen
+    local timeFrac = timePassed / t.RecoilPunchRecovery
 
     -- ease the time
     local recFrac = math.max(1 - easeOut( timeFrac, 0.7 ), 0)
 
-    local sb, ss, su = unpack(self._SourceRecoilPunch)
+    local sb, ss, su = unpack(t._SourceRecoilPunch)
 
-    self.RecoilPunchBack    = sb * recFrac
-    self.RecoilPunchSide    = ss * recFrac
-    self.RecoilPunchUp      = su * recFrac
+    t.RecoilPunchBack    = sb * recFrac
+    t.RecoilPunchSide    = ss * recFrac
+    -- t.RecoilPunchUp      = su * recFrac
 end
 
 
