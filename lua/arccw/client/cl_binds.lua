@@ -48,8 +48,8 @@ local function ArcCW_TranslateBindToEffect(bind)
 end
 
 local function SendNet(string, bool)
-    net.Start(string, true)
-        if bool ~= nil then net.WriteBool(bool) end
+    net.Start(string)
+        if bool != nil then net.WriteBool(bool) end
     net.SendToServer()
 end
 
