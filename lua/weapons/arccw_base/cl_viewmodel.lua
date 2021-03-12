@@ -48,6 +48,10 @@ local function easeOut(x, intensity)
     return (x <= 0 and 0) or (x == 1 and 1) or 1 - (2 ^ (intensity * x))
 end
 
+local function easeOutCubic(x)
+    return 1 - (1 - x) ^ 3
+end
+
 local function easeInOut(x)
     return x == 0 and 0
         or x == 1 and 1
@@ -81,6 +85,7 @@ SWEP.VM_LastBarrelHit = 0
 
 SWEP.VM_LastBarrelRecoverFrom = 0
 SWEP.VM_LastBarrelRecover = 0
+SWEP.VM_MaxBarrelFrac = 0
 
 SWEP.VM_CrouchFrac = 0
 SWEP.VM_CrouchTime = 0
@@ -149,7 +154,7 @@ function SWEP:GetViewModelPosition(pos, ang)
     oldpos:Set(pos)
     oldang:Set(ang)
 
-    ang = ang - self:GetOurViewPunchAngles()
+    ang = ang + self:GetOurViewPunchAngles()
 
     actual = t.ActualVMData or { pos = Vector(), ang = Angle(), down = 1, sway = 1, bob = 1, evpos = Vector(), evang = Angle() }
 
@@ -255,7 +260,13 @@ function SWEP:GetViewModelPosition(pos, ang)
         end
     end
 
-    if self:InBipod() then
+    local inBipod = self:InBipod()
+    local bipodTime = 0.8
+    local bipodDelta = inBipod and
+                            easeOut( (UnPredictedCurTime() - self.VM_EnteredBipod) / bipodTime ) or
+                            1 - easeOut( (UnPredictedCurTime() - self.VM_ExitedBipod) / bipodTime * 1.5 )
+
+    if bipodDelta > 0 then
         if !t.BipodAngle then
             t.BipodPos = self:GetOwner():EyePos()
             t.BipodAngle = self:GetOwner():EyeAngles()
@@ -264,17 +275,22 @@ function SWEP:GetViewModelPosition(pos, ang)
         local BEA = self.BipodAngle - owner:EyeAngles()
 
         local irons = self:GetActiveSights()
+        local dlt = bipodDelta
 
-        target.pos = irons.Pos or target.pos
-        target.ang = irons.Ang or target.ang
+        if irons.Pos then
+            LerpSource(dlt, target.pos, irons.Pos)
+        end
+        if irons.Ang then
+            LerpSource(dlt, target.ang, irons.Ang)
+        end
 
         local r, f, u = BEA:Right(), BEA:Forward(), BEA:Up()
         local bx, by, bz = t.InBipodMult:Unpack()
         local mx, my, mz = t.InBipodPos:Unpack()
 
-        r:Mul(mx * bx)
-        f:Mul(my * by)
-        u:Mul(mz * bz)
+        r:Mul(mx * bx * dlt)
+        f:Mul(my * by * dlt)
+        u:Mul(mz * bz * dlt)
 
         target.pos:Add(r)
         target.pos:Add(f)
@@ -299,7 +315,7 @@ function SWEP:GetViewModelPosition(pos, ang)
     if outSightTime >= inSightTime then
         sightedFrac = 1 - easeOut( math.min(1, (UCT - outSightTime) / sightTime), intensity )
     else
-        sightedFrac = easeOut( math.min(1, (UCT - inSightTime) / sightTime), intensity )
+        sightedFrac = easeOutCubic( math.min(1, (UCT - inSightTime) / sightTime) )
     end
 
     local recovery = (t.VM_UseSightTime and t.VM_SprintRecovery * sightTime) or t.VM_SprintRecovery
@@ -423,6 +439,7 @@ function SWEP:GetViewModelPosition(pos, ang)
             self.VM_LastBarrelRecover = nil
             self.VM_LastBarrelRecoverFrom = nil
             self.VM_LastBarrelHit = self.VM_LastBarrelHit or UCT
+            self.VM_MaxBarrelFrac = math.max(self.VM_MaxBarrelFrac - FrameTime() / stanceRecover, deg)
         else
             self.VM_LastBarrelHit = nil
             self.VM_LastBarrelRecover = self.VM_LastBarrelRecover or UCT
@@ -431,9 +448,10 @@ function SWEP:GetViewModelPosition(pos, ang)
     end
 
     if self.VM_LastBarrelRecover then
-        self.VM_BarrelWallFrac = self.VM_LastBarrelRecoverFrom * (1 - easeOut( (UCT - self.VM_LastBarrelRecover) / stanceRuin, 1 ))
+        self.VM_BarrelWallFrac = self.VM_LastBarrelRecoverFrom * (1 - easeOut( (UCT - self.VM_LastBarrelRecover) / stanceRecover, 1 ))
+        self.VM_MaxBarrelFrac = self.VM_BarrelWallFrac
     else
-        self.VM_BarrelWallFrac = deg * easeOut( (UCT - self.VM_LastBarrelHit) / stanceRuin, 1 )
+        self.VM_BarrelWallFrac = self.VM_MaxBarrelFrac * easeOut( (UCT - self.VM_LastBarrelHit) / stanceRuin, 1 )
     end
 
     if self.VM_BarrelWallFrac > 0 then
@@ -546,10 +564,10 @@ function SWEP:GetViewModelPosition(pos, ang)
     end
     ]]
 
-    local randVec = VectorRand()
-    randVec:Mul(self.RecoilAmount * 0.2)
+    --local randVec = VectorRand()
+    --randVec:Mul(self.RecoilAmount * 0.2)
 
-    target.pos:Add(randVec)
+    --target.pos:Add(randVec)
 
     local speed = target.speed or 3
 
@@ -624,7 +642,8 @@ function SWEP:GetViewModelPosition(pos, ang)
     self.BobScale  = (coolsway and 0) or actual.bob
 
     pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
-    pos:Add( self.RecoilPunchSide * oldang:Right() )
+
+    --pos:Add( self.RecoilPunchSide * oldang:Right() )
     -- upward recoil is terrible on some guns, wtf?
     --pos:Add( self.RecoilPunchUp   * -oldang:Up() )
 
@@ -646,7 +665,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 
     pos[3] = pos[3] - actual.down
 
-    ang = ang + self:GetOurViewPunchAngles() * Lerp(self:GetSightDelta(), 1, -1)
+    ang = ang + self:GetOurViewPunchAngles() * Lerp(self:GetSightDelta(), 0, -3)
 
     self.ActualVMData = actual
 
