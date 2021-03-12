@@ -104,7 +104,7 @@ function SWEP:PlayAnimation(key, mult, pred, startfrom, tt, skipholster, ignorer
     if !vm then return end
     if !IsValid(vm) then return end
 
-    self:KillTimer("idlereset")
+    if IsFirstTimePredicted() then self:KillTimer("idlereset") end
 
     self:GetAnimKeyTime(key)
 
@@ -294,9 +294,11 @@ function SWEP:PlayAnimation(key, mult, pred, startfrom, tt, skipholster, ignorer
         -- self:ResetCheckpoints()
     end, key)
 
-    self:SetTimer(ttime, function()
+    self._PlayIdleAnimationAt = CurTime() + ttime
+
+    --[[self:SetTimer(ttime, function()
         self:PlayIdleAnimation(pred)
-    end, "idlereset")
+    end, "idlereset")]]
 end
 
 function SWEP:PlayIdleAnimation(pred)
@@ -329,8 +331,12 @@ function SWEP:PlayIdleAnimation(pred)
     else
         ianim = ianim or "idle"
     end
+
+    self._PlayIdleAnimationAt = CurTime() + self:GetAnimKeyTime(ianim)
     self:PlayAnimation(ianim, 1, pred, nil, nil, nil, true)
 end
+
+SWEP._PlayIdleAnimationAt = 0
 
 function SWEP:GetAnimKeyTime(key, min)
     if !self:GetOwner() then return 1 end
