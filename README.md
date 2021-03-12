@@ -9,4 +9,6 @@ checklist:
 - [x] bipods make the gun travel into the pocket dimension
 - [ ] binds are fucked
 - [ ] canted sights affect primattack time?
-- [ ] ricochet fires two muzzles
+- [x] ricochet fires two muzzles
+- [ ] gun jitters when shooting sometimes (wtf?)
+- [ ] shell reloading is fucked
