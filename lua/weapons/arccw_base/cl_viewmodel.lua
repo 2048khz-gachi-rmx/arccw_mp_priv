@@ -686,7 +686,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 
     pos[3] = pos[3] - actual.down
 
-    ang = ang + self:GetOurViewPunchAngles() * Lerp(1 - sightedFrac, 0, -2)
+    ang = ang + self:GetOurViewPunchAngles() * Lerp(1 - sightedFrac, -0.5, -3)
 
     self.ActualVMData = actual
 
