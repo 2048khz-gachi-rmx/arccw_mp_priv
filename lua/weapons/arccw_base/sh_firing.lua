@@ -309,6 +309,8 @@ function SWEP:PrimaryAttack()
 
     owner:DoAnimationEvent(self:GetBuff_Override("Override_AnimShoot") or self.AnimShoot)
 
+    if shouldsupp then SuppressHostEvents(owner) end
+
     self:DoEffects()
 
     self:TakePrimaryAmmo(aps)
@@ -319,7 +321,7 @@ function SWEP:PrimaryAttack()
         self:Unload()
     end
 
-    if shouldsupp then SuppressHostEvents(owner) end
+    
 
     self:DoShootSound()
     self:DoPrimaryAnim()
@@ -762,7 +764,7 @@ function SWEP:DoRecoil()
     punch = punch + Angle(0, 0, 90) * math.Rand(-1, 1) * math.Clamp(self.Recoil, 0.25, 1) * recv * rmul * 0.01
     punch = punch * (self.RecoilPunch or 1) * self:GetBuff_Mult("Mult_RecoilPunch") * 0.5
 
-    if CLIENT then self:OurViewPunch(punch) end
+    if CLIENT and IsFirstTimePredicted() then self:OurViewPunch(punch) end
 
     local curRec = self:GetRecoil()
     local addRec = self.Recoil * rmul * recu

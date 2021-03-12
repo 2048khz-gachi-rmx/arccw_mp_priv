@@ -61,7 +61,7 @@ SWEP.ViewPunchAngle = Angle(0, 0, 0)
 SWEP.ViewPunchVelocity = Angle(0, 0, 0)
 
 function SWEP:OurViewPunch(angle)
-    angle:Div(3)
+    angle:Div(2)
     self.ViewPunchVelocity = self.ViewPunchVelocity + angle
 
     local ang = self.ViewPunchVelocity

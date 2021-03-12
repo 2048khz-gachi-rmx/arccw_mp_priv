@@ -78,7 +78,7 @@ function SWEP:RecoilUBGL()
 
     vpa = vpa + (Angle(0, 1, 0) * r * amtside * m * vsm)
 
-    if CLIENT then
+    if CLIENT and IsFirstTimePredicted() then
         self:OurViewPunch(vpa)
     end
     -- self:SetNWFloat("recoil", self.Recoil * m)
