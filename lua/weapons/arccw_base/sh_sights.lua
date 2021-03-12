@@ -147,6 +147,8 @@ function SWEP:ExitSights()
     if anim then
         self:PlayAnimation(anim, self:GetSightTime(), true, nil, nil, nil, false, true)
     end
+
+    self.SwitchedSightsFrom = nil
 end
 
 function SWEP:GetSprintTime()
@@ -445,6 +447,8 @@ end
 function SWEP:SwitchActiveSights()
     if table.Count(self.SightTable) == 1 then return end
 
+    local presight = self:GetActiveSights()
+
     self.ActiveSight = (self.ActiveSight or 1) + 1
 
     if self.ActiveSight > table.Count(self.SightTable) then
@@ -472,6 +476,11 @@ function SWEP:SwitchActiveSights()
     end
 
     self.LastEnterSightTime = CurTime()
+
+    if IsFirstTimePredicted() then
+        self.LastEnterSightTimeUnpred = UnPredictedCurTime()
+        self.SwitchedSightsFrom = presight
+    end
 end
 
 function SWEP:GetActiveSights()

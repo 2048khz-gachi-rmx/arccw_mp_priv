@@ -67,8 +67,8 @@ end
 
 local debounce = 0
 local function ToggleAtts(wep)
-    if debounce > CurTime() then return end -- ugly hack for double trigger
-    debounce = CurTime() + 0.1
+    if debounce > UnPredictedCurTime() then return end -- ugly hack for double trigger
+    debounce = UnPredictedCurTime() + 0.1
     local used = false
     for k, v in pairs(wep.Attachments) do
         local atttbl = v.Installed and ArcCW.AttachmentTable[v.Installed]
@@ -102,7 +102,7 @@ local function processBind(ply, bind, cmdnum)
 
     if bind == "firemode" and (alt or !GetConVar("arccw_altfcgkey"):GetBool()) then
         if wep:GetBuff_Override("UBGL") and !alt and !GetConVar("arccw_altubglkey"):GetBool() then
-            if lastpressZ >= CurTime() - 0.25 and lastpressZCMD ~= cmdnum then
+            if lastpressZ >= UnPredictedCurTime() - 0.25 and lastpressZCMD ~= cmdnum then
                 DoUbgl(wep)
 
                 lastpressZ = 0
@@ -110,7 +110,7 @@ local function processBind(ply, bind, cmdnum)
 
                 timer.Remove("ArcCW_doubletapZ")
             elseif !pred then
-                lastpressZ = CurTime()
+                lastpressZ = UnPredictedCurTime()
                 lastpressZCMD = cmdnum
                 timer.Create("ArcCW_doubletapZ", 0.25, 1, function()
                     if !(IsValid(ply) and IsValid(wep)) then return end
@@ -158,11 +158,13 @@ local function processBind(ply, bind, cmdnum)
             wep:Scroll(-1)
             block = true
         elseif bind == "switchscope_dtap" then
-            if lastpressE >= CurTime() - 0.25 then
-                wep:SwitchActiveSights()
-                lastpressE = 0
-            else
-                lastpressE = CurTime()
+            if not pred then
+                if lastpressE >= UnPredictedCurTime() - 0.25 then
+                    wep:SwitchActiveSights()
+                    lastpressE = 0
+                else
+                    lastpressE = UnPredictedCurTime()
+                end
             end
         elseif bind == "switchscope" then
             wep:SwitchActiveSights()

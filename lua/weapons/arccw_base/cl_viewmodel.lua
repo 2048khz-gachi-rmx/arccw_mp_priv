@@ -390,20 +390,41 @@ function SWEP:GetViewModelPosition(pos, ang)
 
         if sightedFrac > 0 then
             local irons = self:GetActiveSights()
+            local from = t.SwitchedSightsFrom
+
+            target.evpos = sharedEVVector
+            target.evang = sharedEVAng
+
+            local fromEV, fromAng = vector_origin, angle_zero
+
+            if from then
+                target.pos:Set(from.Pos)
+                target.ang:Set(from.Ang)
+
+                if from.EVPos then
+                    fromEV = from.EVPos
+                end
+                if from.EVAng then
+                    fromAng = from.EVAng
+                end
+
+                target.down = 0
+                target.sway = 0.1
+                target.bob = 0.1
+            end
 
             LerpSource(sightedFrac, target.pos, irons.Pos)
             LerpSource(sightedFrac, target.ang, irons.Ang)
 
-            target.evpos = sharedEVVector
             if irons.EVPos then
-                LerpInto(sightedFrac, vector_origin, irons.EVPos, target.evpos)
+                LerpInto(sightedFrac, fromEV, irons.EVPos, target.evpos)
             else
                 target.evpos:Set(vector_origin)
             end
 
-            target.evang = sharedEVAng
+            
             if irons.EVAng then
-                LerpInto(sightedFrac, angle_zero, irons.EVAng, target.evang)
+                LerpInto(sightedFrac, fromAng, irons.EVAng, target.evang)
             else
                 target.evang:Set(angle_zero)
             end
@@ -665,7 +686,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 
     pos[3] = pos[3] - actual.down
 
-    ang = ang + self:GetOurViewPunchAngles() * Lerp(self:GetSightDelta(), 0, -3)
+    ang = ang + self:GetOurViewPunchAngles() * Lerp(1 - sightedFrac, 0, -2)
 
     self.ActualVMData = actual
 
