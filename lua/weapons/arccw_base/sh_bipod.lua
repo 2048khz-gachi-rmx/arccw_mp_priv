@@ -16,6 +16,9 @@ SWEP.BipodAngle = nil
 SWEP.CachedCanBipod = true
 SWEP.CachedCanBipodTime = 0
 
+SWEP.VM_EnteredBipod = 0
+SWEP.VM_ExitedBipod = 0
+
 function SWEP:CanBipod()
     if !(self:GetBuff_Override("Bipod") or self.Bipod_Integral) then return false end
 
@@ -88,8 +91,11 @@ function SWEP:EnterBipod()
         self:DoLHIKAnimation("enter", 0.5)
     end
 
-    self.BipodPos = self:GetOwner():EyePos()
-    self.BipodAngle = self:GetOwner():EyeAngles()
+    if IsFirstTimePredicted() then
+        self.VM_EnteredBipod = UnPredictedCurTime()
+        self.BipodPos = self:GetOwner():EyePos()
+        self.BipodAngle = self:GetOwner():EyeAngles()
+    end
 
     self:SetNextSecondaryFire(CurTime() + 0.075)
 
@@ -111,8 +117,12 @@ function SWEP:ExitBipod()
         self:DoLHIKAnimation("exit", 0.5)
     end
 
-    self.BipodPos = nil
-    self.BipodAngle = nil
+
+    if IsFirstTimePredicted() then
+        self.VM_ExitedBipod = UnPredictedCurTime()
+        -- self.BipodPos = nil
+        -- self.BipodAngle = nil
+    end
 
     self:SetNextSecondaryFire(CurTime() + 0.075)
 
@@ -120,4 +130,5 @@ function SWEP:ExitBipod()
 
     self:MyEmitSound(self.ExitBipodSound)
     self:SetInBipod(false)
+
 end

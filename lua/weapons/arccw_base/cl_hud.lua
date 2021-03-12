@@ -314,7 +314,7 @@ function SWEP:DrawHUD()
             firemode = data.mode,
             heat = data.heat_level,
             self:GetInUBGL(),
-            self:GetInBipod(),
+            self:InBipod(),
             self:CanBipod(),
         }
         if GetConVar("arccw_hud_3dfun_lite"):GetBool() then
@@ -519,10 +519,10 @@ function SWEP:DrawHUD()
                 items = items + 1
             end
 
-            if self:CanBipod() or self:GetInBipod() then
+            if self:CanBipod() or self:InBipod() then
                 local size = ScreenScaleMulti(32)
                 local awesomematerial = Material( "hud/bipod.png", "smooth" )
-                local whatsthecolor =   self:GetInBipod() and     Color(255, 255, 255, alpha) or
+                local whatsthecolor =   self:InBipod() and     Color(255, 255, 255, alpha) or
                                         self:CanBipod() and   Color(255, 255, 255, alpha / 4) or Color(0, 0, 0, 0)
                 local bar = {
                     w = size,
@@ -617,10 +617,10 @@ function SWEP:DrawHUD()
                 surface.DrawTexturedRect( bar2.x, bar2.y, bar2.w, bar2.h )
             end
 
-            if self:CanBipod() or self:GetInBipod() then
+            if self:CanBipod() or self:InBipod() then
                 local size = ScreenScaleMulti(32)
                 local awesomematerial = Material( "hud/bipod.png", "smooth" )
-                local whatsthecolor =   self:GetInBipod() and   Color(255, 255, 255, 255) or
+                local whatsthecolor =   self:InBipod() and   Color(255, 255, 255, 255) or
                                         self:CanBipod() and     Color(255, 255, 255, 127) or
                                                                 Color(255, 255, 255, 0)
                 local bar2 = {

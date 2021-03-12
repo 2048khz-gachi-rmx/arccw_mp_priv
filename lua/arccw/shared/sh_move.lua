@@ -45,7 +45,7 @@ function ArcCW.Move(ply, mv, cmd)
         basespd = math.min(basespd, ply:GetWalkSpeed())
     end
 
-    if wpn:GetInBipod() then
+    if wpn:InBipod() then
         s = 0.0001
     end
 
@@ -66,7 +66,7 @@ function ArcCW.CreateMove(cmd)
 
     if !wpn.ArcCW or !wpn:IsValid() then return end
 
-    if wpn:GetInBipod() then
+    if wpn:InBipod() then
         if !wpn.BipodAngle then
             wpn.BipodPos = wpn:GetOwner():EyePos()
             wpn.BipodAngle = wpn:GetOwner():EyeAngles()
