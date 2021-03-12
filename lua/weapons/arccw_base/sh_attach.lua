@@ -130,6 +130,7 @@ function SWEP:GetBuff_Stat(buff, slot)
     end
 end
 
+
 function SWEP:GetBuff_Hook(buff, data)
     -- call through hook function, args = data. return nil to do nothing. return false to prevent thing from happening.
 
@@ -150,7 +151,7 @@ function SWEP:GetBuff_Hook(buff, data)
             data = ret
         end
 
-        data = hook.Call(buff, ArcCW, self, data) or data
+        --data = hook.Call(buff, ArcCW, self, data) or data
 
         return data
     else

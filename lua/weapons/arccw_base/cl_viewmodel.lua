@@ -100,7 +100,7 @@ local sharedEVAng = Angle()
 local sharedAngle = Angle()
 local sharedAngle2 = Angle()
 
--- local b = bench("pp", 1000)
+--local b = bench("pp", 1000)
 
 --[[
 25.02:
@@ -109,6 +109,13 @@ local sharedAngle2 = Angle()
     "pp" took 88.247ms (avg. across 1000 calls: 0.088ms, time since last print: 1422.749ms)
 ]]
 
+--[[
+12.03:
+    "pp" took 90.301ms (avg. across 1000 calls: 0.090ms, time since last print: 1158.906ms)
+    "pp" took 93.891ms (avg. across 1000 calls: 0.094ms, time since last print: 1152.780ms)
+    "pp" took 94.324ms (avg. across 1000 calls: 0.094ms, time since last print: 1133.695ms)
+
+]]
 
 local function calcCrouchFrac(t, UCT, sightTime, timeMul, out)
     local tdelta = 0
@@ -129,7 +136,7 @@ local function calcCrouchFrac(t, UCT, sightTime, timeMul, out)
 end
 
 function SWEP:GetViewModelPosition(pos, ang)
-    --b:Open()
+    -- b:Open()
 
     local owner = self:GetOwner()
     local t = self:GetTable()
