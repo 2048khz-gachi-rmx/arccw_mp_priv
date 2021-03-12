@@ -8,7 +8,7 @@ checklist:
 - [ ] fix sway
 - [x] bipods make the gun travel into the pocket dimension
 - [ ] binds are fucked
-- [ ] canted sights affect primattack time?
+- [x] canted sights affect primattack time?
 - [x] ricochet fires two muzzles
 - [ ] gun jitters when shooting sometimes (wtf?)
 - [ ] shell reloading is fucked
