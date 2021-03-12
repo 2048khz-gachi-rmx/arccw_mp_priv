@@ -302,7 +302,6 @@ function SWEP:PrimaryAttack()
         end
     end
 
-
     self:DoRecoil()
 
     self:SetNthShot(self:GetNthShot() + 1)
