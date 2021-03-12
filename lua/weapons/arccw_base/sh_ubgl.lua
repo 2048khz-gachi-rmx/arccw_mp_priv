@@ -84,20 +84,43 @@ function SWEP:RecoilUBGL()
     -- self:SetNWFloat("recoil", self.Recoil * m)
     -- self:SetNWFloat("recoilside", r * self.RecoilSide * m)
 
-    if CLIENT or game.SinglePlayer() then
+    local curRec = self:GetRecoil()
+    local addRec = amt * m
+    self:SetRecoil(curRec + addRec)
 
-        self.RecoilAmount = self.RecoilAmount + (amt * m)
-        self.RecoilAmountSide = self.RecoilAmountSide + (r * amtside * m * rs)
+    local curSideRec = self:GetSideRecoil()
+    local addSideRec = r * amtside * m * rs
+    self:SetSideRecoil( curSideRec + addSideRec )
 
-        self.RecoilPunchBack = amt * 2.5 * m
+    self:SetRecoiledWhen(CurTime())
+
+    if CLIENT and IsFirstTimePredicted() then
+        -- don't predict any of this: working with predicted CurTime() in sh_move will be a pain
+        self.UnpredRecoiledWhen = UnPredictedCurTime()
+
+        local unpunchedVLeft = self.MaxRecoilAmount - self._LastVerticalRec - self._CarryVerticalRec
+        self._CarryVerticalRec = curRec - unpunchedVLeft
+
+        local unpunchedHLeft = self.MaxSideRecoilAmount - self._LastHorizontalRec - self._CarryHorizontalRec
+        self._CarryHorizontalRec = curSideRec - unpunchedHLeft
+    end
+
+    self.MaxSideRecoilAmount = curSideRec + addSideRec
+    self.MaxRecoilAmount = curRec + addRec
+
+    if CLIENT then
+        self.RecoilPunchBack  = math.Clamp(self:GetRecoil() * m * 10, 1, 5)
 
         if self.MaxRecoilBlowback > 0 then
             self.RecoilPunchBack = math.Clamp(self.RecoilPunchBack, 0, self.MaxRecoilBlowback)
         end
 
-        self.RecoilPunchSide = r * rs * m * 0.1 * vsm
-        self.RecoilPunchUp = math.Clamp(ru * amt * m * 0.6 * vsm * amtrise, 0, 0.1)
+        self.RecoilPunchSide = self.RecoilSide + (addSideRec) * 0.25
+
+        self._SourceRecoilPunch[1]  = self.RecoilPunchBack
+        self._SourceRecoilPunch[2]  = self.RecoilPunchSide
     end
+
 end
 
 function SWEP:ShootUBGL()
