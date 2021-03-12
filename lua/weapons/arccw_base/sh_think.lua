@@ -270,8 +270,9 @@ function SWEP:Think()
         self:ProcessTimers()
     --end
 
-    if CLIENT and CurTime() >= self._PlayIdleAnimationAt then
+    if IsFirstTimePredicted() and CurTime() >= self._PlayIdleAnimationAt then
         self:PlayIdleAnimation()
+        self._PlayIdleAnimationAt = math.huge
     end
 end
 

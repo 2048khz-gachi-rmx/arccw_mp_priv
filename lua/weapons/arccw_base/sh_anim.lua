@@ -332,7 +332,6 @@ function SWEP:PlayIdleAnimation(pred)
         ianim = ianim or "idle"
     end
 
-    self._PlayIdleAnimationAt = CurTime() + self:GetAnimKeyTime(ianim)
     self:PlayAnimation(ianim, 1, pred, nil, nil, nil, true)
 end
 
