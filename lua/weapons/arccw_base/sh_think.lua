@@ -270,7 +270,7 @@ function SWEP:Think()
         self:ProcessTimers()
     --end
 
-    if CurTime() >= self._PlayIdleAnimationAt then
+    if CLIENT and CurTime() >= self._PlayIdleAnimationAt then
         self:PlayIdleAnimation()
     end
 end
