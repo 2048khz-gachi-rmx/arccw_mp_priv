@@ -61,6 +61,7 @@ SWEP.ViewPunchAngle = Angle(0, 0, 0)
 SWEP.ViewPunchVelocity = Angle(0, 0, 0)
 
 function SWEP:OurViewPunch(angle)
+    angle:Div(3)
     self.ViewPunchVelocity = self.ViewPunchVelocity + angle
 
     local ang = self.ViewPunchVelocity
@@ -87,14 +88,15 @@ function SWEP:DoOurViewPunch()
 
     local vpa = self.ViewPunchAngle
     local vpv = self.ViewPunchVelocity
+    local ft = FrameTime() * 3
 
     if lensqr(vpa) > 0 or lensqr(vpv) > 0 then
         -- {
         --     player->m_Local.m_vecPunchAngle += player->m_Local.m_vecPunchAngleVel * gpGlobals->frametime;
         --     float damping = 1 - (PUNCH_DAMPING * gpGlobals->frametime);
 
-        vpa = vpa + (vpv * FrameTime())
-        local damping = 1 - (PUNCH_DAMPING * FrameTime())
+        vpa = vpa + (vpv * ft)
+        local damping = 1 - (PUNCH_DAMPING * ft)
 
         --     if ( damping < 0 )
         --     {
@@ -110,7 +112,7 @@ function SWEP:DoOurViewPunch()
         --     // torsional spring
         --     // UNDONE: Per-axis spring constant?
         --     float springForceMagnitude = PUNCH_SPRING_CONSTANT * gpGlobals->frametime;
-        local springforcemagnitude = PUNCH_SPRING_CONSTANT * FrameTime()
+        local springforcemagnitude = PUNCH_SPRING_CONSTANT * ft
         --     springForceMagnitude = clamp(springForceMagnitude, 0.f, 2.f );
         springforcemagnitude = math.Clamp(springforcemagnitude, 0, 2)
         --     player->m_Local.m_vecPunchAngleVel -= player->m_Local.m_vecPunchAngle * springForceMagnitude;

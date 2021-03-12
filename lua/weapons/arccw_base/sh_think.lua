@@ -247,7 +247,7 @@ function SWEP:Think()
         end
     end
 
-    if CLIENT then
+    if CLIENT and IsFirstTimePredicted() then
         self:DoOurViewPunch()
     end
 
@@ -269,6 +269,10 @@ function SWEP:Think()
     --if SERVER or !game.SinglePlayer() then
         self:ProcessTimers()
     --end
+
+    if CurTime() >= self._PlayIdleAnimationAt then
+        self:PlayIdleAnimation()
+    end
 end
 
 function SWEP:ProcessRecoil()
