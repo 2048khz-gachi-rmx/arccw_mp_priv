@@ -287,6 +287,7 @@ function SWEP:CreateCustomizeHUD()
         if !IsValid(self) then
             gui.EnableScreenClicker(false)
             span:Remove()
+            return
         end
 
         if --[[self:GetState() != ArcCW.STATE_CUSTOMIZE or]] self:GetReloading() then
