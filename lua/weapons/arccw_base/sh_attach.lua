@@ -130,7 +130,6 @@ function SWEP:GetBuff_Stat(buff, slot)
     end
 end
 
-
 function SWEP:GetBuff_Hook(buff, data)
     -- call through hook function, args = data. return nil to do nothing. return false to prevent thing from happening.
 
@@ -140,8 +139,10 @@ function SWEP:GetBuff_Hook(buff, data)
     --     return data
     -- end
 
-    if self.AttCache_Hooks[buff] then
-        for i, k in pairs(self.AttCache_Hooks[buff]) do
+    local t = self:GetTable()
+
+    if t.AttCache_Hooks[buff] then
+        for i, k in ipairs(t.AttCache_Hooks[buff]) do
             local ret = k(self, data)
 
             if ret == nil then continue end
@@ -155,10 +156,10 @@ function SWEP:GetBuff_Hook(buff, data)
 
         return data
     else
-        self.AttCache_Hooks[buff] = {}
+        t.AttCache_Hooks[buff] = {}
     end
 
-    for i, k in pairs(self.Attachments) do
+    for i, k in pairs(t.Attachments) do
         if !k.Installed then continue end
 
         local atttbl = ArcCW.AttachmentTable[k.Installed]
@@ -168,7 +169,7 @@ function SWEP:GetBuff_Hook(buff, data)
         if isfunction(atttbl[buff]) then
             local ret = atttbl[buff](self, data)
 
-            table.insert(self.AttCache_Hooks[buff], atttbl[buff])
+            table.insert(t.AttCache_Hooks[buff], atttbl[buff])
 
             if ret == nil then continue end
 
@@ -177,7 +178,7 @@ function SWEP:GetBuff_Hook(buff, data)
             data = ret
         elseif atttbl.ToggleStats and k.ToggleNum and atttbl.ToggleStats[k.ToggleNum] and isfunction(atttbl.ToggleStats[k.ToggleNum][buff]) then
            local ret = atttbl.ToggleStats[k.ToggleNum][buff](self, data)
-            table.insert(self.AttCache_Hooks[buff], atttbl.ToggleStats[k.ToggleNum][buff])
+            table.insert(t.AttCache_Hooks[buff], atttbl.ToggleStats[k.ToggleNum][buff])
             if ret == nil then continue end
             if ret == false then return end
             data = ret
@@ -189,7 +190,7 @@ function SWEP:GetBuff_Hook(buff, data)
     if cfm and isfunction(cfm[buff]) then
         local ret = cfm[buff](self, data)
 
-        table.insert(self.AttCache_Hooks[buff], cfm[buff])
+        table.insert(t.AttCache_Hooks[buff], cfm[buff])
 
         hasany = true
 
@@ -203,12 +204,12 @@ function SWEP:GetBuff_Hook(buff, data)
     end
 
     for i, e in pairs(self:GetActiveElements()) do
-        local ele = self.AttachmentElements[e]
+        local ele = t.AttachmentElements[e]
 
         if ele and ele[buff] then
             local ret = ele[buff](self, data)
 
-            table.insert(self.AttCache_Hooks[buff], ele[buff])
+            table.insert(t.AttCache_Hooks[buff], ele[buff])
 
             hasany = true
 
@@ -222,9 +223,9 @@ function SWEP:GetBuff_Hook(buff, data)
     end
 
     if isfunction(self:GetTable()[buff]) then
-        local ret = self:GetTable()[buff](self, data)
+        local ret = t[buff](self, data)
 
-        table.insert(self.AttCache_Hooks[buff], self:GetTable()[buff])
+        table.insert(t.AttCache_Hooks[buff], t[buff])
 
         hasany = true
 
