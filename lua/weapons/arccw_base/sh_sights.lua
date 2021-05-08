@@ -1,3 +1,4 @@
+
 SWEP.Sighted = false
 SWEP.Sprinted = false
 
@@ -15,6 +16,11 @@ function SWEP:EnterSprint()
     if engine.ActiveGamemode() == "terrortown" and !(TTT2 and self:GetOwner().isSprinting) then return end
     if self:GetState() == ArcCW.STATE_SPRINT then return end
     if self:GetState() == ArcCW.STATE_CUSTOMIZE then return end
+
+    if self:GetState() == ArcCW.STATE_SIGHTS then
+        self:ExitSights()
+    end
+    clprint("sprinting", CurTime(), self:GetState())
     self:SetState(ArcCW.STATE_SPRINT)
     self.Sighted = false
     self.Sprinted = true
@@ -34,6 +40,7 @@ function SWEP:EnterSprint()
 
     self.LastEnterSprintTime = CurTime()
     if IsFirstTimePredicted() then
+        clprint("first pred - entering", UnPredictedCurTime())
         self.LastEnterSprintTimeUnpred = UnPredictedCurTime()
     end
 
@@ -100,6 +107,8 @@ function SWEP:EnterSights()
     if !self.ReloadInSights and (self:GetReloading() or self:GetOwner():KeyDown(IN_RELOAD)) then return end
     if self:GetBuff_Hook("Hook_ShouldNotSight") then return end
 
+    clprint("entering", CurTime())
+
     self:SetupActiveSights()
 
     self:SetState(ArcCW.STATE_SIGHTS)
@@ -126,10 +135,18 @@ end
 
 function SWEP:ExitSights()
     local asight = self:GetActiveSights()
-    if self:GetState() != ArcCW.STATE_SIGHTS then return end
     if self.LockSightsInReload and self:GetReloading() then return end
+    if self:GetState() ~= ArcCW.STATE_SIGHTS then clprint("not allowing exit", CurTime()) return end
 
     self:SetState(ArcCW.STATE_IDLE)
+
+    if IsFirstTimePredicted() then
+        clprint("resestting exit", self.LastExitSightTimeUnpred, UnPredictedCurTime())
+        self.LastExitSightTimeUnpred = UnPredictedCurTime()
+    end
+
+    self.SwitchedSightsFrom = nil
+
     self.Sighted = false
     self.Sprinted = false
 
@@ -142,8 +159,6 @@ function SWEP:ExitSights()
     if self:InSprint() then
         self:EnterSprint()
     end
-
-    --if !game.SinglePlayer() and !IsFirstTimePredicted() then return end
 
     self:MyEmitSound(asight.SwitchFromSound or "", 75, math.Rand(80, 90), 0.5, CHAN_AUTO)
 
