@@ -14,8 +14,11 @@ function SWEP:Think()
 
     self.BurstCount = self:GetBurstCount()
 
-    if owner:KeyPressed(IN_ATTACK) then
-        self:SetReqEnd(true)
+    local sg = self:GetShotgunReloading()
+    if (sg == 2 or sg == 4) and owner:KeyPressed(IN_ATTACK) then
+        self:SetShotgunReloading(sg + 1)
+    elseif (sg >= 2) and self:GetReloadingREAL() <= CurTime() then
+        self:ReloadInsert((sg >= 4) and true or false)
     end
 
     if CLIENT then
@@ -87,7 +90,7 @@ function SWEP:Think()
 
             if (CurTime() + postburst) > self:GetWeaponOpDelay() then
                 --self:SetNextPrimaryFire(CurTime() + postburst)
-                self:SetWeaponOpDelay(CurTime() + postburst)
+                self:SetWeaponOpDelay(CurTime() + postburst * self:GetBuff_Mult("Mult_PostBurstDelay") + self:GetBuff_Add("Add_PostBurstDelay"))
             end
         end
     end
@@ -142,7 +145,8 @@ function SWEP:Think()
 
         -- no it really doesn't, past me
         local sighted = self:GetState() == ArcCW.STATE_SIGHTS
-        local toggle = self:GetOwner():GetInfoNum("arccw_toggleads", 0) >= 1
+        local toggle = owner:GetInfoNum("arccw_toggleads", 0) >= 1
+        local suitzoom = owner:KeyDown(IN_ZOOM)
         local sp_cl = game.SinglePlayer() and CLIENT
 
         -- if in singleplayer, client realm should be completely ignored
@@ -150,14 +154,16 @@ function SWEP:Think()
             if owner:KeyPressed(IN_ATTACK2) then
                 if sighted then
                     self:ExitSights()
-                else
+                elseif !suitzoom then
                     self:EnterSights()
                 end
+            elseif suitzoom and sighted then
+                self:ExitSights()
             end
         elseif !toggle then
-            if owner:KeyDown(IN_ATTACK2) and !sighted then
+            if (owner:KeyDown(IN_ATTACK2) and !suitzoom) and !sighted then
                 self:EnterSights()
-            elseif !owner:KeyDown(IN_ATTACK2) and sighted then
+            elseif (!owner:KeyDown(IN_ATTACK2) or suitzoom) and sighted then
                 self:ExitSights()
             end
         end
@@ -270,13 +276,20 @@ function SWEP:Think()
         self:ProcessTimers()
     --end
 
-    if IsFirstTimePredicted() and CurTime() >= self._PlayIdleAnimationAt then
-        self:PlayIdleAnimation()
-        self._PlayIdleAnimationAt = math.huge
+
+    if self:GetNextIdle() != 0 and self:GetNextIdle() <= CurTime() then
+        self:SetNextIdle(0)
+        self:PlayIdleAnimation(true)
     end
 end
 
 function SWEP:ProcessRecoil()
+
+    local owner = self:GetOwner()
+    local ft = FrameTime()
+    local newang = owner:EyeAngles()
+    -- local r = self.RecoilAmount -- self:GetNWFloat("recoil", 0)
+    -- local rs = self.RecoilAmountSide -- self:GetNWFloat("recoilside", 0)
 
     -- not doing autistic shit like basing off of frametime and framerate
 

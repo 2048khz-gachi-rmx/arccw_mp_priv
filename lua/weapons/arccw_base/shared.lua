@@ -42,6 +42,8 @@ SWEP.WorldModelOffset = nil
 --     ang = Angle(0, 0, 0)
 -- }
 
+SWEP.NoHideLeftHandInCustomization = false
+
 SWEP.Damage = 26
 SWEP.DamageMin = 10 -- damage done at maximum range
 SWEP.DamageRand = 0 -- damage will vary randomly each shot by this fraction
@@ -120,13 +122,16 @@ SWEP.RecoilRise = 1
 SWEP.MaxRecoilBlowback = -1
 SWEP.VisualRecoilMult = 1.25
 SWEP.RecoilPunch = 1.5
+
 SWEP.RecoilPunchRecovery = 0.7 -- time to recover the VM punch
 
 -- timed recoil: recoil will kick to 100% within SWEP.RecoilTRecovery seconds
 SWEP.RecoilTRecovery = 0.5
 SWEP.RecoilTEaseOutIntensity = 1.3 -- <1 not recommended
 
+SWEP.RecoilPunchBackMax = 1
 
+SWEP.Sway = 0
 
 SWEP.ShotgunSpreadDispersion = false -- dispersion will cause pattern to increase instead of shifting
 SWEP.ShotgunSpreadPattern = nil
@@ -694,6 +699,7 @@ AddCSLuaFile("sh_grenade.lua")
 AddCSLuaFile("sh_ttt.lua")
 AddCSLuaFile("sh_util.lua")
 
+AddCSLuaFile("cl_customize2.lua")
 AddCSLuaFile("cl_viewmodel.lua")
 AddCSLuaFile("cl_scope.lua")
 AddCSLuaFile("cl_crosshair.lua")
@@ -706,6 +712,7 @@ AddCSLuaFile("cl_presets.lua")
 AddCSLuaFile("cl_light.lua")
 
 if CLIENT then
+    include("cl_customize2.lua")
     include("cl_viewmodel.lua")
     include("cl_scope.lua")
     include("cl_crosshair.lua")
@@ -726,13 +733,18 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Int", 4, "NthReload")
     self:NetworkVar("Int", 5, "NthShot")
 
+    -- 2 = insert
+    -- 3 = cancelling
+    -- 4 = insert empty
+    -- 5 = cancelling empty
+    self:NetworkVar("Int", 6, "ShotgunReloading")
+
     self:NetworkVar("Bool", 0, "HeatLocked")
     self:NetworkVar("Bool", 1, "NeedCycle")
     self:NetworkVar("Bool", 2, "InBipod")
     self:NetworkVar("Bool", 3, "InUBGL")
     self:NetworkVar("Bool", 4, "InCustomize")
     self:NetworkVar("Bool", 5, "GrenadePrimed")
-    self:NetworkVar("Bool", 6, "ReqEnd")
 
     self:NetworkVar("Float", 0, "Heat")
     self:NetworkVar("Float", 1, "WeaponOpDelay")
@@ -743,6 +755,8 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Float", 5, "Recoil")
     self:NetworkVar("Float", 6, "SideRecoil")
     self:NetworkVar("Float", 7, "RecoiledWhen")
+
+    self:NetworkVar("Float", 8, "NextIdle")
 end
 
 function SWEP:OnRestore()
@@ -800,6 +814,12 @@ function SWEP:SetState(v)
 end
 
 function SWEP:GetState(v)
+    if !game.SinglePlayer() and CLIENT then self.State = v end
+end
+
+function SWEP:GetState(v)
+    if !game.SinglePlayer() and CLIENT and self.State then return self.State end
+
     return self:GetNWState(v)
 end
 

@@ -152,6 +152,8 @@ att.LHIK_Animation = false
 att.LHIK_GunDriver = ""
 att.LHIK_CamDriver = ""
 
+att.Override_NoHideLeftHandInCustomization = nil
+
 att.ActivateElements = {}
 
 att.MountPositionOverride = nil -- set between 0 to 1 to always mount in a certain position
@@ -253,6 +255,12 @@ att.HolosightColor = Color(255, 255, 255)
 att.Override_Ammo = "ar2" -- overrides the ammo type with this one
 
 att.Override_Firemodes = {}
+
+-- you can use _Priority to determine the priority of overrides.
+-- append it to the end of an Override_ stat to set this.
+-- for example, att.Override_Firemodes_Priority = 2
+-- higher priority = will be chosen over lower priority
+-- default priority for all stats is 1.
 
 -- all hooks will work when applied to the SWEP table as well
 -- e.g. SWEP.Hook_FireBullets
@@ -385,6 +393,7 @@ att.Hook_PhysBulletHit = function(wep, data) end
 -- changes to dmg may be overwritten later, so set damage and dmgtype instead
 att.Hook_BulletHit = function(wep, data) end
 
+-- return true to prevent reloading
 att.Hook_PreReload = function(wep) end
 
 att.Hook_PostReload = function(wep) end
@@ -424,6 +433,9 @@ att.Hook_Think = function(wep) end
 
 -- thinking hook for att
 att.DrawFunc = function(wep, element, wm) end
+
+-- after ADS starts or ends
+att.Hook_SightToggle = function(wep, enter) end
 
 att.Override_Trivia_Class = nil -- "Submachine Gun"
 att.Override_Trivia_Desc = nil -- "Ubiquitous 9mm SMG. Created as a response to the need for a faster-firing and more reliable submachine gun than existing options at the time."
@@ -498,6 +510,8 @@ att.Add_ChamberSize = nil
 att.Mult_Recoil = 1
 att.Mult_RecoilSide = 1
 att.Mult_VisualRecoilMult = 1
+
+att.Mult_Sway = 1
 
 att.Override_ShootWhileSprint = nil
 

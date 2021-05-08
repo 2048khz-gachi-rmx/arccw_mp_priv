@@ -100,7 +100,7 @@ local function processBind(ply, bind, cmdnum)
 
     local _, alt = ArcCW_TranslateBindToEffect(bind)
 
-    if bind == "firemode" and (alt or !GetConVar("arccw_altfcgkey"):GetBool()) then
+    if bind == "firemode" and (alt or !GetConVar("arccw_altfcgkey"):GetBool()) and !ply:KeyDown(IN_USE) then
         if wep:GetBuff_Override("UBGL") and !alt and !GetConVar("arccw_altubglkey"):GetBool() then
             if lastpressZ >= UnPredictedCurTime() - 0.25 and lastpressZCMD ~= cmdnum then
                 DoUbgl(wep)

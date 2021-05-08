@@ -89,10 +89,12 @@ function SWEP:DoOurViewPunch()
     local vpv = self.ViewPunchVelocity
     local ft = FrameTime() * 3
 
-    if lensqr(vpa) > 0 or lensqr(vpv) > 0 then
+    if lensqr(vpa) + lensqr(vpv) > 0.000001 then
         -- {
         --     player->m_Local.m_vecPunchAngle += player->m_Local.m_vecPunchAngleVel * gpGlobals->frametime;
         --     float damping = 1 - (PUNCH_DAMPING * gpGlobals->frametime);
+
+        local ft = FrameTime()
 
         vpa = vpa + (vpv * ft)
         local damping = 1 - (PUNCH_DAMPING * ft)

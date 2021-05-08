@@ -50,7 +50,7 @@ function ArcCW:SlotAcceptsAtt(slot, wep, att)
 
     if atttbl.Hidden or atttbl.Blacklisted or ArcCW.AttachmentBlacklistTable[att] then return false end
 
-    if (atttbl.NotForNPC or atttbl.NotForNPCs) and wep.Owner:IsNPC() then
+    if (atttbl.NotForNPC or atttbl.NotForNPCs) and wep.Owner and wep.Owner:IsNPC() then
         return false
     end
 
@@ -134,6 +134,7 @@ function ArcCW:PlayerGiveAtt(ply, att, amt)
     local atttbl = ArcCW.AttachmentTable[att]
 
     if !atttbl then print("Invalid att " .. att) return end
+    if atttbl.Free then return end -- You can't give a free attachment, silly
 
     if atttbl.InvAtt then att = atttbl.InvAtt end
 
@@ -144,6 +145,7 @@ function ArcCW:PlayerGiveAtt(ply, att, amt)
         ply.ArcCW_AttInv[att] = (ply.ArcCW_AttInv[att] or 0) + amt
     end
 end
+
 
 function ArcCW:PlayerTakeAtt(ply, att, amt)
     amt = amt or 1
@@ -157,20 +159,21 @@ function ArcCW:PlayerTakeAtt(ply, att, amt)
     end
 
     local atttbl = ArcCW.AttachmentTable[att]
+    if !atttbl or atttbl.Free then return end
 
     if atttbl.InvAtt then att = atttbl.InvAtt end
 
     ply.ArcCW_AttInv[att] = ply.ArcCW_AttInv[att] or 0
 
+    if ply.ArcCW_AttInv[att] < amt then
+        return false
+    end
+
+    ply.ArcCW_AttInv[att] = ply.ArcCW_AttInv[att] - amt
     if ply.ArcCW_AttInv[att] <= 0 then
-        return
+        ply.ArcCW_AttInv[att] = nil
     end
-
-    ply.ArcCW_AttInv[att] = (ply.ArcCW_AttInv[att] or 0) - amt
-
-    if ply.ArcCW_AttInv[att] < 0 then
-        ply.ArcCW_AttInv[att] = 0
-    end
+    return true
 end
 
 if CLIENT then
@@ -241,6 +244,8 @@ net.Receive("arccw_sendattinv", function(len, ply)
 
         LocalPlayer().ArcCW_AttInv[att] = acount
     end
+
+    ArcCW.InvHUD_FormAttachmentSelect()
 end)
 
 net.Receive("arccw_sendatthp", function(len, ply)

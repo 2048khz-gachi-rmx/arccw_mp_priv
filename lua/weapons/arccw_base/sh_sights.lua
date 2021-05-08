@@ -19,6 +19,8 @@ function SWEP:EnterSprint()
     self.Sighted = false
     self.Sprinted = true
 
+    local ct = CurTime()
+
     -- self.SwayScale = 1
     -- self.BobScale = 5
 
@@ -26,8 +28,8 @@ function SWEP:EnterSprint()
 
     local s = self:GetBuff_Override("Override_ShootWhileSprint") or self.ShootWhileSprint
 
-    if !s and self:GetNextPrimaryFire() <= CurTime() then
-        self:SetNextPrimaryFire(CurTime())
+    if !s and self:GetNextPrimaryFire() <= ct then
+        self:SetNextPrimaryFire(ct)
     end
 
     self.LastEnterSprintTime = CurTime()
@@ -35,12 +37,13 @@ function SWEP:EnterSprint()
         self.LastEnterSprintTimeUnpred = UnPredictedCurTime()
     end
 
+
     local anim = self:SelectAnimation("enter_sprint")
     if anim and !s then
         self:PlayAnimation(anim, 1 * self:GetBuff_Mult("Mult_SightTime"), true, nil, false, nil, false, false)
-        self:SetReloading(CurTime() + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime"))
+        self:SetReloading(ct + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime"))
     --elseif !anim and !s then -- Not needed because ExitSprint handles it properly
-        --self:SetReloading(CurTime() + self:GetSprintTime())
+        --self:SetReloading(ct + self:GetSprintTime())
     end
 end
 
@@ -48,6 +51,7 @@ function SWEP:ExitSprint()
     if self:GetState() == ArcCW.STATE_IDLE then return end
 
     local delta = self:GetSprintDelta()
+    local ct = CurTime()
 
     self:SetState(ArcCW.STATE_IDLE)
     self.Sighted = false
@@ -60,8 +64,8 @@ function SWEP:ExitSprint()
 
     local s = self:GetBuff_Override("Override_ShootWhileSprint") or self.ShootWhileSprint
 
-    if !s and self:GetNextPrimaryFire() <= CurTime() then
-        self:SetNextPrimaryFire(CurTime())
+    if !s and self:GetNextPrimaryFire() <= ct then
+        self:SetNextPrimaryFire(ct)
     end
 
     if self:GetOwner():KeyDown(IN_ATTACK2) then
@@ -76,9 +80,9 @@ function SWEP:ExitSprint()
     local anim = self:SelectAnimation("exit_sprint")
     if anim and !s then
         self:PlayAnimation(anim, 1 * self:GetBuff_Mult("Mult_SightTime"), true, nil, false, nil, false, false)
-        self:SetReloading(CurTime() + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime"))
+        self:SetReloading(ct + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime"))
     elseif !anim and !s then
-        self:SetReloading(CurTime() + self:GetSprintTime() * delta)
+        self:SetReloading(ct + self:GetSprintTime() * delta)
     end
 end
 
@@ -106,7 +110,7 @@ function SWEP:EnterSights()
 
     self:MyEmitSound(asight.SwitchToSound or "", 75, math.Rand(95, 105), 0.5, CHAN_AUTO)
 
-    self.LastEnterSightTime = CurTime()
+    self.LastEnterSightTime = UnPredictedCurTime()
 
     if IsFirstTimePredicted() then
         self.LastEnterSightTimeUnpred = UnPredictedCurTime()
@@ -116,6 +120,8 @@ function SWEP:EnterSights()
     if anim then
         self:PlayAnimation(anim, self:GetSightTime(), true, nil, nil, nil, false, true)
     end
+
+    self:GetBuff_Hook("Hook_SightToggle", true)
 end
 
 function SWEP:ExitSights()
@@ -129,16 +135,21 @@ function SWEP:ExitSights()
 
     self:SetShouldHoldType()
 
+    -- if !game.SinglePlayer() and !IsFirstTimePredicted() then return end
+
+    self:MyEmitSound(asight.SwitchFromSound or "", 75, math.Rand(80, 90), 0.5, CHAN_AUTO)
+
     if self:InSprint() then
         self:EnterSprint()
     end
 
-    if !game.SinglePlayer() and !IsFirstTimePredicted() then return end
+    --if !game.SinglePlayer() and !IsFirstTimePredicted() then return end
 
     self:MyEmitSound(asight.SwitchFromSound or "", 75, math.Rand(80, 90), 0.5, CHAN_AUTO)
 
+
     self.LastExitSightTime = CurTime()
-    
+
     if IsFirstTimePredicted() then
         self.LastExitSightTimeUnpred = UnPredictedCurTime()
     end
@@ -149,6 +160,7 @@ function SWEP:ExitSights()
     end
 
     self.SwitchedSightsFrom = nil
+    self:GetBuff_Hook("Hook_SightToggle", false)
 end
 
 function SWEP:GetSprintTime()
@@ -160,6 +172,8 @@ function SWEP:GetSprintDelta()
     local st = self:GetSprintTime()
     local minus = 1
 
+    local ct = CurTime()
+
     if vrmod and vrmod.IsPlayerInVR(self:GetOwner()) then
         return 0 -- This ensures sights will always draw
     end
@@ -167,16 +181,16 @@ function SWEP:GetSprintDelta()
     if self:GetState() == ArcCW.STATE_SPRINT then
         lst = self.LastEnterSprintTime
         minus = 0
-        if CurTime() - lst >= st then
+        if ct - lst >= st then
             return 1
         end
     else
-        if CurTime() - lst >= st then
+        if ct - lst >= st then
             return 0
         end
     end
 
-    local delta = minus - math.Clamp((CurTime() - lst) / st, 0, 1)
+    local delta = minus - math.Clamp((ct - lst) / st, 0, 1)
 
     delta = math.abs(delta)
 
@@ -188,6 +202,8 @@ function SWEP:GetSightDelta()
     local st = self:GetSightTime()
     local minus = 0
 
+    local ct = UnPredictedCurTime()
+
     if vrmod and vrmod.IsPlayerInVR(self:GetOwner()) then
         return 0 -- This ensures sights will always draw
     end
@@ -196,18 +212,20 @@ function SWEP:GetSightDelta()
         lst = self.LastEnterSightTime
         minus = 1
 
-        if CurTime() - lst >= st then
+        if ct - lst >= st then
             return 0
         end
     else
-        if CurTime() - lst >= st then
+        if ct - lst >= st then
             return 1
         end
     end
 
-    local delta = minus - math.Clamp((CurTime() - lst) / st, 0, 1)
+    local delta = minus - math.Clamp((ct - lst) / st, 0, 1)
 
     delta = math.abs(delta)
+
+    --if delta > 0 and delta < 1 then print(delta, UnPredictedCurTime(), CurTime()) end
 
     return delta
 end
@@ -510,7 +528,7 @@ function SWEP:TranslateFOV(fov)
     if self:GetState() == ArcCW.STATE_SIGHTS then
         fov = 75
         app_vm = irons.ViewModelFOV or 45
-        div = math.max(irons.Magnification * (self:GetReloadingREAL() - self.ReloadInSights_CloseIn > CurTime() and self.ReloadInSights_FOVMult or 1), 1)
+        div = math.max(irons.Magnification * (((self:GetShotgunReloading() == 2 or self:GetShotgunReloading() == 4) or self:GetReloadingREAL() - self.ReloadInSights_CloseIn > CurTime()) and self.ReloadInSights_FOVMult or 1), 1)
     end
 
     -- something about this doesn't work in multiplayer
@@ -522,9 +540,11 @@ function SWEP:TranslateFOV(fov)
     self.CurrentFOV = math.Approach(self.CurrentFOV, self.ApproachFOV, FrameTime() * (self.CurrentFOV - self.ApproachFOV))
 
     self.CurrentViewModelFOV = self.CurrentViewModelFOV or self.ViewModelFOV
-
     self.CurrentViewModelFOV = math.Approach(self.CurrentViewModelFOV, app_vm, FrameTime() * (self.CurrentViewModelFOV - app_vm))
-
+    if CLIENT and self:GetState() != ArcCW.STATE_SIGHTS and math.abs(GetConVar("fov_desired"):GetFloat() - self.CurrentFOV) > 0.0001 then
+        -- This mainly exists to handle suitzoom, as you can now hold USE to use it
+        self.CurrentViewModelFOV = app_vm * (self.CurrentFOV / GetConVar("fov_desired"):GetFloat())
+    end
     return self.CurrentFOV
 
     -- return 90
