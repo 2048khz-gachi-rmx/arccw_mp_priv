@@ -53,6 +53,10 @@ local function SendNet(string, bool)
     net.SendToServer()
 end
 
+local function WritePredictedBit(num)
+
+end
+
 local function DoUbgl(wep)
     if wep:GetInUBGL() then
         SendNet("arccw_ubgl", false)
@@ -134,7 +138,6 @@ local function processBind(ply, bind, cmdnum)
 
         block = true
     elseif bind == "inv" and !ply:KeyDown(IN_USE) and GetConVar("arccw_enable_customization"):GetInt() >= 0 then
-        
         local state = wep:GetState() != ArcCW.STATE_CUSTOMIZE
 
         if not pred then
@@ -178,11 +181,45 @@ local function processBind(ply, bind, cmdnum)
     if block then return true end
 end
 
-local function ArcCW_PlayerButtonDown(ply, btn)
-    if !ply:IsValid() then return end
+local blockedBinds = {
+    ["zoomin"] = true,
+    ["zoomout"] = true,
+    ["switchscope"] = true,
+    ["ubgl"] = true,
+    ["toggleatt"] = true,
+
+    ["inv"] = function(wep, ply)
+        if GetConVar("arccw_enable_customization"):GetInt() >= 0 and !ply:KeyDown(IN_USE) then
+            return true
+        end
+    end,
+
+    ["firemode"] = true,
+}
+
+local function shouldBlock(ply, bind, btn)
+    if not ply:IsValid() then return end
 
     local wep = ply:GetActiveWeapon()
-    if !wep.ArcCW then return end
+    if not wep.ArcCW then return end
+
+    bind = ArcCW_TranslateBindToEffect(bind)
+
+    local res = blockedBinds[bind]
+    if not res then return end
+
+    if isfunction(res) then
+        res = res(wep, ply)
+    end
+
+    return res
+end
+
+local function ArcCW_PlayerButtonDown(ply, btn)
+    if not ply:IsValid() then return end
+
+    local wep = ply:GetActiveWeapon()
+    if not wep.ArcCW then return end
 
     -- do actions that require prediction here
     local bind = input.LookupKeyBinding(btn)
@@ -195,7 +232,13 @@ local function ArcCW_PlayerButtonDown(ply, btn)
 
 end
 
+-- run the predicted hook for proper weapon function
 hook.Add("PlayerButtonDown", "ArcCW_PlayerButtonDown", ArcCW_PlayerButtonDown)
+
+-- run the bind hook to stop binds from running when necessary
+hook.Add("PlayerBindPress", "ArcCW_PreventBinds", function(ply, bind, _, key)
+    if shouldBlock(ply, bind, key) then return true end
+end)
 
 -- Actually register the damned things so they can be bound
 for k, v in pairs(ArcCW.BindToEffect_Unique) do
