@@ -528,12 +528,14 @@ function SWEP:GetViewModelPosition(pos, ang)
 	local sighted   = state == ArcCW.STATE_SIGHTS --[[(t.Sighted or state == ArcCW.STATE_SIGHTS or
 		(UCT - inSightTime) < sightTime)]]
 	local sightedFrac = 0
-	local from = t.VM_SightsChange
+	local sightFrom = t.VM_SightsChange
 
-	if outSightTime >= inSightTime then
-		sightedFrac = calculateSwitchableFrac(from, 0, UCT - outSightTime, sightTime)
-	else
-		sightedFrac = calculateSwitchableFrac(from, 1, UCT - inSightTime, sightTime)
+	if sighted then
+		if outSightTime >= inSightTime then
+			sightedFrac = calculateSwitchableFrac(sightFrom, 0, UCT - outSightTime, sightTime)
+		else
+			sightedFrac = calculateSwitchableFrac(sightFrom, 1, UCT - inSightTime, sightTime)
+		end
 	end
 
 	t.VM_SightsCurrent = sightedFrac
@@ -549,6 +551,8 @@ function SWEP:GetViewModelPosition(pos, ang)
 		local from = t.VM_SprintChange
 		local exit = t.LastExitSprintTimeUnpred >= t.LastEnterSprintTimeUnpred
 
+		-- the recovery has some added because easeOutCubic eases out too fast
+		recovery = recovery + math.min(0.3, recovery * 0.6)
 		if exit then
 			-- lerping [0 <- x <- 1]
 			sprintFrac = calculateSwitchableFrac(from, 0, UCT - t.LastExitSprintTimeUnpred, recovery)
@@ -616,7 +620,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 		end
 
 		if sightedFrac > 0 then
-			--clprint(sightedFrac, UCT, inSightTime, outSightTime)
 			local irons = self:GetActiveSights()
 			local from = t.SwitchedSightsFrom
 
@@ -626,8 +629,8 @@ function SWEP:GetViewModelPosition(pos, ang)
 			local fromEV, fromAng = vector_origin, angle_zero
 
 			if from then
-				target.pos:Set(from.Pos)
-				target.ang:Set(from.Ang)
+				target.pos:Set(from._SwitchPos)
+				target.ang:Set(from._SwitchAng)
 
 				if from.EVPos then
 					fromEV = from.EVPos
@@ -644,18 +647,25 @@ function SWEP:GetViewModelPosition(pos, ang)
 			LerpSource(sightedFrac, target.pos, irons.Pos)
 			LerpSource(sightedFrac, target.ang, irons.Ang)
 
+			local delta = math.min( sightedFrac,
+				easeOutCubic( (UCT - t.LastSwitchSightTimeUnpred) / sightTime ),
+				1 )
+
 			if irons.EVPos then
-				LerpInto(sightedFrac, fromEV, irons.EVPos, target.evpos)
+				LerpInto(delta, fromEV, irons.EVPos, target.evpos)
 			else
 				target.evpos:Set(vector_origin)
 			end
 
 
 			if irons.EVAng then
-				LerpInto(sightedFrac, fromAng, irons.EVAng, target.evang)
+				LerpInto(delta, fromAng, irons.EVAng, target.evang)
 			else
 				target.evang:Set(angle_zero)
 			end
+
+			irons._CurPos = target.evpos
+			irons._CurAng = target.evang
 
 			target.down  = Lerp(sightedFrac, target.down, 0)
 			target.sway  = Lerp(sightedFrac, target.sway, 0.1)

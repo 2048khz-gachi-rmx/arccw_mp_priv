@@ -94,6 +94,7 @@ function SWEP:ExitSprint()
     --elseif !anim and !s then
     end
         self:SetReloading(ct + self:GetSprintTime() * delta)
+        clprint(ct + self:GetSprintTime() * delta)
     --end
 end
 
@@ -510,8 +511,14 @@ function SWEP:SwitchActiveSights()
     self.LastEnterSightTime = CurTime()
 
     if IsFirstTimePredicted() then
-        self.LastEnterSightTimeUnpred = UnPredictedCurTime()
+        --self.LastEnterSightTimeUnpred = UnPredictedCurTime()
+        self.LastSwitchSightTimeUnpred = UnPredictedCurTime()
         self.SwitchedSightsFrom = presight
+        presight._SwitchPos = presight._CurPos
+        presight._SwitchAng = presight._CurAng
+
+        asight2._SwitchPos = nil
+        asight2._SwitchAng = nil
     end
 end
 
