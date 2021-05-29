@@ -12,6 +12,12 @@ SWEP.LastExitSprintTime = 0
 SWEP.LastEnterSprintTimeUnpred = 0 -- for VM animations
 SWEP.LastExitSprintTimeUnpred = 0
 
+SWEP.LastEnterSightTimeUnpred = 0
+SWEP.LastExitSightTimeUnpred = 0
+
+SWEP.LastExitSightTime = 0 -- huh?
+SWEP.LastEnterSightTime = 0
+
 function SWEP:EnterSprint()
     if engine.ActiveGamemode() == "terrortown" and !(TTT2 and self:GetOwner().isSprinting) then return end
     if self:GetState() == ArcCW.STATE_SPRINT then return end
@@ -50,7 +56,8 @@ function SWEP:EnterSprint()
     local anim = self:SelectAnimation("enter_sprint")
     if anim and !s then
         self:PlayAnimation(anim, 1 * self:GetBuff_Mult("Mult_SightTime"), true, nil, false, nil, false, false)
-        self:SetReloading(ct + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime"))
+        --self:SetReloading(ct + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime"))
+        self:SetNextPrimaryFire(ct + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime"))
     --elseif !anim and !s then -- Not needed because ExitSprint handles it properly
         --self:SetReloading(ct + self:GetSprintTime())
     end
@@ -122,6 +129,7 @@ function SWEP:EnterSights()
 
     if IsFirstTimePredicted() then
         self.LastEnterSightTimeUnpred = UnPredictedCurTime()
+        self.LastSwitchSightTimeUnpred = UnPredictedCurTime()
         self.VM_SightsChange = self.VM_SightsCurrent
     end
 

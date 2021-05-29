@@ -257,11 +257,8 @@ local function easeOutCubic(x)
 	return 1 - (1 - x) ^ 3
 end
 
-local function easeInOut(x)
-	return x == 0 and 0
-		or x == 1 and 1
-		or x < 0.5 and 2 ^ (20 * x - 10) / 2
-		or (2 - (2 ^ (-20 * x + 10))) / 2;
+local function easeOutCirc(x)
+	return math.sqrt(1 - ((x - 1) ^ 2))
 end
 
 -- touch:
@@ -339,7 +336,7 @@ end
 local function calculateSwitchableFrac(from, to, delta, maxdelta)
 	local frac = math.min(delta / maxdelta, 1)
 	local needAdd = math.max(from, to) - math.min(from, to)
-	local add = easeOutCubic(frac / maxdelta) * needAdd
+	local add = easeOutCubic(frac) * needAdd
 
 	local sign = (from < to and 1) or -1
 
@@ -525,7 +522,9 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 	local inSightTime, outSightTime = t.LastEnterSightTimeUnpred, t.LastExitSightTimeUnpred
 
-	local sighted   = state == ArcCW.STATE_SIGHTS --[[(t.Sighted or state == ArcCW.STATE_SIGHTS or
+	local sighted   = state == ArcCW.STATE_SIGHTS or (UCT - outSightTime) < sightTime
+
+	--[[(t.Sighted or state == ArcCW.STATE_SIGHTS or
 		(UCT - inSightTime) < sightTime)]]
 	local sightedFrac = 0
 	local sightFrom = t.VM_SightsChange
@@ -541,8 +540,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 	t.VM_SightsCurrent = sightedFrac
 
 	local recovery = self:GetSprintTime() -- (t.VM_UseSightTime and t.VM_SprintRecovery * sightTime) or t.VM_SprintRecovery
-	local sprinted  = (t.Sprinted or state == ArcCW.STATE_SPRINT or
-			(not sighted and (UCT - t.LastExitSprintTimeUnpred) < recovery)) -- sighting takes priority over sprint recovery
+	local sprinted  = state == ArcCW.STATE_SPRINT or (UCT - t.LastExitSprintTimeUnpred) < recovery
 	local sprintFrac = 0
 
 
@@ -551,8 +549,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 		local from = t.VM_SprintChange
 		local exit = t.LastExitSprintTimeUnpred >= t.LastEnterSprintTimeUnpred
 
-		-- the recovery has some added because easeOutCubic eases out too fast
-		recovery = recovery + math.min(0.3, recovery * 0.6)
 		if exit then
 			-- lerping [0 <- x <- 1]
 			sprintFrac = calculateSwitchableFrac(from, 0, UCT - t.LastExitSprintTimeUnpred, recovery)
