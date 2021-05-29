@@ -101,7 +101,6 @@ function SWEP:ExitSprint()
     --elseif !anim and !s then
     end
         self:SetReloading(ct + self:GetSprintTime() * delta)
-        clprint(ct + self:GetSprintTime() * delta)
     --end
 end
 
