@@ -138,6 +138,53 @@ function SWEP:DoOurViewPunch()
     end
 end
 
+local rand = math.random(0, 100000)
+
+local function resStr()
+    return ("%d_%dx%d"):format(rand, ScrW(), ScrH())
+end
+
+local rtName = "ArcCW_RT" .. resStr()
+local uid = tostring( os.time() + SysTime() % 1 ):gsub("%.", "_")
+local main_rt = GetRenderTarget(rtName, 512, 512)
+local blur_rt = GetRenderTarget(rtName .. "_blur", 512, 512)
+
+local mat_BlurX = CreateMaterial("bshadows_blurx" .. uid, "g_blurx", {
+    ["$basetexture"] = rtName .. "_blur",
+    ["$size"] = "6",
+    ["$ignorez"] = "1",
+    ["$additive"] = "1",
+})
+
+local mat_BlurY = CreateMaterial("bshadows_blury" .. uid, "g_blury", {
+    ["$basetexture"] = rtName .. "_blur",
+    ["$translucent"] = 1,
+    ["$size"] = "6",
+    ["$ignorez"] = "1",
+    ["$additive"] = "1",
+})
+
+local function BlurRenderTarget( rt, sizex, sizey, passes )
+
+    mat_BlurX:SetTexture( "$basetexture", rt )
+    mat_BlurY:SetTexture( "$basetexture", tex_Bloom1 )
+    mat_BlurX:SetFloat( "$size", sizex )
+    mat_BlurY:SetFloat( "$size", sizey )
+
+    for i=1, passes+1 do
+
+        render.SetRenderTarget( tex_Bloom1 )
+        render.SetMaterial( mat_BlurX )
+        render.DrawScreenQuad()
+
+        render.SetRenderTarget( rt )
+        render.SetMaterial( mat_BlurY )
+        render.DrawScreenQuad()
+
+    end
+
+end
+
 -- viewbob during reload and firing shake
 SWEP.ProceduralViewOffset = Angle(0, 0, 0)
 local procedural_spdlimit = 5

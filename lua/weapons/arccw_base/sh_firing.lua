@@ -638,6 +638,37 @@ function SWEP:GetDispersion()
     return hip
 end
 
+--[[
+    special for scope blur
+    returns:
+        - move dispersion
+        - air dispersion
+]]
+
+function SWEP:GetBlurDispersion()
+    local owner = self:GetOwner()
+
+    if vrmod and vrmod.IsPlayerInVR(owner) then return 0 end
+
+    local mvDisp = 0
+    local airDisp = 0
+
+    if owner:OnGround() or owner:WaterLevel() > 0 or owner:GetMoveType() == MOVETYPE_NOCLIP then
+        local speed    = owner:GetAbsVelocity():Length()
+        local maxspeed = owner:GetWalkSpeed() * self:GetBuff("SpeedMult")
+
+        maxspeed = maxspeed * self:GetBuff("SightedSpeedMult")
+
+        speed = math.Clamp(speed / maxspeed, 0, 2)
+
+        mvDisp = speed * self:GetBuff("MoveDispersion")
+    else
+        airDisp = self:GetBuff("JumpDispersion")
+    end
+
+    return mvDisp, airDisp
+end
+
 function SWEP:DoShellEject(atti)
     local eff = self:GetBuff_Override("Override_ShellEffect") or "arccw_shelleffect"
 
