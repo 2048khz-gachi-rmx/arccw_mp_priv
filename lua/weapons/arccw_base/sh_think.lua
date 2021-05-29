@@ -139,11 +139,10 @@ function SWEP:Think()
                 self:SelectUBGL()
             end
         end
-    elseif self:GetBuff_Hook("Hook_ShouldNotSight") and (self.Sighted or self:GetState() == ArcCW.STATE_SIGHTS) then
+    elseif self:GetBuff_Hook("Hook_ShouldNotSight") and (self:GetState() == ArcCW.STATE_SIGHTS) then
         self:ExitSights()
     else
 
-        -- no it really doesn't, past me
         local sighted = self:GetState() == ArcCW.STATE_SIGHTS
         local toggle = owner:GetInfoNum("arccw_toggleads", 0) >= 1
         local suitzoom = owner:KeyDown(IN_ZOOM)

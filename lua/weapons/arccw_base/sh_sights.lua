@@ -16,10 +16,11 @@ function SWEP:EnterSprint()
     if engine.ActiveGamemode() == "terrortown" and !(TTT2 and self:GetOwner().isSprinting) then return end
     if self:GetState() == ArcCW.STATE_SPRINT then return end
     if self:GetState() == ArcCW.STATE_CUSTOMIZE then return end
+    if self:GetState() == ArcCW.STATE_SIGHTS then return end
+    -- sights beat sprint
 
-    if self:GetState() == ArcCW.STATE_SIGHTS then
-        self:ExitSights()
-    end
+    --     self:ExitSights()
+    -- end
 
     self:SetState(ArcCW.STATE_SPRINT)
     self.Sighted = false
@@ -42,6 +43,7 @@ function SWEP:EnterSprint()
 
     if IsFirstTimePredicted() then
         self.LastEnterSprintTimeUnpred = UnPredictedCurTime()
+        self.VM_SprintChange = self.VM_SprintCurrent
     end
 
 
@@ -82,29 +84,27 @@ function SWEP:ExitSprint()
     self.LastExitSprintTime = CurTime() - self:GetSprintTime() * delta
     if IsFirstTimePredicted() then
         self.LastExitSprintTimeUnpred = UnPredictedCurTime()
+        self.VM_SprintChange = self.VM_SprintCurrent
     end
 
     local anim = self:SelectAnimation("exit_sprint")
     if anim and !s then
         self:PlayAnimation(anim, 1 * self:GetBuff_Mult("Mult_SightTime"), true, nil, false, nil, false, false)
-        self:SetReloading(ct + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime"))
-    elseif !anim and !s then
-        self:SetReloading(ct + self:GetSprintTime() * delta)
+        --self:SetReloading(ct + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime"))
+    --elseif !anim and !s then
     end
+        self:SetReloading(ct + self:GetSprintTime() * delta)
+    --end
 end
-
-SWEP.LastEnterSightTime = 0
-SWEP.LastExitSightTime = 0
-
-SWEP.LastEnterSightTimeUnpred = 0 -- for VM animations
-SWEP.LastExitSightTimeUnpred = 0
 
 function SWEP:EnterSights()
     local asight = self:GetActiveSights()
     if !asight then return end
     if self:GetState() != ArcCW.STATE_IDLE then return end
     if self:GetCurrentFiremode().Mode == 0 then return end
-    if !self.ReloadInSights and (self:GetReloading() or self:GetOwner():KeyDown(IN_RELOAD)) then return end
+    if !self.ReloadInSights and (self:GetReloading() or self:GetOwner():KeyDown(IN_RELOAD)) then
+        return
+    end
     if self:GetBuff_Hook("Hook_ShouldNotSight") then return end
 
     self:SetupActiveSights()
@@ -121,6 +121,7 @@ function SWEP:EnterSights()
 
     if IsFirstTimePredicted() then
         self.LastEnterSightTimeUnpred = UnPredictedCurTime()
+        self.VM_SightsChange = self.VM_SightsCurrent
     end
 
     local anim = self:SelectAnimation("enter_sight")
@@ -164,6 +165,7 @@ function SWEP:ExitSights()
 
     if IsFirstTimePredicted() then
         self.LastExitSightTimeUnpred = UnPredictedCurTime()
+        self.VM_SightsChange = self.VM_SightsCurrent
     end
 
     local anim = self:SelectAnimation("exit_sight")
