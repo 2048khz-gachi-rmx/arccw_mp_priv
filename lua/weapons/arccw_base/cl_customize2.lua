@@ -229,9 +229,9 @@ function SWEP:CreateCustomize2HUD()
             return
         end
 
-        surface.SetDrawColor(Color(0, 0, 0, Lerp(ArcCW.Inv_Fade, 0, 255)))
+        --[[surface.SetDrawColor(Color(0, 0, 0, Lerp(ArcCW.Inv_Fade, 0, 255)))
         surface.SetMaterial(grad)
-        surface.DrawTexturedRect(0, 0, ScrW(), ScrH())
+        surface.DrawTexturedRect(0, 0, ScrW(), ScrH())]]
 
         if self:GetReloading() then
             ArcCW.InvHUD:Remove()

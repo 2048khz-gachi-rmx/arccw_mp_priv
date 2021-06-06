@@ -5,14 +5,16 @@ local off = math.pi * 1.25
 ArcCW.SwayDir = 0
 
 function ArcCW.Sway(cmd)
+    if not enabled then return end
+
     local ply = LocalPlayer()
     local wpn = ply:GetActiveWeapon()
 
-    if !wpn.ArcCW then return end
+    if not wpn.ArcCW then return end
 
     local ang = cmd:GetViewAngles()
 
-    if (wpn.Sighted or wpn:GetState() == ArcCW.STATE_SIGHTS) and !wpn.NoSway then
+    if (wpn.Sighted or wpn:GetState() == ArcCW.STATE_SIGHTS) and not wpn.NoSway then
 
         local sway = mult:GetFloat() * wpn:GetBuff("Sway")
         --sway = sway * math.Clamp(1 / (wpn:GetActiveSights().ScopeMagnification or 1), 0.1, 1)
