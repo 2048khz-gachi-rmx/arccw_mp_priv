@@ -302,7 +302,7 @@ function SWEP:FormNightVision(tex)
 	colormod:SetTexture("$fbtexture", orig)
 end
 
-local rand = math.random(0, 100000)
+local rand = 1 --math.random(0, 100000)
 
 local function resStr()
 	return ("%d_%dx%d"):format(rand, ScrW(), ScrH())
@@ -310,7 +310,7 @@ end
 
 local rtName = "ArcCW_RT_" .. resStr()
 local uid = rand
-print("rtname", rtName)
+
 local main_rt = GetRenderTarget(rtName, 1024, 1024)
 local blur_rt = GetRenderTarget(rtName .. "_blur", 1024, 1024)
 
@@ -334,6 +334,18 @@ local mat_main = CreateMaterial("ArcCW_Scope" .. uid, "UnlitGeneric", {
 	["$translucent"] = 1,
 	["$ignorez"] = 1,
 })
+
+
+mat_BlurX:SetTexture("$basetexture", blur_rt)
+mat_BlurY:SetTexture("$basetexture", blur_rt)
+mat_main:SetTexture("$basetexture", main_rt)
+
+hook.Add("OnScreenSizeChanged", "ArcCW_Resize_Scope", function()
+	-- awful
+	mat_BlurX:SetTexture("$basetexture", blur_rt)
+	mat_BlurY:SetTexture("$basetexture", blur_rt)
+	mat_main:SetTexture("$basetexture", main_rt)
+end)
 
 local function BlurRenderTarget( rt, sizex, sizey, passes )
 
@@ -459,7 +471,9 @@ end)
 local black = Material("hud/black.png")
 local defaultdot = Material("hud/scopes/dot.png")
 
-local b = bench("a", 600)
+local mtrx = Matrix()
+local scvec = Vector()
+local trvec = Vector()
 
 function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	-- holosight structure
@@ -604,10 +618,14 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	local dir = ang:Up()
 
 	local pdiff = (pos - EyePos()):Length()
+	local d = (8 + pdiff)
+	d = hs.HolosightConstDist or d
 
 	pos = LerpVector(delta, EyePos(), pos)
 
-	local eyeangs = self:GetOwner():EyeAngles() + (self:GetOurViewPunchAngles() * 0.5)
+	local eyeangs = self:GetOwner():EyeAngles() --+ (self:GetOurViewPunchAngles() * 0.5)
+
+	eyeangs[1] = eyeangs[1] + self:GetRecoil() * -3 / d
 
 	-- local vm = hsm or hsp
 
@@ -617,9 +635,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 	pdiff = Lerp(delta, pdiff, 0)
 
-	local d = (8 + pdiff)
-
-	d = hs.HolosightConstDist or d
+	
 
 	local vmscale = (self.Attachments[asight.Slot] or {}).VMScale or Vector(1, 1, 1)
 
@@ -747,22 +763,26 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	local hss = size * 32 * math.min(ScrW(), ScrH()) / 800
 
 	render.SetStencilEnable(false)
-	render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+	render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 
 		local sw, sh = ScrW(), ScrH()
 		local dlt = self:GetSightDelta()
 		local mvDisp, jmpdisp = self:GetBlurDispersion()
 
-		local extend = (dlt ^ 0.7 * 0.1) + math.max(mvDisp / 750, jmpdisp / 200 / 8)
+		local extend = (dlt ^ 0.7 * 0.1) + -- slight extend when zooming in
+			math.max(mvDisp / 750, jmpdisp / 200 / 8) -- dispersion affects zoom
+			/ hsmag -- higher magnification = less inaccuracy zoom
 
-		local blur = math.max(mvDisp / 75, jmpdisp / 250)
+		local blur = math.max(mvDisp / 75, jmpdisp / 250) -- only movement dispersion affects blurryness
 
 		render.PushRenderTarget(main_rt)
 		render.Clear(0, 0, 0, 0, true)
 			surface.SetMaterial(hs.HolosightReticle or defaultdot)
 			surface.SetDrawColor(hsc or color_white)
-			surface.DrawTexturedRect(-extend * sw, -extend * sh,
-				sw * (1 + extend * 2), sh * (1 + extend * 2))
+			--[[surface.DrawTexturedRect(-extend * sw, -extend * sh,
+				sw * (1 + extend * 2), sh * (1 + extend * 2))]]
+
+			surface.DrawTexturedRect(0, 0, sw, sh)
 
 			if !hs.HolosightNoFlare then
 				render.SetStencilPassOperation(STENCIL_KEEP)
@@ -770,14 +790,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 				surface.SetMaterial(hs.HolosightFlare or hs.HolosightReticle or defaultdot)
 				surface.SetDrawColor(255, 255, 255, 150)
 
-				local hss2 = hss
-
-				if !hs.HolosightFlare then
-					hss2 = hss2 * 0.75
-				end
-
-				surface.DrawTexturedRect(-extend * sw, -extend * sh,
-				sw * (1 + extend * 2), sh * (1 + extend * 2))
+				surface.DrawTexturedRect(0, 0, sw, sh)
 
 				render.SetStencilReferenceValue(ref)
 			end
@@ -792,10 +805,23 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	surface.SetMaterial(mat_main)
 
 	--surface.SetMaterial(hs.HolosightReticle or defaultdot)
-	surface.SetDrawColor(255, 255, 255)
-	surface.DrawTexturedRect(x - (hss / 2), y - (hss / 2), hss, hss)
+	--hss = hss * (1 + extend)
 
-	render.PopFilterMin(TEXFILTER.ANISOTROPIC)
+	trvec[1], trvec[2] = x, y
+	scvec[1], scvec[2] = 1 + extend, 1 + extend
+
+	mtrx:Identity()
+	mtrx:Translate(trvec)
+		mtrx:SetScale(scvec)
+	mtrx:Translate(-trvec)
+
+	surface.SetDrawColor(255, 255, 255)
+
+	cam.PushModelMatrix(mtrx, true)
+		surface.DrawTexturedRect(x - (hss / 2), y - (hss / 2), hss, hss)
+	cam.PopModelMatrix()
+
+	render.PopFilterMag()
 
 
 	if hs.HolosightBlackbox then

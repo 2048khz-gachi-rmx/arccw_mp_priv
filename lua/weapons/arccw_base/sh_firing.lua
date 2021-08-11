@@ -98,7 +98,11 @@ function SWEP:PrimaryAttack()
 
     self.Primary.Automatic = true
 
-    local dir = owner:GetAimVector()
+    local aimvec = owner:GetAimVector()
+    local aimang = aimvec:Angle() + Angle(self:GetRecoil() * -2, 0, 0)
+
+    aimang:Normalize()
+    local dir = aimang:Forward()
     local src = self:GetShootSrc()
 
     if bit.band(util.PointContents(src), CONTENTS_WATER) == CONTENTS_WATER and !(self.CanFireUnderwater or self:GetBuff_Override("Override_CanFireUnderwater")) then

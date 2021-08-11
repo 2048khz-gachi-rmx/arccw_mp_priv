@@ -343,6 +343,14 @@ local function calculateSwitchableFrac(from, to, delta, maxdelta)
 	return math[from < to and "min" or "max"] (from + add * sign, to)
 end
 
+local recoilAng = Angle()
+
+local function recoilMethod(self)
+	recoilAng[1] = self:GetRecoil() * 1
+
+	return recoilAng -- self:GetOurViewPunchAngles()
+end
+
 function SWEP:GetViewModelPosition(pos, ang)
 	-- b:Open()
 
@@ -368,12 +376,9 @@ function SWEP:GetViewModelPosition(pos, ang)
 	local sightTime = self:GetSightTime()
 
 	local sgtd = self:GetSightDelta()
-	local sprd = self:GetSprintDelta()
 
 	oldpos:Set(pos)
 	oldang:Set(ang)
-
-	ang = ang + self:GetOurViewPunchAngles()
 
 	actual = t.ActualVMData or { pos = Vector(), ang = Angle(), down = 1, sway = 1, bob = 1, evpos = Vector(), evang = Angle() }
 
@@ -916,8 +921,9 @@ function SWEP:GetViewModelPosition(pos, ang)
 		ang:Set(nang)
 	end
 
-
-	pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
+	oldang:Add(recoilMethod(self))
+	ang:Add(recoilMethod(self, true))
+	--pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
 
 	--pos:Add( self.RecoilPunchSide * oldang:Right() )
 	-- upward recoil is terrible on some guns, wtf?
@@ -931,9 +937,9 @@ function SWEP:GetViewModelPosition(pos, ang)
 	ang:RotateAroundAxis(oldang:Up(),      actual.evang.y)
 	ang:RotateAroundAxis(oldang:Forward(), actual.evang.z)
 
-	pos:Add( oldang:Right()   * actual.evpos.x)
-	pos:Add( oldang:Forward() * actual.evpos.y)
-	pos:Add( oldang:Up()      * actual.evpos.z)
+	pos:Add( ang:Right()   * actual.evpos.x)
+	pos:Add( ang:Forward() * actual.evpos.y)
+	pos:Add( ang:Up()      * actual.evpos.z)
 
 	pos:Add( actual.pos.x * ang:Right() )
 	pos:Add( actual.pos.y * ang:Forward() )
@@ -941,8 +947,11 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 	pos[3] = pos[3] - actual.down
 
-	ang = ang + self:GetOurViewPunchAngles() * Lerp(1 - sightedFrac, -0.5, -3)
+	ang:Sub(recoilMethod(self))
 
+	-- this is the desyncing angle: modifying it here will offset the crosshair from its' intended target
+	--ang = ang - recoilMethod(self) --self:GetOurViewPunchAngles() * Lerp(1 - sightedFrac, -0.5, -3)
+	
 	-- if IsFirstTimePredicted() then
 
 	self.ActualVMData = actual

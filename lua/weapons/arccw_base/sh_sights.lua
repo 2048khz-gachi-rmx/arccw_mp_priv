@@ -521,8 +521,8 @@ function SWEP:SwitchActiveSights()
         --self.LastEnterSightTimeUnpred = UnPredictedCurTime()
         self.LastSwitchSightTimeUnpred = UnPredictedCurTime()
         self.SwitchedSightsFrom = presight
-        presight._SwitchPos = presight._CurPos
-        presight._SwitchAng = presight._CurAng
+        presight._SwitchPos = presight._CurPos or vector_origin
+        presight._SwitchAng = presight._CurAng or angle_zero
 
         asight2._SwitchPos = nil
         asight2._SwitchAng = nil
