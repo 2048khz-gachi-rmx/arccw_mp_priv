@@ -154,10 +154,11 @@ local function processBind(ply, bind, cmdnum)
     end
 
     if wep:GetState() == ArcCW.STATE_SIGHTS then
-        if bind == "zoomin" then
+
+        if bind == "zoomin" and IsFirstTimePredicted() then
             wep:Scroll(1)
             block = true
-        elseif bind == "zoomout" then
+        elseif bind == "zoomout" and IsFirstTimePredicted() then
             wep:Scroll(-1)
             block = true
         elseif bind == "switchscope_dtap" then
@@ -182,8 +183,14 @@ local function processBind(ply, bind, cmdnum)
 end
 
 local blockedBinds = {
-    ["zoomin"] = true,
-    ["zoomout"] = true,
+    ["zoomin"] = function(wep, ply)
+        if wep:GetState() == ArcCW.STATE_SIGHTS then return true end
+    end,
+
+    ["zoomout"] = function(wep, ply)
+        if wep:GetState() == ArcCW.STATE_SIGHTS then return true end
+    end,
+
     ["switchscope"] = true,
     ["ubgl"] = true,
     ["toggleatt"] = true,
@@ -212,7 +219,7 @@ local function shouldBlock(ply, bind, btn)
         res = res(wep, ply)
     end
 
-    return res
+    if res then return res end
 end
 
 local function ArcCW_PlayerButtonDown(ply, btn)
@@ -229,7 +236,6 @@ local function ArcCW_PlayerButtonDown(ply, btn)
     local ucmd = ply:GetCurrentCommand()
 
     processBind(ply, bind, ucmd:CommandNumber())
-
 end
 
 -- run the predicted hook for proper weapon function
