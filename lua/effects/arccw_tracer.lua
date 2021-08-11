@@ -38,7 +38,7 @@ function EFFECT:Init(data)
         self.Speed = speed
     end
 
-    if IsValid(wep) then
+    if IsValid(wep) and wep.ArcCW then
         profile = wep:GetBuff_Override("Override_PhysTracerProfile") or wep.PhysTracerProfile or 0
     end
 
