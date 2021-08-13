@@ -346,7 +346,7 @@ end
 local recoilAng = Angle()
 
 local function recoilMethod(self)
-	recoilAng[1] = self:GetRecoil() * 1
+	recoilAng[1] = self:GetRecoil() * 2
 
 	return recoilAng -- self:GetOurViewPunchAngles()
 end
@@ -921,8 +921,8 @@ function SWEP:GetViewModelPosition(pos, ang)
 		ang:Set(nang)
 	end
 
-	oldang:Add(recoilMethod(self))
-	ang:Add(recoilMethod(self, true))
+	--oldang:Add(recoilMethod(self))
+	ang:Sub(recoilMethod(self, true))
 	--pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
 
 	--pos:Add( self.RecoilPunchSide * oldang:Right() )
@@ -937,6 +937,8 @@ function SWEP:GetViewModelPosition(pos, ang)
 	ang:RotateAroundAxis(oldang:Up(),      actual.evang.y)
 	ang:RotateAroundAxis(oldang:Forward(), actual.evang.z)
 
+	ang:Add(recoilMethod(self, true))
+
 	pos:Add( ang:Right()   * actual.evpos.x)
 	pos:Add( ang:Forward() * actual.evpos.y)
 	pos:Add( ang:Up()      * actual.evpos.z)
@@ -947,7 +949,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 	pos[3] = pos[3] - actual.down
 
-	ang:Sub(recoilMethod(self))
+	--ang:Sub(recoilMethod(self))
 
 	-- this is the desyncing angle: modifying it here will offset the crosshair from its' intended target
 	--ang = ang - recoilMethod(self) --self:GetOurViewPunchAngles() * Lerp(1 - sightedFrac, -0.5, -3)
