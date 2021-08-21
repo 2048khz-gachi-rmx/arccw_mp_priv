@@ -148,6 +148,18 @@ ArcCW.Inv_Fade = 0
 ArcCW.Inv_ShownAtt = nil
 ArcCW.Inv_Hidden = false
 
+function ArcCW.RememberCursor()
+    if vgui.CursorVisible() then
+        ArcCW.CursorPos = {gui.MousePos()}
+    end
+end
+
+function ArcCW.RestoreCursor()
+    if ArcCW.CursorPos then
+        gui.SetMousePos(unpack(ArcCW.CursorPos))
+    end
+end
+
 function SWEP:CreateCustomize2HUD()
     local col_fg = Color(255, 255, 255, 255)
     local col_fg_tr = Color(255, 255, 255, 125)
@@ -222,8 +234,40 @@ function SWEP:CreateCustomize2HUD()
     ArcCW.InvHUD:SetText("")
     ArcCW.InvHUD:SetTitle("")
     ArcCW.InvHUD:ShowCloseButton(false)
+
+    ArcCW.InvHUD.PredThink = function(self2)
+        local first = IsFirstTimePredicted()
+
+        if first and self:GetReloading() then
+            self2:Remove()
+            return
+        end
+
+        if first then
+            if self:GetState() == ArcCW.STATE_CUSTOMIZE and !ArcCW.Inv_Hidden then
+                ArcCW.Inv_Fade = math.Approach(ArcCW.Inv_Fade, 1, FrameTime() * 5)
+                if !vgui.CursorVisible() then
+                    gui.EnableScreenClicker(true)
+                    ArcCW.RestoreCursor()
+                end
+            else
+                ArcCW.Inv_Fade = math.Approach(ArcCW.Inv_Fade, 0, FrameTime() * 5)
+
+
+                ArcCW.RememberCursor()
+                gui.EnableScreenClicker(false)
+
+
+                if ArcCW.Inv_Fade == 0 then
+                    ArcCW.InvHUD:Remove()
+                end
+            end
+        end
+    end
+
     ArcCW.InvHUD.Paint = function(self2)
         if !IsValid(self) then
+            ArcCW.RememberCursor()
             gui.EnableScreenClicker(false)
             ArcCW.InvHUD:Remove()
             return
@@ -233,19 +277,7 @@ function SWEP:CreateCustomize2HUD()
         surface.SetMaterial(grad)
         surface.DrawTexturedRect(0, 0, ScrW(), ScrH())]]
 
-        if self:GetReloading() then
-            ArcCW.InvHUD:Remove()
-            return
-        end
 
-        local st = 1 / 5
-        if self:GetState() == ArcCW.STATE_CUSTOMIZE and !ArcCW.Inv_Hidden then
-            ArcCW.Inv_Fade = math.Approach(ArcCW.Inv_Fade, 1, FrameTime() * 1 / st)
-        else
-            ArcCW.Inv_Fade = math.Approach(ArcCW.Inv_Fade, 0, FrameTime() * 1 / st)
-            -- if (self:GetState() != ArcCW.STATE_CUSTOMIZE or !ArcCW.Inv_Hidden) and ArcCW.Inv_Fade == 0 then ArcCW.InvHUD:Remove() end
-                -- This'll completely screw up on multiplayer games and sometimes even singleplayer
-        end
         col_fg = Color(255, 255, 255, Lerp(ArcCW.Inv_Fade, 0, 255))
         col_fg_tr = Color(255, 255, 255, Lerp(ArcCW.Inv_Fade, 0, 125))
         col_shadow = Color(0, 0, 0, Lerp(ArcCW.Inv_Fade, 0, 255))
@@ -284,7 +316,10 @@ function SWEP:CreateCustomize2HUD()
             end
         end
 
+        ArcCW.RememberCursor()
         gui.EnableScreenClicker(false)
+
+        ArcCW.InvHUD = nil
     end
 
     if GetConVar("arccw_attinv_onlyinspect"):GetBool() then

@@ -1,3 +1,6 @@
+ArcCW.IN_CUSTOMIZE = IN_WEAPON1
+ArcCW.IN_WHAT = IN_WEAPON2
+
 net.Receive("arccw_firemode", function(len, ply)
     local wpn = ply:GetActiveWeapon()
 
@@ -30,7 +33,7 @@ elseif SERVER then
         local onoff = net.ReadBool()
 
         if !wpn.ArcCW then return end
-
+        print("server: toggling customize", wpn, onoff)
         wpn:ToggleCustomizeHUD(onoff)
     end)
 end

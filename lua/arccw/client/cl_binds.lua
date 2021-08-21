@@ -48,13 +48,17 @@ local function ArcCW_TranslateBindToEffect(bind)
 end
 
 local function SendNet(string, bool)
-    net.Start(string)
+    net.Start(string, true)
         if bool != nil then net.WriteBool(bool) end
     net.SendToServer()
 end
 
-local function WritePredictedBit(num)
+ArcCW.CMD_NeedSend = 0
+ArcCW.CMD_NeedSendTick = 0
 
+local function WritePredictedBit(num)
+    ArcCW.CMD_NeedSend = bit.bor(ArcCW.CMD_NeedSend, num)
+    ArcCW.CMD_NeedSendTick = LocalPlayer():GetCurrentCommand():TickCount()
 end
 
 local function DoUbgl(wep)
@@ -139,9 +143,11 @@ local function processBind(ply, bind, cmdnum)
         block = true
     elseif bind == "inv" and !ply:KeyDown(IN_USE) and GetConVar("arccw_enable_customization"):GetInt() >= 0 then
         local state = wep:GetState() != ArcCW.STATE_CUSTOMIZE
+        if not wep:CanOpenCustomize() then return end
 
         if not pred then
-            SendNet("arccw_togglecustomize", state)
+            --SendNet("arccw_togglecustomize", state)
+            WritePredictedBit(ArcCW.IN_CUSTOMIZE)
         end
 
         wep:ToggleCustomizeHUD(state)
@@ -244,6 +250,17 @@ hook.Add("PlayerButtonDown", "ArcCW_PlayerButtonDown", ArcCW_PlayerButtonDown)
 -- run the bind hook to stop binds from running when necessary
 hook.Add("PlayerBindPress", "ArcCW_PreventBinds", function(ply, bind, _, key)
     if shouldBlock(ply, bind, key) then return true end
+end)
+
+hook.Add("StartCommand", "ArcCW_PredBinds", function(ply, cmd)
+    if ArcCW.CMD_NeedSend > 0 then
+        if cmd:TickCount() > ArcCW.CMD_NeedSendTick + 1 then -- wtf
+            -- awfulness
+            ArcCW.CMD_NeedSend = 0
+        end
+
+        cmd:SetButtons(bit.bor(cmd:GetButtons(), ArcCW.CMD_NeedSend))
+    end
 end)
 
 -- Actually register the damned things so they can be bound

@@ -29,6 +29,7 @@ function SWEP:Think()
         ArcCW.LastWeapon = self
     end
 
+
     self:InBipod()
 
     if self:GetNeedCycle() and !self:GetReloading() and self:GetWeaponOpDelay() < CurTime() and self:GetNextPrimaryFire() < CurTime() and -- Adding this delays bolting if the RPM is too low, but removing it may reintroduce the double pump bug. Increasing the RPM allows you to shoot twice on many multiplayer servers. Sure would be convenient if everything just worked nicely
@@ -96,9 +97,9 @@ function SWEP:Think()
     end
 
 
-    if self:InSprint() and self:GetState() != ArcCW.STATE_SPRINT then
+    if self:InSprint(true) and self:GetState() != ArcCW.STATE_SPRINT then
         self:EnterSprint()
-    elseif !self:InSprint() and self:GetState() == ArcCW.STATE_SPRINT then
+    elseif !self:InSprint(true) and self:GetState() == ArcCW.STATE_SPRINT then
         self:ExitSprint()
     end
 
@@ -228,6 +229,10 @@ function SWEP:Think()
     end
 
     self:DoHeat()
+
+    if CLIENT and IsValid(ArcCW.InvHUD) then
+        ArcCW.InvHUD:PredThink()
+    end
 
     -- if CLIENT then
         -- if !IsValid(ArcCW.InvHUD) then

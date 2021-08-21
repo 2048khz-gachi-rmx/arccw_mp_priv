@@ -47,13 +47,18 @@ local function DrawTextRot(span, txt, x, y, tx, ty, maxw, only)
     end
 end
 
+function SWEP:CanOpenCustomize()
+    return self:GetState() ~= ArcCW.STATE_SPRINT and
+        (self:GetNextPrimaryFire() + (CLIENT and 0.2 or 0.1)) < CurTime() and
+        not self:GetReloading() and
+        (self:GetOwner():IsPlayer() and not self:GetOwner():KeyDown(IN_SPEED))
+end
+
 function SWEP:ToggleCustomizeHUD(ic)
-    if ic and self:GetState() == ArcCW.STATE_SPRINT then return end
-
     if ic then
-        if (self:GetNextPrimaryFire() + 0.1) >= CurTime() then return end
-
+        if not self:CanOpenCustomize() then print("can't open customize", Realm()) return end
         self:SetState(ArcCW.STATE_CUSTOMIZE)
+
         self:ExitSights()
         self:SetShouldHoldType()
         self:ExitBipod()
@@ -64,6 +69,7 @@ function SWEP:ToggleCustomizeHUD(ic)
         end
     else
         self:SetState(ArcCW.STATE_IDLE)
+
         self.Sighted = false
         self.Sprinted = false
         self:SetShouldHoldType()
@@ -238,6 +244,7 @@ function SWEP:OpenCustomizeHUD()
         ArcCW.Inv_Hidden = false
 
         gui.EnableScreenClicker(true)
+        ArcCW.RestoreCursor()
         if GetConVar("arccw_cust_sounds"):GetBool() then surface.PlaySound("weapons/arccw/extra2.wav") end
     end
 end
@@ -264,6 +271,7 @@ function SWEP:CloseCustomizeHUD( hide )
         end
 
         if !hide then
+            ArcCW.RememberCursor()
             gui.EnableScreenClicker(false)
         end
 
@@ -310,8 +318,10 @@ function SWEP:CreateCustomizeHUD()
     ArcCW.InvHUD:Center()
     ArcCW.InvHUD:SetText("")
     ArcCW.InvHUD:SetTitle("")
+    --[=[
     ArcCW.InvHUD.Paint = function(span)
         if !IsValid(self) then
+            ArcCW.CursorPos = {gui.MousePos()}
             gui.EnableScreenClicker(false)
             span:Remove()
             return
@@ -321,6 +331,8 @@ function SWEP:CreateCustomizeHUD()
             span:Remove()
         end
     end
+    ]=]
+
     ArcCW.InvHUD.ActiveWeapon = self
     ArcCW.InvHUD.OnRemove = function()
         local close = false
@@ -342,6 +354,7 @@ function SWEP:CreateCustomizeHUD()
             end
         end
 
+        ArcCW.RememberCursor()
         gui.EnableScreenClicker(false)
     end
 
