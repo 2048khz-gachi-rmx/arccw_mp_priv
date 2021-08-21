@@ -401,6 +401,8 @@ function SWEP:FormCheapScope()
 	render.UpdateFullScreenDepthTexture()
 end
 
+local recAng = Angle()
+
 function SWEP:FormRTScope()
 	local asight = self:GetActiveSights()
 
@@ -415,10 +417,12 @@ function SWEP:FormRTScope()
 	ArcCW.Overdraw = true
 	ArcCW.LaserBehavior = true
 
+	recAng[1] = self:GetRecoil() * -1
+
 	local rt = {
 		w = rtsize,
 		h = rtsize,
-		angles = LocalPlayer():EyeAngles() + (self:GetOurViewPunchAngles() * 0.5),
+		angles = LocalPlayer():EyeAngles() + recAng,
 		origin = LocalPlayer():EyePos(),
 		drawviewmodel = false,
 		fov = self:GetOwner():GetFOV() / mag / 1.2,
@@ -625,17 +629,15 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 	local eyeangs = self:GetOwner():EyeAngles() --+ (self:GetOurViewPunchAngles() * 0.5)
 
-	eyeangs[1] = eyeangs[1] + self:GetRecoil() * -3 / d
+	eyeangs[1] = eyeangs[1] + self:GetRecoil() * -1
 
 	-- local vm = hsm or hsp
 
 	-- eyeangs = eyeangs + (eyeangs - vm:GetAngles())
 
-	dir = LerpVector(delta, eyeangs:Forward(), dir:GetNormalized())
-
 	pdiff = Lerp(delta, pdiff, 0)
 
-	
+	dir = LerpVector(delta, eyeangs:Forward(), dir:GetNormalized())
 
 	local vmscale = (self.Attachments[asight.Slot] or {}).VMScale or Vector(1, 1, 1)
 
@@ -686,7 +688,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 			-- local sx = -(sw - ScrW()) / 2
 			-- local sy = -(sh - ScrH()) / 2
 
-			local cpos = self:GetOwner():EyePos() + ((EyeAngles() + (self:GetOurViewPunchAngles() * 0.5)):Forward() * 2048)
+			local cpos = self:GetOwner():EyePos() + ((EyeAngles() + recAng):Forward() * 2048)
 
 			cpos:Rotate(Angle(0, -ArcCW.StrafeTilt(self), 0))
 
@@ -694,7 +696,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 			local sx = ts.x - (sw / 2)
 			local sy = ts.y - (sh / 2)
-
+			print(cpos, sx, sy)
 			render.SetMaterial(black)
 			render.DrawScreenQuad()
 
@@ -760,7 +762,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	render.SetStencilPassOperation(STENCIL_DECR)
 	render.SetStencilCompareFunction(STENCIL_EQUAL)
 
-	local hss = size * 32 * math.min(ScrW(), ScrH()) / 800
+	local hss = size * 48 * math.min(ScrW(), ScrH()) / 800
 
 	render.SetStencilEnable(false)
 	render.PushFilterMag(TEXFILTER.ANISOTROPIC)

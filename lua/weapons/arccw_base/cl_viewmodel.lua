@@ -346,7 +346,7 @@ end
 local recoilAng = Angle()
 
 local function recoilMethod(self)
-	recoilAng[1] = self:GetRecoil() * 2
+	recoilAng[1] = self:GetRecoil() * 0.8
 
 	return recoilAng -- self:GetOurViewPunchAngles()
 end
@@ -922,12 +922,16 @@ function SWEP:GetViewModelPosition(pos, ang)
 	end
 
 	--oldang:Add(recoilMethod(self))
-	ang:Sub(recoilMethod(self, true))
+	
 	--pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
 
 	--pos:Add( self.RecoilPunchSide * oldang:Right() )
 	-- upward recoil is terrible on some guns, wtf?
 	--pos:Add( self.RecoilPunchUp   * -oldang:Up() )
+
+	--oldang:Add(recoilMethod(self))
+
+	oldang:Add(recoilMethod(self))
 
 	ang:RotateAroundAxis(oldang:Right(),   actual.ang.x)
 	ang:RotateAroundAxis(oldang:Up(),      actual.ang.y)
@@ -937,7 +941,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 	ang:RotateAroundAxis(oldang:Up(),      actual.evang.y)
 	ang:RotateAroundAxis(oldang:Forward(), actual.evang.z)
 
-	ang:Add(recoilMethod(self, true))
+	ang:Sub(recoilMethod(self))
 
 	pos:Add( ang:Right()   * actual.evpos.x)
 	pos:Add( ang:Forward() * actual.evpos.y)
@@ -946,6 +950,8 @@ function SWEP:GetViewModelPosition(pos, ang)
 	pos:Add( actual.pos.x * ang:Right() )
 	pos:Add( actual.pos.y * ang:Forward() )
 	pos:Add( actual.pos.z * ang:Up() )
+
+	
 
 	pos[3] = pos[3] - actual.down
 
