@@ -29,6 +29,7 @@ function SWEP:EnterSprint()
     -- end
 
     self:SetState(ArcCW.STATE_SPRINT)
+
     self.Sighted = false
     self.Sprinted = true
 
@@ -117,6 +118,8 @@ function SWEP:EnterSights()
     self:SetupActiveSights()
 
     self:SetState(ArcCW.STATE_SIGHTS)
+    self:SetSightTimeChanged(CurTime())
+
     self.Sighted = true
     self.Sprinted = false
 
@@ -146,6 +149,7 @@ function SWEP:ExitSights()
     if self:GetState() ~= ArcCW.STATE_SIGHTS then return end
 
     self:SetState(ArcCW.STATE_IDLE)
+    self:SetSightTimeChanged(CurTime())
 
     if IsFirstTimePredicted() then
         self.LastExitSightTimeUnpred = UnPredictedCurTime()
@@ -220,18 +224,20 @@ function SWEP:GetSprintDelta()
 end
 
 function SWEP:GetSightDelta()
-    local lst = self.LastExitSightTime
+    local in_pred = IsValid(GetPredictionPlayer())
+
+    local lst = in_pred and self:GetSightTimeChanged() or self.LastExitSightTimeUnpred
     local st = self:GetSightTime()
     local minus = 0
 
-    local ct = UnPredictedCurTime()
+    local ct = in_pred and CurTime() or UnPredictedCurTime()
 
     if vrmod and vrmod.IsPlayerInVR(self:GetOwner()) then
         return 0 -- This ensures sights will always draw
     end
 
     if self:GetState() == ArcCW.STATE_SIGHTS then
-        lst = self.LastEnterSightTime
+        lst = not in_pred and self.LastEnterSightTimeUnpred or lst
         minus = 1
 
         if ct - lst >= st then
@@ -267,6 +273,7 @@ function SWEP:SetupActiveSights()
     if !vm or !vm:IsValid() then return end
 
     local kbi = self.KeepBaseIrons or true
+    local bif = self.BaseIronsFirst or true
 
     for i, k in pairs(self.Attachments) do
         if !k.Installed then continue end
@@ -277,6 +284,7 @@ function SWEP:SetupActiveSights()
         if !addsights then continue end
 
         if !k.KeepBaseIrons and !atttbl.KeepBaseIrons then kbi = false end
+        if !k.BaseIronsFirst and !atttbl.BaseIronsFirst then bif = false end
 
         for _, s in pairs(addsights) do
             local stab = table.Copy(s)
@@ -451,7 +459,8 @@ function SWEP:SetupActiveSights()
 
                 evpos = evpos * (k.VMScale or Vector(1, 1, 1))
 
-                if !s.IgnoreExtra then
+                --if !s.IgnoreExtra then
+                if false then -- Always ignore extra. Allow the sight creator to define the distance.
                     evpos = evpos + Vector(0, k.ExtraSightDist or self.ExtraSightDist or 0, 0)
                 end
 
@@ -478,7 +487,12 @@ function SWEP:SetupActiveSights()
     end
 
     if kbi then
-        table.insert(sighttable, table.Copy(self:GetBuff_Override("Override_IronSightStruct") or self.IronSightStruct))
+        local t = table.Copy(self:GetBuff_Override("Override_IronSightStruct") or self.IronSightStruct)
+        if bif then
+            table.insert(sighttable, 1, t)
+        else
+            table.insert(sighttable, t)
+        end
     end
 
     self.SightTable = sighttable
@@ -521,11 +535,15 @@ function SWEP:SwitchActiveSights()
         --self.LastEnterSightTimeUnpred = UnPredictedCurTime()
         self.LastSwitchSightTimeUnpred = UnPredictedCurTime()
         self.SwitchedSightsFrom = presight
-        presight._SwitchPos = presight._CurPos or vector_origin
-        presight._SwitchAng = presight._CurAng or angle_zero
 
-        asight2._SwitchPos = nil
-        asight2._SwitchAng = nil
+        presight._SwitchDat = {
+            presight._CurEVPos and Vector(presight._CurEVPos) or vector_origin,
+            presight._CurEVAng and Angle(presight._CurEVAng) or angle_zero,
+            presight._CurPos and Vector(presight._CurPos) or vector_origin,
+            presight._CurAng and Angle(presight._CurAng) or angle_zero
+        }
+
+        asight2._SwitchDat = nil
     end
 end
 
@@ -535,6 +553,7 @@ function SWEP:GetActiveSights()
     end
 
     if table.Count(self.SightTable) == 0 then
+
         return self.IronSightStruct
     else
         return self.SightTable[self.ActiveSight or 1]

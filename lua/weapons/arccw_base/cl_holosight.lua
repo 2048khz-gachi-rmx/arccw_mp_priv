@@ -45,7 +45,7 @@ function SWEP:DoHolosight()
 		local hsm = asight.HolosightModel
 
 		if !hsp and !hsm then
-			self:SetupActiveSights()
+			--self:SetupActiveSights()
 			return
 		end
 

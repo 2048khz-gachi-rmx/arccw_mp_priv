@@ -757,6 +757,7 @@ function SWEP:SetupDataTables()
     self:NetworkVar("Float", 7, "RecoiledWhen")
 
     self:NetworkVar("Float", 8, "NextIdle")
+    self:NetworkVar("Float", 9, "SightTimeChanged")
 end
 
 function SWEP:OnRestore()

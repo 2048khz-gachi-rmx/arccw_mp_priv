@@ -346,7 +346,7 @@ end
 local recoilAng = Angle()
 
 local function recoilMethod(self)
-	recoilAng[1] = self:GetRecoil() * 0.8
+	recoilAng[1] = self:GetRecoil() * 0.6
 
 	return recoilAng -- self:GetOurViewPunchAngles()
 end
@@ -527,17 +527,26 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 	local inSightTime, outSightTime = t.LastEnterSightTimeUnpred, t.LastExitSightTimeUnpred
 
-	local sighted   = state == ArcCW.STATE_SIGHTS or (UCT - outSightTime) < sightTime
+	local svSightTime = self:GetSightTimeChanged()
+	local sighted   = state == ArcCW.STATE_SIGHTS or (UCT - math.max(outSightTime, svSightTime)) < sightTime
 
-	--[[(t.Sighted or state == ArcCW.STATE_SIGHTS or
-		(UCT - inSightTime) < sightTime)]]
 	local sightedFrac = 0
 	local sightFrom = t.VM_SightsChange
 
 	if sighted then
-		if outSightTime >= inSightTime then
+		local time
+		local outSight = outSightTime >= inSightTime
+
+		if svSightTime > math.max(inSightTime, outSightTime) then -- desynced; use server data
+			time = svSightTime
+			outSight = state ~= ArcCW.STATE_SIGHTS
+		end
+
+		if outSight then
+			time = time or outSightTime
 			sightedFrac = calculateSwitchableFrac(sightFrom, 0, UCT - outSightTime, sightTime)
 		else
+			time = time or inSightTime
 			sightedFrac = calculateSwitchableFrac(sightFrom, 1, UCT - inSightTime, sightTime)
 		end
 	end
@@ -629,9 +638,18 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 			local fromEV, fromAng = vector_origin, angle_zero
 
+			local delta = math.min( sightedFrac,
+				easeOutCubic( (UCT - t.LastSwitchSightTimeUnpred) / sightTime ),
+				1 )
+
+			local sp, sa, sep, sea
+
 			if from then
-				target.pos:Set(from._SwitchPos)
-				target.ang:Set(from._SwitchAng)
+				sep, sea, sp, sa = unpack(from._SwitchDat)
+				target.pos:Set(sp)
+				target.ang:Set(sa)
+				target.evpos:Set(sep)
+				target.evang:Set(sea)
 
 				if from.EVPos then
 					fromEV = from.EVPos
@@ -643,14 +661,13 @@ function SWEP:GetViewModelPosition(pos, ang)
 				target.down = 0
 				target.sway = 0.1
 				target.bob = 0.1
+
+				LerpSource(delta, target.pos, irons.Pos)
+				LerpSource(delta, target.ang, irons.Ang)
+			else
+				LerpSource(sightedFrac, target.pos, irons.Pos)
+				LerpSource(sightedFrac, target.ang, irons.Ang)
 			end
-
-			LerpSource(sightedFrac, target.pos, irons.Pos)
-			LerpSource(sightedFrac, target.ang, irons.Ang)
-
-			local delta = math.min( sightedFrac,
-				easeOutCubic( (UCT - t.LastSwitchSightTimeUnpred) / sightTime ),
-				1 )
 
 			if irons.EVPos then
 				LerpInto(delta, fromEV, irons.EVPos, target.evpos)
@@ -658,15 +675,16 @@ function SWEP:GetViewModelPosition(pos, ang)
 				target.evpos:Set(vector_origin)
 			end
 
-
 			if irons.EVAng then
 				LerpInto(delta, fromAng, irons.EVAng, target.evang)
 			else
 				target.evang:Set(angle_zero)
 			end
 
-			irons._CurPos = target.evpos
-			irons._CurAng = target.evang
+			irons._CurPos = target.pos
+			irons._CurAng = target.ang
+			irons._CurEVPos = target.evpos
+			irons._CurEVAng = target.evang
 
 			target.down  = Lerp(sightedFrac, target.down, 0)
 			target.sway  = Lerp(sightedFrac, target.sway, 0.1)
@@ -943,24 +961,16 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 	ang:Sub(recoilMethod(self))
 
-	pos:Add( ang:Right()   * actual.evpos.x)
-	pos:Add( ang:Forward() * actual.evpos.y)
-	pos:Add( ang:Up()      * actual.evpos.z)
+	pos:Add( oldang:Right()   * actual.evpos.x)
+	pos:Add( oldang:Forward() * actual.evpos.y)
+	pos:Add( oldang:Up()      * actual.evpos.z)
 
 	pos:Add( actual.pos.x * ang:Right() )
 	pos:Add( actual.pos.y * ang:Forward() )
 	pos:Add( actual.pos.z * ang:Up() )
 
-	
 
 	pos[3] = pos[3] - actual.down
-
-	--ang:Sub(recoilMethod(self))
-
-	-- this is the desyncing angle: modifying it here will offset the crosshair from its' intended target
-	--ang = ang - recoilMethod(self) --self:GetOurViewPunchAngles() * Lerp(1 - sightedFrac, -0.5, -3)
-	
-	-- if IsFirstTimePredicted() then
 
 	self.ActualVMData = actual
 	if coolsway then lasteyeangles = LerpAngle(m_min(FT * 100, 1), lasteyeangles, eyeangles) end
