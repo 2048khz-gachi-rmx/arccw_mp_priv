@@ -146,7 +146,8 @@ local function processBind(ply, bind, cmdnum)
         local state = not wep:IsCustomizing()
         if not wep:CanOpenCustomize() then return end
 
-        WritePredictedBit(ArcCW.IN_CUSTOMIZE)
+        SendNet("arccw_togglecustomize", state)
+        --WritePredictedBit(ArcCW.IN_CUSTOMIZE)
         wep:ToggleCustomizeHUD(state)
 
         block = true
