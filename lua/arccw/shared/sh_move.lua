@@ -29,8 +29,7 @@ function ArcCW.Move(ply, mv, cmd)
 
     local blocksprint = false
 
-    if wpn:GetState() == ArcCW.STATE_SIGHTS or
-        wpn:GetState() == ArcCW.STATE_CUSTOMIZE then
+    if wpn:GetState() == ArcCW.STATE_SIGHTS then
         blocksprint = true
         s = s * math.Clamp(wpn:GetBuff("SightedSpeedMult") * wpn:GetBuff_Mult("Mult_SightedMoveSpeed"), 0, 1)
     elseif shottime > 0 then
@@ -172,7 +171,7 @@ function ArcCW.StartCommand(ply, ucmd)
 
         -- Aim towards target
         tgt = ply.ArcCW_AATarget
-        if wep:GetState() ~= ArcCW.STATE_CUSTOMIZE and wep:GetState() ~= ArcCW.STATE_SPRINT and IsValid(tgt) then
+        if wep:GetState() ~= ArcCW.STATE_SPRINT and IsValid(tgt) then
             local ang = ucmd:GetViewAngles()
             local pos = tgt_pos(tgt, head)
             local tgt_ang = (pos - ply:EyePos()):Angle()

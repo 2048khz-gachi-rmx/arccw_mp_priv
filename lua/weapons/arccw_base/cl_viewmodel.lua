@@ -568,7 +568,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 	local holstered = self:GetCurrentFiremode().Mode == 0
 
-	if state == ArcCW.STATE_CUSTOMIZE then
+	if self:IsCustomizing() then
 		target.pos  = Vector()
 		target.ang  = Angle()
 		target.down = 1

@@ -141,15 +141,12 @@ local function processBind(ply, bind, cmdnum)
         end
 
         block = true
-    elseif bind == "inv" and !ply:KeyDown(IN_USE) and GetConVar("arccw_enable_customization"):GetInt() >= 0 then
-        local state = wep:GetState() != ArcCW.STATE_CUSTOMIZE
+    elseif bind == "inv" and !ply:KeyDown(IN_USE) and
+        GetConVar("arccw_enable_customization"):GetInt() >= 0 and not pred then
+        local state = not wep:IsCustomizing()
         if not wep:CanOpenCustomize() then return end
 
-        if not pred then
-            --SendNet("arccw_togglecustomize", state)
-            WritePredictedBit(ArcCW.IN_CUSTOMIZE)
-        end
-
+        WritePredictedBit(ArcCW.IN_CUSTOMIZE)
         wep:ToggleCustomizeHUD(state)
 
         block = true

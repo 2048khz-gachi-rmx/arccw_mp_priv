@@ -244,7 +244,7 @@ function SWEP:CreateCustomize2HUD()
         end
 
         if first then
-            if self:GetState() == ArcCW.STATE_CUSTOMIZE and !ArcCW.Inv_Hidden then
+            if self:IsCustomizing() and !ArcCW.Inv_Hidden then
                 ArcCW.Inv_Fade = math.Approach(ArcCW.Inv_Fade, 1, FrameTime() * 5)
                 if !vgui.CursorVisible() then
                     gui.EnableScreenClicker(true)
@@ -269,7 +269,7 @@ function SWEP:CreateCustomize2HUD()
         if !IsValid(self) then
             ArcCW.RememberCursor()
             gui.EnableScreenClicker(false)
-            ArcCW.InvHUD:Remove()
+            self2:Remove()
             return
         end
 
@@ -298,7 +298,7 @@ function SWEP:CreateCustomize2HUD()
     ArcCW.InvHUD.ActiveWeapon = self
     ArcCW.InvHUD.OnRemove = function()
         local close = false
-        if self:IsValid() and self:GetState() == ArcCW.STATE_CUSTOMIZE then
+        if self:IsValid() and self:IsCustomizing() then
             close = true
         end
 

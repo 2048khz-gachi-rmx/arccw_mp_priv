@@ -813,6 +813,16 @@ function SWEP:SetState(v)
     self:SetNWState(v)
 end
 
+function SWEP:IsCustomizing()
+    if CLIENT then return self.ArcCW_Customizing end
+    return self:GetState() == ArcCW.STATE_CUSTOMIZE
+end
+
+function SWEP:SetCustomizing(b)
+    if CLIENT then self.ArcCW_Customizing = b end
+    return self:SetState(b and ArcCW.STATE_CUSTOMIZE or ArcCW.STATE_IDLE)
+end
+
 function SWEP:GetState(v)
     if !game.SinglePlayer() and CLIENT then self.State = v end
 end

@@ -49,14 +49,16 @@ end
 
 function SWEP:CanOpenCustomize()
     return self:GetState() ~= ArcCW.STATE_SPRINT and
-        (self:GetNextPrimaryFire() + (CLIENT and 0.2 or 0.1)) < CurTime() and
+        self:GetNextPrimaryFire() + 0.1 < CurTime() and
         not self:GetReloading() and
         (self:GetOwner():IsPlayer() and not self:GetOwner():KeyDown(IN_SPEED))
 end
 
 function SWEP:ToggleCustomizeHUD(ic)
     if ic then
-        if not self:CanOpenCustomize() then print("can't open customize", Realm()) return end
+        if not self:CanOpenCustomize() then print('cant', Realm()) return end
+
+        self:SetCustomizing(true)
         self:SetState(ArcCW.STATE_CUSTOMIZE)
 
         self:ExitSights()
@@ -68,6 +70,7 @@ function SWEP:ToggleCustomizeHUD(ic)
             self:OpenCustomizeHUD()
         end
     else
+        self:SetCustomizing(false)
         self:SetState(ArcCW.STATE_IDLE)
 
         self.Sighted = false

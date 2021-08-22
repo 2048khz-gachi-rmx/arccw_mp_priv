@@ -230,8 +230,12 @@ function SWEP:Think()
 
     self:DoHeat()
 
-    if CLIENT and IsValid(ArcCW.InvHUD) then
-        ArcCW.InvHUD:PredThink()
+    if CLIENT then
+        if IsValid(ArcCW.InvHUD) then
+            ArcCW.InvHUD:PredThink()
+        elseif IsFirstTimePredicted() and self:IsCustomizing() then
+            self:OpenCustomizeHUD()
+        end
     end
 
     -- if CLIENT then

@@ -283,7 +283,7 @@ function SWEP:PlayIdleAnimation(pred)
         ianim = self:SelectAnimation("idle_sight") or self:SelectAnimation("idle_sights") or ianim
     end
 
-    if self:GetState() == ArcCW.STATE_CUSTOMIZE then
+    if self:IsCustomizing() then
         ianim = self:SelectAnimation("idle_inspect") or ianim
     end
 
