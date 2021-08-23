@@ -18,6 +18,8 @@ SWEP.LastExitSightTimeUnpred = 0
 SWEP.LastExitSightTime = 0 -- huh?
 SWEP.LastEnterSightTime = 0
 
+SWEP.LastSwitchSightTimeUnpred = 0
+
 function SWEP:EnterSprint()
     if engine.ActiveGamemode() == "terrortown" and !(TTT2 and self:GetOwner().isSprinting) then return end
     if self:GetState() == ArcCW.STATE_SPRINT then return end
