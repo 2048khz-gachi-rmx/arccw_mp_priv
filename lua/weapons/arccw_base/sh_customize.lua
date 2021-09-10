@@ -289,6 +289,8 @@ local activeslot = nil
 SWEP.InAttMenu = false
 
 function SWEP:CreateCustomizeHUD()
+    do return end -- you do NOT exiST
+    
     local barsize = ScreenScaleMulti(160)
     local airgap = ScreenScaleMulti(16)
     local smallgap = ScreenScaleMulti(2)

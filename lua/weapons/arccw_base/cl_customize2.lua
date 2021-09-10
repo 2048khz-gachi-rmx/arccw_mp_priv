@@ -189,6 +189,7 @@ function SWEP:CreateCustomize2HUD()
         scrh = 768
     end
 
+    if IsValid(ArcCW.InvHUD) then ArcCW.InvHUD:Remove() end
     ArcCW.InvHUD = vgui.Create("DFrame")
 
     local scrwmult = GetConVar("arccw_hud_deadzone_x"):GetFloat() * scrw
@@ -298,13 +299,13 @@ function SWEP:CreateCustomize2HUD()
         --col_info = Color(75, 75, 255, 255 * ArcCW.Inv_Fade)
     end
     ArcCW.InvHUD.ActiveWeapon = self
-    ArcCW.InvHUD.OnRemove = function()
+    ArcCW.InvHUD.OnRemove = function(me)
         local close = false
         if self:IsValid() and self:IsCustomizing() then
             close = true
         end
 
-        if LocalPlayer():GetActiveWeapon() != ArcCW.InvHUD.ActiveWeapon then
+        if LocalPlayer():GetActiveWeapon() != me.ActiveWeapon then
             close = true
         end
 

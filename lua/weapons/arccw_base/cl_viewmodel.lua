@@ -39,6 +39,7 @@ SWEP.VelocityLastDiff = 0
 SWEP.Breath_Intensity = 1
 SWEP.Breath_Rate = 1
 
+
 local coolswayCT = 0
 local function LerpC(t,a,b,powa)
 
@@ -940,8 +941,8 @@ function SWEP:GetViewModelPosition(pos, ang)
 	end
 
 	--oldang:Add(recoilMethod(self))
-	
-	--pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
+
+	pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
 
 	--pos:Add( self.RecoilPunchSide * oldang:Right() )
 	-- upward recoil is terrible on some guns, wtf?
