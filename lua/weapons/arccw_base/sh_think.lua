@@ -233,8 +233,8 @@ function SWEP:Think()
     if CLIENT then
         if IsValid(ArcCW.InvHUD) then
             ArcCW.InvHUD:PredThink()
-        elseif IsFirstTimePredicted() and self:IsCustomizing() then
-            self:OpenCustomizeHUD()
+        -- elseif IsFirstTimePredicted() and self:IsCustomizing() then
+        --    self:OpenCustomizeHUD()
         end
     end
 

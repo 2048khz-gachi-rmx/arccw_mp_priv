@@ -240,7 +240,12 @@ function SWEP:OpenCustomizeHUD()
             ArcCW.InvHUD:Show()
             -- ArcCW.InvHUD:RequestFocus()
         else
-            if GetConVar("arccw_dev_cust2beta"):GetBool() then self:CreateCustomize2HUD() else self:CreateCustomizeHUD() end
+            if GetConVar("arccw_dev_cust2beta"):GetBool() then
+                self:CreateCustomize2HUD()
+            else
+                self:CreateCustomizeHUD()
+            end
+
             gui.SetMousePos(ScrW() / 2, ScrH() / 2)
         end
 
@@ -278,7 +283,9 @@ function SWEP:CloseCustomizeHUD( hide )
             gui.EnableScreenClicker(false)
         end
 
-        if GetConVar("arccw_cust_sounds"):GetBool() then surface.PlaySound("weapons/arccw/extra2.wav") end
+        if GetConVar("arccw_cust_sounds"):GetBool() then
+            surface.PlaySound("weapons/arccw/extra2.wav")
+        end
     end
 end
 
