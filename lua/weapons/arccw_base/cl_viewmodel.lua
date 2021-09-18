@@ -258,10 +258,6 @@ local function easeOutCubic(x)
 	return 1 - (1 - x) ^ 3
 end
 
-local function easeOutCirc(x)
-	return math.sqrt(1 - ((x - 1) ^ 2))
-end
-
 -- touch:
 
 -- if true, this will use SightTime for determining recovery speeds

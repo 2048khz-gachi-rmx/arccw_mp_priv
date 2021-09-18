@@ -130,6 +130,24 @@ function SWEP:GetBuff_Stat(buff, slot)
     end
 end
 
+local SHARED_DATA = {}
+
+local frs = {}
+local fn = CLIENT and FrameNumber() or 0
+
+if CLIENT then
+    hook.Add("Think", "a", function()
+        fn = FrameNumber()
+
+        if frs[fn - 5] and frs[fn - 5] > 10 then
+            print("called hook", frs[fn - 5])
+        end
+
+        frs[fn - 5] = nil
+        frs[fn] = 0
+    end)
+end
+
 function SWEP:GetBuff_Hook(buff, data)
     -- call through hook function, args = data. return nil to do nothing. return false to prevent thing from happening.
 
@@ -152,7 +170,7 @@ function SWEP:GetBuff_Hook(buff, data)
             end
         end
 
-        --data = hook.Call(buff, ArcCW, self, data) or data
+        data = hook.Call(buff, ArcCW, self, data) or data
 
         return data
     else
@@ -245,6 +263,7 @@ function SWEP:GetBuff_Hook(buff, data)
     end
 
     data = hook.Call(buff, nil, self, data) or data
+    Inventory.DoBuffHook(self, buff, data)
 
     return data
 end
@@ -258,17 +277,15 @@ function SWEP:GetBuff_Override(buff, default)
         current = self.TickCache_Overrides[buff][1]
         winningslot = self.TickCache_Overrides[buff][2]
 
-        local data = {
-            buff = buff,
-            current = current,
-            winningslot = winningslot
-        }
-
         if !ArcCW.BuffStack then
+
+            SHARED_DATA.buff = buff
+            SHARED_DATA.current = current
+            SHARED_DATA.winningslot = winningslot
 
             ArcCW.BuffStack = true
 
-            local out = (self:GetBuff_Hook("O_Hook_" .. buff, data) or {})
+            local out = (self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA) or {})
 
             current = out.current or current
             winningslot = out.winningslot or winningslot
@@ -369,17 +386,14 @@ function SWEP:GetBuff_Override(buff, default)
         current = true
     end
 
-    local data = {
-        buff = buff,
-        current = current,
-        winningslot = winningslot
-    }
-
     if !ArcCW.BuffStack then
+        SHARED_DATA.buff = buff
+        SHARED_DATA.current = current
+        SHARED_DATA.winningslot = winningslot
 
         ArcCW.BuffStack = true
 
-        current = (self:GetBuff_Hook("O_Hook_" .. buff, data) or {}).current or current
+        current = (self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA) or {}).current or current
 
         ArcCW.BuffStack = false
 
@@ -394,19 +408,18 @@ end
 
 function SWEP:GetBuff_Mult(buff)
     local mult = 1
+    local tbl = self:GetTable()
 
-    if self.TickCache_Mults[buff] then
-        mult = self.TickCache_Mults[buff]
-        local data = {
-            buff = buff,
-            mult = mult
-        }
+    if tbl.TickCache_Mults[buff] then
+        mult = tbl.TickCache_Mults[buff]
 
         if !ArcCW.BuffStack then
+            SHARED_DATA.buff = buff
+            SHARED_DATA.mult = mult
 
             ArcCW.BuffStack = true
 
-            mult = (self:GetBuff_Hook("M_Hook_" .. buff, data) or {}).mult or mult
+            mult = (self:GetBuff_Hook("M_Hook_" .. buff, SHARED_DATA) or {}).mult or mult
 
             ArcCW.BuffStack = false
 
@@ -419,7 +432,7 @@ function SWEP:GetBuff_Mult(buff)
         return mult
     end
 
-    for i, k in pairs(self.Attachments) do
+    for i, k in pairs(tbl.Attachments) do
         if !k.Installed then continue end
 
         local atttbl = ArcCW.AttachmentTable[k.Installed]
@@ -439,19 +452,24 @@ function SWEP:GetBuff_Mult(buff)
         mult = mult * cfm[buff]
     end
 
-    if self:GetTable()[buff] then
-        mult = mult * self:GetTable()[buff]
+    if tbl[buff] then
+        mult = mult * tbl[buff]
     end
 
     for i, e in pairs(self:GetActiveElements()) do
-        local ele = self.AttachmentElements[e]
+        local ele = tbl.AttachmentElements[e]
 
         if ele and ele[buff] then
             mult = mult * ele[buff]
         end
     end
 
-    self.TickCache_Mults[buff] = mult
+    if Inventory then
+        local invbuff = Inventory.DoBuffMult(self, buff, mult)
+        if invbuff then mult = mult * invbuff end
+    end
+
+    tbl.TickCache_Mults[buff] = mult
 
     if ArcCW.ConVar_BuffMults[buff] then
         mult = mult * GetConVar(ArcCW.ConVar_BuffMults[buff]):GetFloat()
@@ -477,9 +495,10 @@ end
 
 function SWEP:GetBuff_Add(buff)
     local add = 0
+    local tbl = self:GetTable()
 
-    if self.TickCache_Adds[buff] then
-        add = self.TickCache_Adds[buff]
+    if tbl.TickCache_Adds[buff] then
+        add = tbl.TickCache_Adds[buff]
 
         local data = {
             buff = buff,
@@ -503,7 +522,7 @@ function SWEP:GetBuff_Add(buff)
         return add
     end
 
-    for i, k in pairs(self.Attachments) do
+    for i, k in pairs(tbl.Attachments) do
         if !k.Installed then continue end
 
         local atttbl = ArcCW.AttachmentTable[k.Installed]
@@ -524,14 +543,19 @@ function SWEP:GetBuff_Add(buff)
     end
 
     for i, e in pairs(self:GetActiveElements()) do
-        local ele = self.AttachmentElements[e]
+        local ele = tbl.AttachmentElements[e]
 
         if ele and ele[buff] then
             add = add + ele[buff]
         end
     end
 
-    self.TickCache_Adds[buff] = add
+    if Inventory then
+        local invbuff = Inventory.DoBuffAdd(self, buff, add)
+        if invbuff then add = add + invbuff end
+    end
+
+    tbl.TickCache_Adds[buff] = add
 
     if ArcCW.ConVar_BuffAdds[buff] then
         add = add + GetConVar(ArcCW.ConVar_BuffAdds[buff]):GetFloat()

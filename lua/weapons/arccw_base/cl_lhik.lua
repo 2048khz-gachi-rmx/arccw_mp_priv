@@ -14,6 +14,8 @@ SWEP.LHIKAnimationTime = 0
 SWEP.LHIKCamAng = Angle(0, 0, 0)
 SWEP.LHIKGunAng = Angle(0, 0, 0)
 
+SHARED_VEC = Vector()
+
 function SWEP:DoLHIKAnimation(key, time)
     local lhik_model
     local LHIK_GunDriver
@@ -84,6 +86,21 @@ SWEP.LHIKDeltaAng = {}
 SWEP.ViewModel_Hit = Vector(0, 0, 0)
 SWEP.Customize_Hide = 0
 
+local SHARED_MATRIX = Matrix()
+local f_lerp   = Lerp
+
+local function LerpSource(dlt, from, to)
+    from[1] = f_lerp(dlt, from[1], to[1])
+    from[2] = f_lerp(dlt, from[2], to[2])
+    from[3] = f_lerp(dlt, from[3], to[3])
+end
+
+local function LerpInto(dlt, from, to, into)
+    into[1] = f_lerp(dlt, from[1], to[1])
+    into[2] = f_lerp(dlt, from[2], to[2])
+    into[3] = f_lerp(dlt, from[3], to[3])
+end
+
 function SWEP:GetLHIKAnim()
     local cyc = (UnPredictedCurTime() - self.LHIKAnimationStart) / self.LHIKAnimationTime
 
@@ -100,16 +117,16 @@ function SWEP:DoLHIK()
     local delta = 1
 
     local vm = self:GetOwner():GetViewModel()
-
-    if !self.NoHideLeftHandInCustomization and !self:GetBuff_Override("Override_NoHideLeftHandInCustomization") then
+    local t = self:GetTable()
+    if !t.NoHideLeftHandInCustomization and !self:GetBuff_Override("Override_NoHideLeftHandInCustomization") then
         if self:IsCustomizing() then
-            self.Customize_Hide = math.Approach(self.Customize_Hide, 1, FrameTime() / 0.25)
+            t.Customize_Hide = math.Approach(t.Customize_Hide, 1, FrameTime() / 0.25)
         else
-            self.Customize_Hide = math.Approach(self.Customize_Hide, 0, FrameTime() / 0.25)
+            t.Customize_Hide = math.Approach(t.Customize_Hide, 0, FrameTime() / 0.25)
         end
     end
 
-    for i, k in pairs(self.Attachments) do
+    for i, k in pairs(t.Attachments) do
         if !k.Installed then continue end
         -- local atttbl = ArcCW.AttachmentTable[k.Installed]
 
@@ -126,14 +143,14 @@ function SWEP:DoLHIK()
         end
     end
 
-    if self.LHIKTimeline then
-        local tl = self.LHIKTimeline
+    if t.LHIKTimeline then
+        local tl = t.LHIKTimeline
 
         local stage, next_stage, next_stage_index
 
         for i, k in pairs(tl) do
             if !k or !k.t then continue end
-            if k.t + self.LHIKStartTime > CurTime() then
+            if k.t + t.LHIKStartTime > CurTime() then
                 next_stage_index = i
                 break
             end
@@ -143,17 +160,17 @@ function SWEP:DoLHIK()
             if next_stage_index == 1 then
                 -- we are on the first stage.
                 stage = {t = 0, lhik = 0}
-                next_stage = self.LHIKTimeline[next_stage_index]
+                next_stage = t.LHIKTimeline[next_stage_index]
             else
-                stage = self.LHIKTimeline[next_stage_index - 1]
-                next_stage = self.LHIKTimeline[next_stage_index]
+                stage = t.LHIKTimeline[next_stage_index - 1]
+                next_stage = t.LHIKTimeline[next_stage_index]
             end
         else
-            stage = self.LHIKTimeline[#self.LHIKTimeline]
-            next_stage = {t = self.LHIKEndTime, lhik = self.LHIKTimeline[#self.LHIKTimeline].lhik}
+            stage = t.LHIKTimeline[#t.LHIKTimeline]
+            next_stage = {t = t.LHIKEndTime, lhik = t.LHIKTimeline[#t.LHIKTimeline].lhik}
         end
 
-        local local_time = CurTime() - self.LHIKStartTime
+        local local_time = CurTime() - t.LHIKStartTime
 
         local delta_time = next_stage.t - stage.t
         delta_time = (local_time - stage.t) / delta_time
@@ -232,7 +249,7 @@ function SWEP:DoLHIK()
         delta = 1
     end
 
-    if delta == 1 and self.Customize_Hide > 0 then
+    if delta == 1 and t.Customize_Hide > 0 then
         if !lhik_model or !IsValid(lhik_model) then
             justhide = true
             delta = math.min(self.Customize_Hide, delta)
@@ -256,6 +273,12 @@ function SWEP:DoLHIK()
 
             local newtransform = Matrix()
 
+            --[[
+            local eang = EyeAngles()
+            local wtf = vm_pos - (eang:Up() * 12) - (eang:Forward() * 12) - (eang:Right() * 4)
+            LerpSource(delta, vm_pos, vm_pos + wtf)
+            newtransform:SetTranslation(vm_pos)
+            ]]
             newtransform:SetTranslation(LerpVector(delta, vm_pos, vm_pos - (EyeAngles():Up() * 12) - (EyeAngles():Forward() * 12) - (EyeAngles():Right() * 4)))
             newtransform:SetAngles(vm_ang)
 
@@ -269,10 +292,10 @@ function SWEP:DoLHIK()
 
     if justhide then return end
 
-    local cyc = (UnPredictedCurTime() - self.LHIKAnimationStart) / self.LHIKAnimationTime
+    local cyc = (UnPredictedCurTime() - t.LHIKAnimationStart) / t.LHIKAnimationTime
 
-    if self.LHIKAnimation and cyc < 1 then
-        lhik_model:SetSequence(self.LHIKAnimation)
+    if t.LHIKAnimation and cyc < 1 then
+        lhik_model:SetSequence(t.LHIKAnimation)
         lhik_model:SetCycle(cyc)
     else
         local key = "idle"
@@ -283,7 +306,7 @@ function SWEP:DoLHIK()
 
         self:DoLHIKAnimation(key, 1)
 
-        self.LHIKAnimation_IsIdle = true
+        t.LHIKAnimation_IsIdle = true
     end
 
     local cf_deltapos = Vector(0, 0, 0)
@@ -291,29 +314,47 @@ function SWEP:DoLHIK()
 
     for _, bone in pairs(ArcCW.LHIKBones) do
         local vmbone = vm:LookupBone(bone)
-        local lhikbone = lhik_model:LookupBone(bone)
-
         if !vmbone then continue end
+
+        local lhikbone = lhik_model:LookupBone(bone)
         if !lhikbone then continue end
 
         local vmtransform = vm:GetBoneMatrix(vmbone)
-        local lhiktransform = lhik_model:GetBoneMatrix(lhikbone)
-
         if !vmtransform then continue end
+
+        local lhiktransform = lhik_model:GetBoneMatrix(lhikbone)
         if !lhiktransform then continue end
 
-        local vm_pos = vmtransform:GetTranslation()
-        local vm_ang = vmtransform:GetAngles()
+
         local lhik_pos = lhiktransform:GetTranslation()
         local lhik_ang = lhiktransform:GetAngles()
 
-        local newtransform = Matrix()
+        local newtransform = SHARED_MATRIX
+        newtransform:Identity()
 
-        newtransform:SetTranslation(LerpVector(delta, vm_pos, lhik_pos))
-        newtransform:SetAngles(LerpAngle(delta, vm_ang, lhik_ang))
+        local newTransl
 
-        if !self:GetBuff_Override("LHIK_GunDriver") and self.LHIKDelta[lhikbone] and self.LHIKAnimation and cyc < 1 then
-            local deltapos = lhik_model:WorldToLocal(lhik_pos) - self.LHIKDelta[lhikbone]
+        if delta == 1 then
+            -- less GAWWBAGE
+            newtransform:SetTranslation(lhik_pos)
+            newTransl = lhik_pos
+            newtransform:SetAngles(lhik_ang)
+        else
+            local vm_pos = vmtransform:GetTranslation()
+            local vm_ang = vmtransform:GetAngles()
+
+            LerpSource(delta, vm_pos, lhik_pos)
+            vm_ang = LerpAngle(delta, vm_ang, lhik_ang) -- idk how to lerp angles properly :v
+
+            newtransform:SetTranslation(vm_pos)
+            newTransl = vm_pos
+            newtransform:SetAngles(vm_ang)
+        end
+
+        if !self:GetBuff_Override("LHIK_GunDriver") and
+            t.LHIKDelta[lhikbone] and
+            t.LHIKAnimation and cyc < 1 then
+            local deltapos = lhik_model:WorldToLocal(lhik_pos) - t.LHIKDelta[lhikbone]
 
             if !deltapos:IsZero() then
                 cf_deltapos = cf_deltapos + deltapos
@@ -324,13 +365,24 @@ function SWEP:DoLHIK()
         self.LHIKDelta[lhikbone] = lhik_model:WorldToLocal(lhik_pos)
 
         if hide_component then
-            local new_pos = newtransform:GetTranslation()
-            newtransform:SetTranslation(LerpVector(self.Customize_Hide, new_pos, new_pos - (EyeAngles():Up() * 12) - (EyeAngles():Forward() * 12) - (EyeAngles():Right() * 4)))
+            -- EEK WTF IS THIS
+            local new_pos = newTransl
+            local ea = EyeAngles()
+            local eau, eaf, ear = ea:Up(), ea:Forward(), ea:Right()
+            eau:Mul(12) eaf:Mul(12) ear:Mul(12)
+
+            local new = SHARED_VEC
+            new:Set(vector_origin)
+            new:Add(new_pos) new:Sub(eau) new:Sub(eaf) new:Sub(ear)
+
+            LerpSource(self.Customize_Hide,
+                new_pos,
+                new)
+
+            newtransform:SetTranslation(new_pos)
         end
 
-        local matrix = Matrix(newtransform)
-
-        vm:SetBoneMatrix(vmbone, matrix)
+        vm:SetBoneMatrix(vmbone, newtransform)
 
         -- local vm_pos, vm_ang = vm:GetBonePosition(vmbone)
         -- local lhik_pos, lhik_ang = lhik_model:GetBonePosition(lhikbone)
@@ -342,13 +394,17 @@ function SWEP:DoLHIK()
     end
 
     if !cf_deltapos:IsZero() and cf > 0 and self:GetBuff_Override("LHIK_Animation") then
-        local new = Vector(0, 0, 0)
+        local new = SHARED_VEC
         local viewmult = self:GetBuff_Override("LHIK_MovementMult") or 1
+        new:SetUnpacked(
+            cf_deltapos[2],
+            cf_deltapos[1],
+            cf_deltapos[3]
+        )
 
-        new[1] = cf_deltapos[2] * viewmult
-        new[2] = cf_deltapos[1] * viewmult
-        new[3] = cf_deltapos[3] * viewmult
+        new:Mul(viewmult)
+        new:Div(cf)
 
-        self.ViewModel_Hit = LerpVector(0.25, self.ViewModel_Hit, new / cf):GetNormalized()
+        self.ViewModel_Hit = LerpVector(0.25, t.ViewModel_Hit, new):GetNormalized()
     end
 end
