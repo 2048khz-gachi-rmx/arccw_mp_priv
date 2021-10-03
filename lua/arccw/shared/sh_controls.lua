@@ -33,7 +33,6 @@ elseif SERVER then
         local onoff = net.ReadBool()
 
         if !wpn.ArcCW then return end
-        print("server: toggling customize", wpn, onoff)
         wpn:ToggleCustomizeHUD(onoff)
     end)
 end
