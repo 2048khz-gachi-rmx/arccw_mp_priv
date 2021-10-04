@@ -76,9 +76,11 @@ function SWEP:Deploy()
     if SERVER then
         self:SetupShields()
         self:NetworkWeapon()
+        hook.Run("ArcCW_GunDeployed", self, self:GetOwner())
     end
 
     -- self:RefreshBGs()
+    
 
     return true
 end
@@ -358,6 +360,8 @@ function SWEP:Holster(wep)
     end
 
     -- return true
+
+    hook.Run("ArcCW_GunHolstered", self, self:GetOwner())
 
     if !skip then return true end
 
