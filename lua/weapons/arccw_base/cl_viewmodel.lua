@@ -309,8 +309,6 @@ local sharedAngle2 = Angle()
 
 --local b = bench("pp", 1000)
 
--- i didn't forget ;)
-
 local function calcCrouchFrac(t, UCT, sightTime, timeMul, out)
 	local tdelta = 0
 	local tmax = 0

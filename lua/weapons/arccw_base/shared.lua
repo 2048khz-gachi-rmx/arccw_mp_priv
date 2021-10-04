@@ -653,6 +653,11 @@ end
 SWEP.Bodygroups = {} -- [0] = 1, [1] = 0...
 -- SWEP.RegularClipSize = 0
 
+function SWEP:AddDTRestoreHook(state, key, func)
+    self[state .. "_RestoreHooks"] = self[state .. "_RestoreHooks"] or {}
+    self[state .. "_RestoreHooks"][key] = func
+end
+
 if SERVER then
 
 include("sv_npc.lua")
@@ -758,6 +763,8 @@ function SWEP:SetupDataTables()
 
     self:NetworkVar("Float", 8, "NextIdle")
     self:NetworkVar("Float", 9, "SightTimeChanged")
+
+    self._StateChanges = {}
 end
 
 function SWEP:OnRestore()
@@ -810,8 +817,19 @@ function SWEP:GetBurstCount()
     return self:GetBuff_Hook("Hook_GetBurstCount", self:GetBurstCountUM()) or self:GetBurstCountUM() or 0
 end
 
+SWEP._LatestState = 0
+SWEP._LatestStateWhen = 0
+
 function SWEP:SetState(v)
     self:SetNWState(v)
+    if CLIENT then
+        local t = self:GetTable()
+        t._StateChanges[CurTime()] = v
+        if IsFirstTimePredicted() then
+            t._LatestState = v
+            t._LatestStateWhen = CurTime()
+        end
+    end
 end
 
 function SWEP:IsCustomizing()

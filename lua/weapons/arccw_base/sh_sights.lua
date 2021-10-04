@@ -20,32 +20,19 @@ SWEP.LastEnterSightTime = 0
 
 SWEP.LastSwitchSightTimeUnpred = 0
 
-function SWEP:EnterSprint()
-    if engine.ActiveGamemode() == "terrortown" and !(TTT2 and self:GetOwner().isSprinting) then return end
-    if self:GetState() == ArcCW.STATE_SPRINT then return end
-    if self:GetState() == ArcCW.STATE_CUSTOMIZE then return end
-    if self:GetState() == ArcCW.STATE_SIGHTS then return end
-    -- sights beat sprint
-
-    --     self:ExitSights()
-    -- end
-
-    self:SetState(ArcCW.STATE_SPRINT)
-
+function SWEP:_OnEnterSprint(comp)
     self.Sighted = false
     self.Sprinted = true
 
     local ct = CurTime()
-
-    -- self.SwayScale = 1
-    -- self.BobScale = 5
-
     self:SetShouldHoldType()
 
     local s = self:GetBuff_Override("Override_ShootWhileSprint") or self.ShootWhileSprint
 
-    if !s and self:GetNextPrimaryFire() <= ct then
-        self:SetNextPrimaryFire(ct)
+    local npf = self:GetNextPrimaryFire()
+    local newnpf = ct + self:GetSightTime()
+    if !s and npf <= newnpf then
+        self:SetNextPrimaryFire(newnpf)
     end
 
     self.LastEnterSprintTime = CurTime()
@@ -58,12 +45,26 @@ function SWEP:EnterSprint()
 
     local anim = self:SelectAnimation("enter_sprint")
     if anim and !s then
+        newnpf = ct + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime")
         self:PlayAnimation(anim, 1 * self:GetBuff_Mult("Mult_SightTime"), true, nil, false, nil, false, false)
-        --self:SetReloading(ct + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime"))
-        self:SetNextPrimaryFire(ct + self:GetAnimKeyTime(anim) * self:GetBuff_Mult("Mult_SightTime"))
-    --elseif !anim and !s then -- Not needed because ExitSprint handles it properly
-        --self:SetReloading(ct + self:GetSprintTime())
+
+        if npf <= newnpf then
+            self:SetNextPrimaryFire(newnpf)
+        end
     end
+end
+
+SWEP:AddDTRestoreHook(ArcCW.STATE_SPRINT, "SprintCore", SWEP._OnEnterSprint)
+
+function SWEP:EnterSprint()
+    if engine.ActiveGamemode() == "terrortown" and !(TTT2 and self:GetOwner().isSprinting) then return end
+    if self:GetState() == ArcCW.STATE_SPRINT then return end
+    if self:GetState() == ArcCW.STATE_CUSTOMIZE then return end
+    if self:GetState() == ArcCW.STATE_SIGHTS then return end
+
+    
+    self:SetState(ArcCW.STATE_SPRINT)
+    self:_OnEnterSprint()
 end
 
 function SWEP:ExitSprint()
@@ -133,7 +134,7 @@ function SWEP:EnterSights()
 
     if IsFirstTimePredicted() then
         self.LastEnterSightTimeUnpred = UnPredictedCurTime()
-        self.LastSwitchSightTimeUnpred = UnPredictedCurTime()
+        --self.LastSwitchSightTimeUnpred = UnPredictedCurTime()
         self.VM_SightsChange = self.VM_SightsCurrent
     end
 

@@ -7,6 +7,22 @@ local LastAttack2 = false
 
 function SWEP:Think()
     local owner = self:GetOwner()
+    local t = self:GetTable()
+
+    if --[[IsFirstTimePredicted() and]] CLIENT then
+        --print(t._LatestState, CurTime() - t._LatestStateWhen, self:GetNWState())
+        if t._LatestStateWhen < CurTime() and self:GetNWState() ~= t._LatestState then
+            local key = self:GetNWState() .. "_RestoreHooks"
+            -- print("lol state mismatch restoring", t._LatestState, self:GetNWState())
+            if self[key] then
+                for k,v in pairs(self[key]) do
+                    v(self)
+                end
+            end
+
+            self:SetState(self:GetNWState())
+        end
+    end
 
     if !IsValid(owner) or owner:IsNPC() then return end
 
@@ -95,7 +111,6 @@ function SWEP:Think()
             end
         end
     end
-
 
     if self:InSprint(true) and self:GetState() != ArcCW.STATE_SPRINT then
         self:EnterSprint()
