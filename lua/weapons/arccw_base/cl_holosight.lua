@@ -342,9 +342,28 @@ mat_main:SetTexture("$basetexture", main_rt)
 
 hook.Add("OnScreenSizeChanged", "ArcCW_Resize_Scope", function()
 	-- awful
-	mat_BlurX:SetTexture("$basetexture", blur_rt)
-	mat_BlurY:SetTexture("$basetexture", blur_rt)
-	mat_main:SetTexture("$basetexture", main_rt)
+	uid = resStr()
+
+	mat_BlurX = CreateMaterial("ArcCW_BlurX" .. uid, "g_blurx", {
+		["$basetexture"] = rtName .. "_blur",
+		["$size"] = "6",
+		["$ignorez"] = "1",
+		["$additive"] = "1",
+	})
+
+	mat_BlurY = CreateMaterial("ArcCW_BlurY" .. uid, "g_blury", {
+		["$basetexture"] = rtName .. "_blur",
+		["$translucent"] = 1,
+		["$size"] = "6",
+		["$ignorez"] = "1",
+		["$additive"] = "1",
+	})
+
+	mat_main = CreateMaterial("ArcCW_Scope" .. uid, "UnlitGeneric", {
+		["$basetexture"] = rtName,
+		["$translucent"] = 1,
+		["$ignorez"] = 1,
+	})
 end)
 
 local function BlurRenderTarget( rt, sizex, sizey, passes )
