@@ -62,7 +62,20 @@ local function ArcCW_SendBlacklist(ply)
     if SERVER then
         -- Only load if table is empty, bruh
         if table.IsEmpty(ArcCW.AttachmentBlacklistTable) then
-            ArcCW.AttachmentBlacklistTable = util.JSONToTable(file.Read("arccw_blacklist.txt") or "") or {}
+            local all_data = {}
+            for k,v in ipairs(file.Find("arccw_blacklist*.txt", "DATA")) do
+                table.insert(all_data, file.Read(v, "DATA") or "")
+            end
+
+            ArcCW.AttachmentBlacklistTable = {}
+            for k,v in ipairs(all_data) do
+                local t = util.JSONToTable(v) or {}
+
+                for att, _ in pairs(t) do
+                    ArcCW.AttachmentBlacklistTable[att] = true
+                end
+            end
+
             local curcount = table.Count(ArcCW.AttachmentBlacklistTable)
             VerifyBlacklist()
             print("Loaded " .. table.Count(ArcCW.AttachmentBlacklistTable) .. " active (" .. curcount .. " total) blacklisted ArcCW attachments.")
@@ -85,6 +98,10 @@ local function ArcCW_SendBlacklist(ply)
     end
 end
 
+function ArcCW.SetShortName(n)
+    shortname = n
+end
+
 local function ArcCW_LoadAtt(v)
     att = {}
     shortname = string.sub(v, 1, -5)
@@ -102,23 +119,32 @@ local function ArcCW_LoadAtts()
     ArcCW.NumAttachments = 1
     ArcCW.AttachmentBits = nil
 
+
+    for k, v in pairs(file.Find("arccw_all_atts/*", "LUA")) do
+        local b = bench("Loading attachment pack " .. v):Open()
+        include("arccw_all_atts/" .. v)
+        AddCSLuaFile("arccw_all_atts/" .. v)
+        b:Close():print()
+    end
+
+
+    --[[
+    local b = bench("Loading attachments 1 by 1 "):Open()
     for k, v in pairs(file.Find("arccw/shared/attachments/*", "LUA")) do
-        if !pcall(function() ArcCW_LoadAtt(v) end) then
+        if !pcall(ArcCW_LoadAtt, v) then
             print("!!!! Attachment " .. v .. " has errors!")
         end
     end
+    b:Close():print()
+    ]]
+
 
     print("Loaded " .. tostring(ArcCW.NumAttachments) .. " ArcCW attachments.")
 
     if !game.SinglePlayer() then
         ArcCW_SendBlacklist()
     else
-        -- Simply read the file and do no networking, since both client/server has access to it
-        ArcCW.AttachmentBlacklistTable = util.JSONToTable(file.Read("arccw_blacklist.txt") or "") or {}
-        for i, v in pairs(ArcCW.AttachmentTable) do
-            v.Blacklisted = ArcCW.AttachmentBlacklistTable[i]
-        end
-        print("Loaded blacklist with " .. table.Count(ArcCW.AttachmentBlacklistTable) .. " attachments.")
+        error("lol dont use in sp")
     end
 
     hook.Run("ArcCW_PostLoadAtts")
@@ -197,7 +223,7 @@ elseif SERVER then
 
             ArcCW_SendBlacklist(ply)
             return
-        elseif !isRequest and !ply:IsAdmin() then
+        elseif !isRequest and !ply:IsSuperAdmin() then
             return
         end
 
@@ -214,8 +240,8 @@ elseif SERVER then
         for i, k in pairs(ArcCW.AttachmentTable) do
             k.Blacklisted = ArcCW.AttachmentBlacklistTable[i] or false
         end
-        print("Received blacklist with " .. table.Count(ArcCW.AttachmentBlacklistTable) .. " attachments.")
-        file.Write("arccw_blacklist.txt", util.TableToJSON(ArcCW.AttachmentBlacklistTable))
+
+        file.Write("arccw_blacklist" .. Settings.Get("ServerID", "UNKNOWN_ID") .. ".txt", util.TableToJSON(ArcCW.AttachmentBlacklistTable))
         ArcCW_SendBlacklist()
     end)
 end
