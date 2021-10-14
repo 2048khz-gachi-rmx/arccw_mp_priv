@@ -1,3 +1,5 @@
+local Material = ArcCW.AttachmentMat
+
 ------
 -- gsoe_extra_fcg_smartburst.lua
 ------

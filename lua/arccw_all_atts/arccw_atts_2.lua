@@ -1,3 +1,5 @@
+local Material = ArcCW.AttachmentMat
+
 ------
 -- dmi_mac10_sil.lua
 ------

@@ -1,3 +1,5 @@
+local Material = ArcCW.AttachmentMat
+
 ------
 -- acoggers.lua
 ------

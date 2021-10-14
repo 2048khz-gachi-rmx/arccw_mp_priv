@@ -1,3 +1,5 @@
+local Material = ArcCW.AttachmentMat
+
 ------
 -- go_glock_mag_26_45acp.lua
 ------

@@ -112,6 +112,10 @@ local function ArcCW_LoadAtt(v)
     ArcCW.LoadAttachmentType(att)
 end
 
+function ArcCW.AttachmentMat(path, flags)
+    if CLIENT then return Material(path, flags) end
+end
+
 local function ArcCW_LoadAtts()
     ArcCW.AttachmentTable = {}
     ArcCW.AttachmentIDTable = {}
@@ -119,16 +123,18 @@ local function ArcCW_LoadAtts()
     ArcCW.NumAttachments = 1
     ArcCW.AttachmentBits = nil
 
+    local all = bench("AllAttachments"):Open()
+    local files = file.Find("arccw_all_atts/*", "LUA")
 
-    for k, v in pairs(file.Find("arccw_all_atts/*", "LUA")) do
+    for k, v in pairs(files) do
         local b = bench("Loading attachment pack " .. v):Open()
         include("arccw_all_atts/" .. v)
         AddCSLuaFile("arccw_all_atts/" .. v)
         b:Close():print()
     end
 
+    all:Close():print()
 
-    --[[
     local b = bench("Loading attachments 1 by 1 "):Open()
     for k, v in pairs(file.Find("arccw/shared/attachments/*", "LUA")) do
         if !pcall(ArcCW_LoadAtt, v) then
@@ -136,7 +142,7 @@ local function ArcCW_LoadAtts()
         end
     end
     b:Close():print()
-    ]]
+
 
 
     print("Loaded " .. tostring(ArcCW.NumAttachments) .. " ArcCW attachments.")

@@ -1,3 +1,5 @@
+local Material = ArcCW.AttachmentMat
+
 ------
 -- go_ammo_sg_dragon.lua
 ------

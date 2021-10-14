@@ -1,3 +1,5 @@
+local Material = ArcCW.AttachmentMat
+
 ------
 -- mw2_ubgl_masterkey.lua
 ------
