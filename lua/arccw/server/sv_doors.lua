@@ -1,6 +1,6 @@
 function ArcCW.DoorBust(ent, vel)
-    local cvar = GetConVar("arccw_doorbust"):GetInt()
-    local t = GetConVar("arccw_doorbust_time"):GetFloat()
+    local cvar = (ArcCW.DoorBustEnabled ~= nil and ArcCW.DoorBustEnabled) or GetConVar("arccw_doorbust"):GetInt()
+    local t = (ArcCW.DoorBustTime ~= nil and ArcCW.DoorBustTime) or GetConVar("arccw_doorbust_time"):GetFloat()
     if cvar == 0 or ent.ArcCW_DoorBusted then return end
     ent.ArcCW_DoorBusted = true
 
