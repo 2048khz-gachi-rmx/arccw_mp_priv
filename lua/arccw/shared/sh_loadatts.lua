@@ -135,13 +135,13 @@ local function ArcCW_LoadAtts()
 
     all:Close():print()
 
-    local b = bench("Loading attachments 1 by 1 "):Open()
+    --[[local b = bench("Loading attachments 1 by 1 "):Open()
     for k, v in pairs(file.Find("arccw/shared/attachments/*", "LUA")) do
         if !pcall(ArcCW_LoadAtt, v) then
             print("!!!! Attachment " .. v .. " has errors!")
         end
     end
-    b:Close():print()
+    b:Close():print()]]
 
 
 
