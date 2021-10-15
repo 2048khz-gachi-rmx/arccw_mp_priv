@@ -130,24 +130,6 @@ function SWEP:GetBuff_Stat(buff, slot)
     end
 end
 
-local SHARED_DATA = {}
-
-local frs = {}
-local fn = CLIENT and FrameNumber() or 0
-
-if CLIENT then
-    hook.Add("Think", "a", function()
-        fn = FrameNumber()
-
-        if frs[fn - 5] and frs[fn - 5] > 10 then
-            print("called hook", frs[fn - 5])
-        end
-
-        frs[fn - 5] = nil
-        frs[fn] = 0
-    end)
-end
-
 function SWEP:GetBuff_Hook(buff, data)
     -- call through hook function, args = data. return nil to do nothing. return false to prevent thing from happening.
 
