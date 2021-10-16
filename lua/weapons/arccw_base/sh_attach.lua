@@ -130,6 +130,8 @@ function SWEP:GetBuff_Stat(buff, slot)
     end
 end
 
+local SHARED_DATA = {}
+
 function SWEP:GetBuff_Hook(buff, data)
     -- call through hook function, args = data. return nil to do nothing. return false to prevent thing from happening.
 
