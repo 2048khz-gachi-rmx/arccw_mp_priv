@@ -50,7 +50,11 @@ function ArcCW.DoorBust(ent, vel)
 end
 
 function ArcCW.TryBustDoor(ent, dmginfo)
-    if GetConVar("arccw_doorbust"):GetInt() == 0 or !IsValid(ent) or !string.find(ent:GetClass(), "door") then return end
+    local cvar = (ArcCW.DoorBustEnabled ~= nil and ArcCW.DoorBustEnabled) or GetConVar("arccw_doorbust"):GetInt()
+    if cvar == 0 or !IsValid(ent) or !string.find(ent:GetClass(), "door") then
+        return
+    end
+
     local wep = IsValid(dmginfo:GetAttacker()) and ((dmginfo:GetInflictor():IsWeapon() and dmginfo:GetInflictor()) or dmginfo:GetAttacker():GetActiveWeapon())
     if !wep or !wep:IsWeapon() or !wep.ArcCW or !dmginfo:IsDamageType(DMG_BUCKSHOT) then return end
     if ent:GetNoDraw() or ent.ArcCW_NoBust or ent.ArcCW_DoorBusted then return end
