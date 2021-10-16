@@ -78,56 +78,74 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity)
 
 end
 
-local stepend = math.pi*4
+local stepend = math.pi * 266
+local time = 0
+
 function SWEP:Step_Process(EyePos,EyeAng, velocity)
-	local CT = CurTime()
-	if CT > coolswayCT then
-		coolswayCT = CT
-	else
-		return
-	end
 
 	local VMPos, VMAng = self.VMPos, self.VMAng
 	local VMPosOffset, VMAngOffset = self.VMPosOffset, self.VMAngOffset
 	local VMPosOffset_Lerp, VMAngOffset_Lerp = self.VMPosOffset_Lerp, self.VMAngOffset_Lerp
+
 	velocity = math.min(velocity:Length(), 500)
 	if self:GetState() == ArcCW.STATE_SPRINT then
 		velocity = velocity * 1.25
 	end
-	local delta = math.abs(self.StepBob*2/(stepend)-1)
-	local FT = (game.SinglePlayer() and FrameTime()) or RealFrameTime()*2
-	local FTMult = 300 * FT
+
+	--[[local FT = RealFrameTime()
+	local FTMult = 0.15 * FT]]
+
+	local freq = math.pi * 3
+
 	local sightedmult = (self:GetState() == ArcCW.STATE_SIGHTS and 0.25) or 1
-	local sprintmult = (self:GetState() == ArcCW.STATE_SPRINT and 2) or 1
+	local in_sprint = (self:GetState() == ArcCW.STATE_SPRINT and 1) or 0
+
+	local sprint_freqmult = in_sprint * 0.7 + 1
+	local sprint_posmult = in_sprint * 1.5 + 1
+	local sprint_angmult = in_sprint * 30 + 1
+
 	local onground = self:GetOwner():OnGround()
-	self.StepBob = self.StepBob + (velocity * 0.00015 + (math.pow(delta, 0.01)*0.03)) * swayspeed * (FTMult)
+	local firstPred = IsFirstTimePredicted()
 
-	if self.StepBob >= stepend then
-		self.StepBob = 0
-		self.StepRandomX = 1 --math.Rand(1,1.5)
-		self.StepRandomY = 1 --math.Rand(1,1.5)
+	if firstPred then
+		time = time + FrameTime() * freq * sprint_freqmult
+		self.StepBob = time % stepend --self.StepBob + (velocity * 0.00015 + (delta * 0.03)) * swayspeed -- * (FTMult)
+
+		local sb = self.StepBob
+		time = sb
+
+		if sb >= stepend then
+			self.StepBob = sb % stepend
+			self.StepRandomX = 1 --math.Rand(1,1.25)
+			self.StepRandomY = 1 --math.Rand(1,1.25)
+		end
+
+		if velocity == 0 then
+			sb = 0
+		end
+
 	end
 
-	if velocity == 0 then
-		self.StepBob = 0
-	end
+	local sb = self.StepBob
+	
 
 	if onground then
-		VMPosOffset.x = (math.sin(self.StepBob) * velocity * 0.000375 * sightedmult * swayxmult) * self.StepRandomX
-		VMPosOffset.y = (math.sin(self.StepBob * 0.5) * velocity * 0.0005 * sightedmult * sprintmult * swayymult) * self.StepRandomY
-		VMPosOffset.z = math.sin(self.StepBob * 0.75) * velocity * 0.002 * sightedmult * swayzmult
+		VMPosOffset.x = (math.sin(sb) * velocity * 0.0005 * sightedmult * swayxmult * sprint_posmult) * self.StepRandomX
+		VMPosOffset.y = (math.cos(sb * 0.5) * velocity * 0.0003 * sightedmult  * swayymult / sprint_posmult) * self.StepRandomY
+		VMPosOffset.z = math.sin(sb * 0.75) * velocity * 0.001 * sightedmult * swayzmult
 	end
 
-	local firstPred = IsFirstTimePredicted()
-	if firstPred then
-		VMPosOffset_Lerp.x = Lerp(16*FT, VMPosOffset_Lerp.x, VMPosOffset.x)
-		VMPosOffset_Lerp.y = Lerp(4*FT, VMPosOffset_Lerp.y, VMPosOffset.y)
-		VMPosOffset_Lerp.z = Lerp(2*FT, VMPosOffset_Lerp.z, VMPosOffset.z)
-	end
 
-	VMAngOffset.x = VMPosOffset_Lerp.x * 2
-	VMAngOffset.y = VMPosOffset_Lerp.y * -7.5
-	VMAngOffset.z = VMPosOffset_Lerp.y * 5
+	VMPosOffset_Lerp:Add(VMPosOffset)
+
+	--[[VMPosOffset_Lerp.x = Lerp(16*FT, VMPosOffset_Lerp.x, VMPosOffset.x)
+	VMPosOffset_Lerp.y = Lerp(4*FT, VMPosOffset_Lerp.y, VMPosOffset.y)
+	VMPosOffset_Lerp.z = Lerp(2*FT, VMPosOffset_Lerp.z, VMPosOffset.z)]]
+
+
+	VMAngOffset.x = VMPosOffset.x / 2 -- vertical
+	VMAngOffset.y = VMPosOffset.y * -7.5 / 5 * sprint_angmult -- horizontal
+	VMAngOffset.z = VMPosOffset.y * 5 -- tilt
 
 
 	VMPos:Add(VMAng:Up() * VMPosOffset_Lerp.x)
@@ -135,6 +153,8 @@ function SWEP:Step_Process(EyePos,EyeAng, velocity)
 	VMPos:Add(VMAng:Forward() * VMPosOffset_Lerp.z)
 
 	VMAng:Add(VMAngOffset)
+
+	VMPosOffset_Lerp:Sub(VMPosOffset)
 end
 
 function SWEP:Breath_Health()
