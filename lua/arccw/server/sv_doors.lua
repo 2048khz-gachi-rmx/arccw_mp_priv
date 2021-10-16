@@ -79,7 +79,14 @@ function ArcCW.TryBustDoor(ent, dmginfo)
         ent.ArcCW_BustCurTime = nil
         ent.ArcCW_BustDamage = nil
     end
-    ArcCW.DoorBust(ent, dmginfo:GetDamageForce() * 0.5)
+
+    local force = dmginfo:GetDamageForce()
+    local dist = force:Length()
+    force:Normalize()
+
+    force:Mul(math.Clamp(dist, 50, 100))
+
+    ArcCW.DoorBust(ent, force)
     -- Double doors are usually linked to the same areaportal. We must destroy the second half of the double door no matter what
     for _, otherDoor in pairs(ents.FindInSphere(ent:GetPos(), 64)) do
         if ent != otherDoor and otherDoor:GetClass() == ent:GetClass() and !otherDoor:GetNoDraw() then

@@ -128,7 +128,7 @@ function SWEP:Step_Process(EyePos,EyeAng, velocity)
 
 	local sb = self.StepBob
 	
-
+	VMPosOffset:Zero()
 	if onground then
 		VMPosOffset.x = (math.sin(sb) * velocity * 0.0005 * sightedmult * swayxmult * sprint_posmult) * self.StepRandomX
 		VMPosOffset.y = (math.cos(sb * 0.5) * velocity * 0.0003 * sightedmult  * swayymult / sprint_posmult) * self.StepRandomY
