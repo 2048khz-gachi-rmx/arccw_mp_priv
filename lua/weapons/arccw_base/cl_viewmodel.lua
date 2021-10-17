@@ -54,27 +54,44 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 	local VMPosOffset, VMAngOffset = t.VMPosOffset, t.VMAngOffset
 	local VMPosOffset_Lerp, VMAngOffset_Lerp = t.VMPosOffset_Lerp, t.VMAngOffset_Lerp
 	local FT = (game.SinglePlayer() and FrameTime()) or RealFrameTime() * 0.5308
+
 	local sightedmult = (self:GetState() == ArcCW.STATE_SIGHTS and 0.1) or 1
 
 	VMPos:Set(EyePos)
 	VMAng:Set(EyeAng)
 
-	local x = loc_vel.z * 0.0015 * sightedmult
-	local y = math.Clamp(velocity.y * -0.004, -1, 1) * sightedmult
+	self._LastVMZ = self._LastVMZ or 0
+	local lvm = self._LastVMZ
+	local mx_vertvel = 700
+	local vvel = loc_vel.z
 
-	VMPosOffset_Lerp.x = Lerp(8*FT, VMPosOffset_Lerp.x, x)
-	VMPosOffset_Lerp.y = Lerp(8*FT, VMPosOffset_Lerp.y, y)
+	if IsFirstTimePredicted() then
+		local land_mul = lvm < vvel and 2 or 1 -- going to 0 velocity is faster than going to 1
 
-	local ang_x = math.Clamp(x * 8, -4, 4)
-	local ang_y = y * ((game.SinglePlayer() and 5) or -1)
-	local ang_z = y * 0.5 + (x * -5)
+		vvel = math.Approach(lvm, vvel, FrameTime() * 1500 * land_mul)
+		self._LastVMZ = vvel
+	end
+
+	local sign = vvel >= 0 and 1 or -1
+	local linear_frac = math.TimeFraction(0, mx_vertvel, math.min(math.abs(vvel), mx_vertvel))
+	local frac = Ease(linear_frac, 0.2) * sign
+
+	local y = math.Clamp(velocity.y * -0.004, -1, 1) * sightedmult -- horizontal
+	local x = math.Clamp(frac * sightedmult, -1, 1) -- vertical
+
+	--VMPosOffset_Lerp.x = Lerp(8*FT, VMPosOffset_Lerp.x, x)
+	--VMPosOffset_Lerp.y = Lerp(8*FT, VMPosOffset_Lerp.y, y)
+
+	local ang_x = x * 5 -- vertical
+	local ang_y = y * ((game.SinglePlayer() and 5) or -5) -- horizontal
+	local ang_z = y * 2 + (x * -7) -- roll
 
 	VMAngOffset_Lerp.x = LerpC(10*FT, VMAngOffset_Lerp.x, ang_x, 0.75)
 	VMAngOffset_Lerp.y = LerpC(5*FT, VMAngOffset_Lerp.y, ang_y, 0.6)
 	VMAngOffset_Lerp.z = Lerp(25*FT, VMAngOffset_Lerp.z, ang_z)
 
 	VMPos:Add(VMAng:Up() * VMPosOffset_Lerp.x)
-	VMPos:Add(VMAng:Right() * VMPosOffset_Lerp.y)
+	VMPos:Add(VMAng:Right() * y * -1)
 
 	VMAng:Add(VMAngOffset_Lerp)
 
