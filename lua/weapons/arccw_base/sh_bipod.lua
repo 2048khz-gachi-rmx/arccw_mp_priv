@@ -1,5 +1,6 @@
 function SWEP:InBipod()
     local bip = self:GetInBipod()
+    if not bip then return bip end
 
     -- if !self:CanBipod() then
     --     self:ExitBipod()

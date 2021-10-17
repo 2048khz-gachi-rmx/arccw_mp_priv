@@ -860,8 +860,12 @@ function SWEP:IsProne()
     end
 end
 
+local cvar = GetConVar("arccw_override_nearwall")
+
 function SWEP:BarrelHitWall(visual)
-    if GetConVar("arccw_override_nearwall"):GetBool() then
+    cvar = cvar or GetConVar("arccw_override_nearwall")
+
+    if cvar:GetBool() then
         local offset = self.BarrelOffsetHip
 
         if vrmod and vrmod.IsPlayerInVR(self:GetOwner()) then
@@ -872,8 +876,9 @@ function SWEP:BarrelHitWall(visual)
             offset = self.BarrelOffsetSighted
         end
 
-        local dir = self:GetOwner():EyeAngles()
-        local src = self:GetOwner():EyePos()
+        local ow = self:GetOwner()
+        local dir = ow:EyeAngles()
+        local src = ow:EyePos()
 
         src = src + dir:Right() * offset[1]
         src = src + dir:Forward() * offset[2]
@@ -881,29 +886,36 @@ function SWEP:BarrelHitWall(visual)
 
         local mask = MASK_SOLID
 
-        local filter = {self:GetOwner()}
+        local filter = {ow}
 
-        table.Add(filter, self.Shields)
+        if self.Shields and #self.Shields > 0 then
+            table.Add(filter, self.Shields)
+        end
 
         local barrelLength = self.BarrelLength + self:GetBuff_Add("Add_BarrelLength")
         local max = 0
 
         if visual then
-            local hmin, hmax = self:GetOwner():GetHull()
+            local hmin, hmax = ow:GetHull()
             -- it's probably guaranteed that mins are - and maxs are + but I'M NOT TAKIN ANY CHANCES
             max = math.max(math.abs(hmin[1]), math.abs(hmin[2]), math.abs(hmax[1]), math.abs(hmax[2])) / 2
         end
 
-        local tr = util.TraceLine({
+        local tr = ow:GetEyeTrace()
+
+        --[[
+        util.TraceLine({
             start = src,
             endpos = src + (dir:Forward() * (barrelLength + max)),
             filter = filter,
             mask = mask
         })
+        ]]
 
-        
-        if tr.Hit and not tr.Entity.ArcCWProjectile then
-            local l = tr.Fraction * (barrelLength + max) - max
+        if tr.Hit and tr.Fraction * 32768 < barrelLength + max
+            and not tr.Entity.ArcCWProjectile then
+
+            local l = tr.Fraction * 32768 - max
             return 1 - math.max(l / barrelLength, 0)
         else
             return 0

@@ -23,7 +23,7 @@ SWEP.VMAngOffset = Angle()
 SWEP.VMPosOffset_Lerp = Vector()
 SWEP.VMAngOffset_Lerp = Angle()
 
-SWEP.VMLookLerp = Angle()
+SWEP.VMLookLerp = 0
 
 SWEP.StepBob = 0
 SWEP.StepBobLerp = 0
@@ -47,29 +47,31 @@ return a + (b - a) * math.pow(t,powa)
 
 end
 
-function SWEP:Move_Process(EyePos, EyeAng, velocity)
-	local VMPos, VMAng = self.VMPos, self.VMAng
-	local VMPosOffset, VMAngOffset = self.VMPosOffset, self.VMAngOffset
-	local VMPosOffset_Lerp, VMAngOffset_Lerp = self.VMPosOffset_Lerp, self.VMAngOffset_Lerp
-	local FT = (game.SinglePlayer() and FrameTime()) or RealFrameTime()*0.5308
+function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
+	local t = self:GetTable()
+
+	local VMPos, VMAng = t.VMPos, t.VMAng
+	local VMPosOffset, VMAngOffset = t.VMPosOffset, t.VMAngOffset
+	local VMPosOffset_Lerp, VMAngOffset_Lerp = t.VMPosOffset_Lerp, t.VMAngOffset_Lerp
+	local FT = (game.SinglePlayer() and FrameTime()) or RealFrameTime() * 0.5308
 	local sightedmult = (self:GetState() == ArcCW.STATE_SIGHTS and 0.1) or 1
 
 	VMPos:Set(EyePos)
 	VMAng:Set(EyeAng)
 
-	VMPosOffset.x = self:GetOwner():GetVelocity().z*0.0015 * sightedmult
-	VMPosOffset.y = math.Clamp(velocity.y*-0.004, -1, 1) * sightedmult
+	local x = loc_vel.z * 0.0015 * sightedmult
+	local y = math.Clamp(velocity.y * -0.004, -1, 1) * sightedmult
 
-	VMPosOffset_Lerp.x = Lerp(8*FT, VMPosOffset_Lerp.x, VMPosOffset.x)
-	VMPosOffset_Lerp.y = Lerp(8*FT, VMPosOffset_Lerp.y, VMPosOffset.y)
+	VMPosOffset_Lerp.x = Lerp(8*FT, VMPosOffset_Lerp.x, x)
+	VMPosOffset_Lerp.y = Lerp(8*FT, VMPosOffset_Lerp.y, y)
 
-	VMAngOffset.x = math.Clamp(VMPosOffset.x * 8, -4, 4)
-	VMAngOffset.y = VMPosOffset.y * ((game.SinglePlayer() and 5) or -1)
-	VMAngOffset.z = VMPosOffset.y * 0.5 + (VMPosOffset.x * -5)
+	local ang_x = math.Clamp(x * 8, -4, 4)
+	local ang_y = y * ((game.SinglePlayer() and 5) or -1)
+	local ang_z = y * 0.5 + (x * -5)
 
-	VMAngOffset_Lerp.x = LerpC(10*FT, VMAngOffset_Lerp.x, VMAngOffset.x, 0.75)
-	VMAngOffset_Lerp.y = LerpC(5*FT, VMAngOffset_Lerp.y, VMAngOffset.y, 0.6)
-	VMAngOffset_Lerp.z = Lerp(25*FT, VMAngOffset_Lerp.z, VMAngOffset.z)
+	VMAngOffset_Lerp.x = LerpC(10*FT, VMAngOffset_Lerp.x, ang_x, 0.75)
+	VMAngOffset_Lerp.y = LerpC(5*FT, VMAngOffset_Lerp.y, ang_y, 0.6)
+	VMAngOffset_Lerp.z = Lerp(25*FT, VMAngOffset_Lerp.z, ang_z)
 
 	VMPos:Add(VMAng:Up() * VMPosOffset_Lerp.x)
 	VMPos:Add(VMAng:Right() * VMPosOffset_Lerp.y)
@@ -78,75 +80,80 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity)
 
 end
 
-local stepend = math.pi * 266
+local stepend = math.pi * 266 -- closest multiple of (2 / 0.75; 2 / 0.5; 2)
 local time = 0
 
-function SWEP:Step_Process(EyePos,EyeAng, velocity)
+function SWEP:Step_Process(EyePos, EyeAng, velocity)
+	if velocity:Length() == 0 then
+		self.StepBob = 0
+		return
+	end
 
-	local VMPos, VMAng = self.VMPos, self.VMAng
-	local VMPosOffset, VMAngOffset = self.VMPosOffset, self.VMAngOffset
-	local VMPosOffset_Lerp, VMAngOffset_Lerp = self.VMPosOffset_Lerp, self.VMAngOffset_Lerp
+	local t = self:GetTable()
 
+	local VMPos, VMAng = t.VMPos, t.VMAng
+	local VMPosOffset, VMAngOffset = t.VMPosOffset, t.VMAngOffset
+	local VMPosOffset_Lerp, VMAngOffset_Lerp = t.VMPosOffset_Lerp, t.VMAngOffset_Lerp
+
+	local state = self:GetState()
 	velocity = math.min(velocity:Length(), 500)
-	if self:GetState() == ArcCW.STATE_SPRINT then
+	if state == ArcCW.STATE_SPRINT then
 		velocity = velocity * 1.25
 	end
 
 	--[[local FT = RealFrameTime()
 	local FTMult = 0.15 * FT]]
 
-	local freq = math.pi * 3
+	local ow = self:GetOwner()
+	
+	local sightedmult = (state == ArcCW.STATE_SIGHTS and 0.25) or 1
+	local in_sprint = (state == ArcCW.STATE_SPRINT and 1) or 0
 
-	local sightedmult = (self:GetState() == ArcCW.STATE_SIGHTS and 0.25) or 1
-	local in_sprint = (self:GetState() == ArcCW.STATE_SPRINT and 1) or 0
+	local sprint_freqmult = in_sprint * 0.8 + 1
+	local sprint_posmult = in_sprint * 0.7 + 1
+	local sprint_angmult = in_sprint * 10 + 1
 
-	local sprint_freqmult = in_sprint * 0.7 + 1
-	local sprint_posmult = in_sprint * 1.5 + 1
-	local sprint_angmult = in_sprint * 30 + 1
-
-	local onground = self:GetOwner():OnGround()
+	local onground = ow:OnGround()
 	local firstPred = IsFirstTimePredicted()
 
 	if firstPred then
-		time = time + FrameTime() * freq * sprint_freqmult
-		self.StepBob = time % stepend --self.StepBob + (velocity * 0.00015 + (delta * 0.03)) * swayspeed -- * (FTMult)
+		local timeBetweenFootsteps = hook.Run("PlayerStepSoundTime",
+			ow, STEPSOUNDTIME_NORMAL, ow:KeyDown(IN_WALK))
 
-		local sb = self.StepBob
+		local freq = math.pi / (timeBetweenFootsteps / 1000)
+
+		time = time + FrameTime() * freq * sprint_freqmult
+		t.StepBob = time % stepend --self.StepBob + (velocity * 0.00015 + (delta * 0.03)) * swayspeed -- * (FTMult)
+
+		local sb = t.StepBob
 		time = sb
 
 		if sb >= stepend then
-			self.StepBob = sb % stepend
-			self.StepRandomX = 1 --math.Rand(1,1.25)
-			self.StepRandomY = 1 --math.Rand(1,1.25)
+			t.StepBob = sb % stepend
+			t.StepRandomX = 1 --math.Rand(1,1.25)
+			t.StepRandomY = 1 --math.Rand(1,1.25)
 		end
-
-		if velocity == 0 then
-			sb = 0
-		end
-
 	end
 
-	local sb = self.StepBob
-	
+	local sb = t.StepBob
+
 	VMPosOffset:Zero()
-	if onground then
-		VMPosOffset.x = (math.sin(sb) * velocity * 0.0005 * sightedmult * swayxmult * sprint_posmult) * self.StepRandomX
-		VMPosOffset.y = (math.cos(sb * 0.5) * velocity * 0.0003 * sightedmult  * swayymult / sprint_posmult) * self.StepRandomY
+
+	if onground then	
+		VMPosOffset.x = (math.sin(sb) * velocity * 0.0005 * sightedmult * swayxmult * sprint_posmult) * t.StepRandomX
+		VMPosOffset.y = (math.cos(sb * 0.5) * velocity * 0.0003 * sightedmult  * swayymult) * t.StepRandomY
 		VMPosOffset.z = math.sin(sb * 0.75) * velocity * 0.001 * sightedmult * swayzmult
+
+		VMPosOffset_Lerp:Add(VMPosOffset)
+
+		VMAngOffset.x = VMPosOffset.x / 2 -- vertical
+		VMAngOffset.y = VMPosOffset.y * -7.5 / 5 * sprint_angmult -- horizontal
+		VMAngOffset.z = VMPosOffset.y * 5 -- tilt
 	end
-
-
-	VMPosOffset_Lerp:Add(VMPosOffset)
 
 	--[[VMPosOffset_Lerp.x = Lerp(16*FT, VMPosOffset_Lerp.x, VMPosOffset.x)
 	VMPosOffset_Lerp.y = Lerp(4*FT, VMPosOffset_Lerp.y, VMPosOffset.y)
 	VMPosOffset_Lerp.z = Lerp(2*FT, VMPosOffset_Lerp.z, VMPosOffset.z)]]
-
-
-	VMAngOffset.x = VMPosOffset.x / 2 -- vertical
-	VMAngOffset.y = VMPosOffset.y * -7.5 / 5 * sprint_angmult -- horizontal
-	VMAngOffset.z = VMPosOffset.y * 5 -- tilt
-
 
 	VMPos:Add(VMAng:Up() * VMPosOffset_Lerp.x)
 	VMPos:Add(VMAng:Right() * VMPosOffset_Lerp.y)
@@ -157,38 +164,41 @@ function SWEP:Step_Process(EyePos,EyeAng, velocity)
 	VMPosOffset_Lerp:Sub(VMPosOffset)
 end
 
-function SWEP:Breath_Health()
-	local owner = self:GetOwner()
-	if !IsValid(owner) then return end
+function SWEP:Breath_Health(owner, t)
 	local health = owner:Health()
 	local maxhealth = owner:GetMaxHealth()
 
-	self.Breath_Intensity = math.Clamp( maxhealth / health, 0, 2 )
-	self.Breath_Rate = math.Clamp( ((maxhealth*0.5) / health ), 1, 1.5 )
+	t.Breath_Intensity = math.Clamp( maxhealth / health, 0, 2 )
+	t.Breath_Rate = math.Clamp( ((maxhealth*0.5) / health ), 1, 1.5 )
 end
 
-function SWEP:Breath_StateMult()
-	local owner = self:GetOwner()
-	if !IsValid(owner) then return end
+function SWEP:Breath_StateMult(owner, t)
 	local sightedmult = (self:GetState() == ArcCW.STATE_SIGHTS and 0.05) or 1
 
-	self.Breath_Intensity = self.Breath_Intensity * sightedmult
+	t.Breath_Intensity = t.Breath_Intensity * sightedmult
 end
 
 function SWEP:Breath_Process(EyePos, EyeAng)
-	local VMPos, VMAng = self.VMPos, self.VMAng
-	local VMPosOffset, VMAngOffset = self.VMPosOffset, self.VMAngOffset
+	local t = self:GetTable()
 
-	self:Breath_Health()
-	self:Breath_StateMult()
-	VMPosOffset.x = (math.sin(CurTime() * 2 * self.Breath_Rate) * 0.1) * self.Breath_Intensity
-	VMPosOffset.y = (math.sin(CurTime() * 2.5 * self.Breath_Rate) * 0.025) * self.Breath_Intensity
+	local VMPos, VMAng = t.VMPos, t.VMAng
+	local VMPosOffset, VMAngOffset = t.VMPosOffset, t.VMAngOffset
 
-	VMAngOffset.x = VMPosOffset.x * 1.5
-	VMAngOffset.y = VMPosOffset.y * 2
+	local ow = self:GetOwner()
 
-	VMPos:Add(VMAng:Up() * VMPosOffset.x)
-	VMPos:Add(VMAng:Right() * VMPosOffset.y)
+	local ct = CurTime()
+
+	self:Breath_Health(ow, t)
+	self:Breath_StateMult(ow, t)
+
+	local x = (math.sin(ct * 2 * t.Breath_Rate) * 0.1) * t.Breath_Intensity
+	local y = (math.sin(ct * 2.5 * t.Breath_Rate) * 0.025) * t.Breath_Intensity
+
+	VMAngOffset.x = x * 1.5
+	VMAngOffset.y = y * 2
+
+	VMPos:Add(VMAng:Up() * x)
+	VMPos:Add(VMAng:Right() * y)
 
 	VMAng:Add(VMAngOffset)
 
@@ -198,7 +208,7 @@ function SWEP:Look_Process(EyePos, EyeAng)
 	local t = self:GetTable()
 
 	local VMPos, VMAng = t.VMPos, t.VMAng
-	local VMPosOffset, VMAngOffset = t.VMPosOffset, t.VMAngOffset
+	local VMAngOffset = t.VMAngOffset
 	local FT = FrameTime()
 	local sightedmult = (self:GetState() == ArcCW.STATE_SIGHTS and 0.25) or 1
 
@@ -207,21 +217,20 @@ function SWEP:Look_Process(EyePos, EyeAng)
 		t.SmoothEyeAng = LerpAngle(0.2, t.SmoothEyeAng, EyeAng - t.LastEyeAng)
 	end
 
-	VMPosOffset.x = -t.SmoothEyeAng.x * -1 * sightedmult * lookxmult
-	VMPosOffset.y = t.SmoothEyeAng.y * 0.5 * sightedmult * lookymult
+	local x = -t.SmoothEyeAng.x * -1 * sightedmult * lookxmult
+	local y = t.SmoothEyeAng.y * 0.5 * sightedmult * lookymult
 
-	VMAngOffset.x = VMPosOffset.x * 2.5
-	VMAngOffset.y = VMPosOffset.y * 1.25
-	VMAngOffset.z = VMPosOffset.y * 2
+	local vmang_y = y * 1.25
+	VMAngOffset:SetUnpacked(x * 2.5, vmang_y, y * 2)
 
 	if firstPred then
-		t.VMLookLerp.y = Lerp(FT*10, t.VMLookLerp.y, VMAngOffset.y * 1.5 + t.SmoothEyeAng.y)
+		t.VMLookLerp = Lerp(FT*10, t.VMLookLerp, vmang_y * 1.5 + t.SmoothEyeAng.y)
 	end
 
-	VMAng.y = VMAng.y - t.VMLookLerp.y
+	VMAng.y = VMAng.y - t.VMLookLerp
 
-	VMPos:Add(VMAng:Up() * VMPosOffset.x)
-	VMPos:Add(VMAng:Right() * VMPosOffset.y)
+	VMPos:Add(VMAng:Up() * x)
+	VMPos:Add(VMAng:Right() * y)
 
 	VMAng:Add(VMAngOffset)
 
@@ -229,15 +238,16 @@ end
 
 function SWEP:GetVMPosition(EyePos, EyeAng)
 	local velocity = self:GetOwner():GetVelocity()
-	velocity = WorldToLocal(velocity, angle_zero, vector_origin, EyeAng)
-	self:Move_Process(EyePos, EyeAng, velocity)
-	self:Step_Process(EyePos, EyeAng, velocity)
+	local glob_velocity = WorldToLocal(velocity, angle_zero, vector_origin, EyeAng)
+
+	self:Move_Process(EyePos, EyeAng, glob_velocity, velocity)
+	self:Step_Process(EyePos, EyeAng, glob_velocity, velocity)
 	self:Breath_Process(EyePos, EyeAng)
 	self:Look_Process(EyePos, EyeAng)
 
 	self.LastEyeAng = EyeAng
 	self.LastEyePos = EyePos
-	self.LastVelocity = velocity
+	self.LastVelocity = glob_velocity
 	return self.VMPos, self.VMAng
 end
 
@@ -366,9 +376,9 @@ local function recoilMethod(self)
 	return recoilAng -- self:GetOurViewPunchAngles()
 end
 
-function SWEP:GetViewModelPosition(pos, ang)
-	-- b:Open()
+local b = bench("vm_calc", 600)
 
+function SWEP:GetViewModelPosition(pos, ang)
 	local owner = self:GetOwner()
 	local t = self:GetTable()
 
@@ -499,11 +509,13 @@ function SWEP:GetViewModelPosition(pos, ang)
 		end
 	end
 
+	
+
 	local inBipod = self:InBipod()
 	local bipodTime = 0.8
 	local bipodDelta = inBipod and
-							easeOut( (UnPredictedCurTime() - self.VM_EnteredBipod) / bipodTime ) or
-							1 - easeOut( (UnPredictedCurTime() - self.VM_ExitedBipod) / bipodTime * 1.5 )
+							easeOut( (UCT - t.VM_EnteredBipod) / bipodTime ) or
+							1 - easeOut( (UCT - t.VM_ExitedBipod) / bipodTime * 1.5 )
 
 	if bipodDelta > 0 then
 		if !t.BipodAngle then
@@ -511,7 +523,9 @@ function SWEP:GetViewModelPosition(pos, ang)
 			t.BipodAngle = self:GetOwner():EyeAngles()
 		end
 
-		local BEA = self.BipodAngle - owner:EyeAngles()
+		local BEA = owner:EyeAngles()
+		BEA:Sub(t.BipodAngle)
+		BEA:Mul(-1)
 
 		local irons = self:GetActiveSights()
 		local dlt = bipodDelta
@@ -538,6 +552,9 @@ function SWEP:GetViewModelPosition(pos, ang)
 		target.sway = 0.2
 	end
 
+	
+
+	
 	addElem(target.pos, vm_right, vm_forward, vm_up)
 
 	local inSightTime, outSightTime = t.LastEnterSightTimeUnpred, t.LastExitSightTimeUnpred
@@ -567,6 +584,8 @@ function SWEP:GetViewModelPosition(pos, ang)
 	end
 
 	t.VM_SightsCurrent = sightedFrac
+
+	
 
 	local recovery = self:GetSprintTime() -- (t.VM_UseSightTime and t.VM_SprintRecovery * sightTime) or t.VM_SprintRecovery
 	local sprinted  = state == ArcCW.STATE_SPRINT or (UCT - t.LastExitSprintTimeUnpred) < recovery
@@ -727,31 +746,36 @@ function SWEP:GetViewModelPosition(pos, ang)
 	local stanceRecover = self:GetSightTime() ^ 0.4 / 2     -- how fast the stance will recover
 	local stanceRuin = self:GetSightTime() ^ 0.2            -- how fast the stance will break
 
+	
+
 	if firstpred then
 		if deg > 0 then
-			self.VM_LastBarrelRecover = nil
-			self.VM_LastBarrelRecoverFrom = nil
-			self.VM_LastBarrelHit = self.VM_LastBarrelHit or UCT
-			self.VM_MaxBarrelFrac = math.max(self.VM_MaxBarrelFrac - FrameTime() / stanceRecover, deg)
+			t.VM_LastBarrelRecover = nil
+			t.VM_LastBarrelRecoverFrom = nil
+			t.VM_LastBarrelHit = t.VM_LastBarrelHit or UCT
+			t.VM_MaxBarrelFrac = math.max(t.VM_MaxBarrelFrac - FrameTime() / stanceRecover, deg)
 		else
-			self.VM_LastBarrelHit = nil
-			self.VM_LastBarrelRecover = self.VM_LastBarrelRecover or UCT
-			self.VM_LastBarrelRecoverFrom = self.VM_LastBarrelRecoverFrom or self.VM_BarrelWallFrac
+			t.VM_LastBarrelHit = nil
+			t.VM_LastBarrelRecover = t.VM_LastBarrelRecover or UCT
+			t.VM_LastBarrelRecoverFrom = t.VM_LastBarrelRecoverFrom or t.VM_BarrelWallFrac
 		end
 	end
 
-	if self.VM_LastBarrelRecover then
-		self.VM_BarrelWallFrac = self.VM_LastBarrelRecoverFrom * (1 - easeOut( (UCT - self.VM_LastBarrelRecover) / stanceRecover, 1 ))
-		self.VM_MaxBarrelFrac = self.VM_BarrelWallFrac
+	
+	if t.VM_LastBarrelRecover then
+		t.VM_BarrelWallFrac = t.VM_LastBarrelRecoverFrom * (1 - easeOut( (UCT - t.VM_LastBarrelRecover) / stanceRecover, 1 ))
+		t.VM_MaxBarrelFrac = t.VM_BarrelWallFrac
 	else
-		self.VM_BarrelWallFrac = self.VM_MaxBarrelFrac * easeOut( (UCT - self.VM_LastBarrelHit) / stanceRuin, 1 )
+		t.VM_BarrelWallFrac = t.VM_MaxBarrelFrac * easeOut( (UCT - t.VM_LastBarrelHit) / stanceRuin, 1 )
 	end
 
-	if self.VM_BarrelWallFrac > 0 then
-		local fr = self.VM_BarrelWallFrac
+	
 
-		LerpSource(fr, target.pos, self.HolsterPos)
-		LerpSource(fr, target.ang, self.HolsterAng)
+	if t.VM_BarrelWallFrac > 0 then
+		local fr = t.VM_BarrelWallFrac
+
+		LerpSource(fr, target.pos, t.HolsterPos)
+		LerpSource(fr, target.ang, t.HolsterAng)
 
 		local int = fr * 2
 
@@ -762,10 +786,12 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 	if !isangle(target.ang) then target.ang = Angle(target.ang) end
 
-	if self.InProcDraw then
-		self.InProcHolster = false
 
-		local delta = m_clamp((CT - self.ProcDrawTime) / (0.25 * self:GetBuff_Mult("Mult_DrawTime")), 0, 1)
+	
+	if t.InProcDraw then
+		t.InProcHolster = false
+
+		local delta = m_clamp((CT - t.ProcDrawTime) / (0.25 * self:GetBuff_Mult("Mult_DrawTime")), 0, 1)
 
 		targetpos  = LerpVector(delta, Vector(0, 0, -5), target.pos)
 		targetang  = LerpAngle(delta, Angle(-70, 30, 0), target.ang)
@@ -773,13 +799,13 @@ function SWEP:GetViewModelPosition(pos, ang)
 		targetsway = target.sway
 		targetbob  = target.bob
 
-		if delta == 1 then self.InProcDraw = false end
+		if delta == 1 then t.InProcDraw = false end
 	end
 
-	if self.InProcHolster then
-		self.InProcDraw = false
+	if t.InProcHolster then
+		t.InProcDraw = false
 
-		local delta = 1 - m_clamp((CT - self.ProcHolsterTime) / (0.25 * self:GetBuff_Mult("Mult_DrawTime")), 0, 1)
+		local delta = 1 - m_clamp((CT - t.ProcHolsterTime) / (0.25 * self:GetBuff_Mult("Mult_DrawTime")), 0, 1)
 
 		target.pos = LerpVector(delta, Vector(0, 0, -5), target.pos)
 		target.ang = LerpAngle(delta, Angle(-70, 30, 10), target.ang)
@@ -787,7 +813,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 		target.sway = target.sway
 		target.bob = target.bob
 
-		if delta == 0 then self.InProcHolster = false end
+		if delta == 0 then t.InProcHolster = false end
 	end
 
 	if self.InProcBash then
@@ -862,6 +888,8 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 	--target.pos:Add(randVec)
 
+	
+
 	local speed = target.speed or 3
 
 	local coolsway = GetConVar("arccw_vm_coolsway"):GetBool()
@@ -875,48 +903,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 	swayspeed = GetConVar("arccw_vm_sway_speedmult"):GetFloat()
 	swayrotate = GetConVar("arccw_vm_sway_rotatemult"):GetFloat()
 
-	--[[if coolsway then
-		eyeangles = owner:EyeAngles()
-
-		local sightmult = ((sighted and 0.1) or 1)
-		local sprintmult = (sprinted and 3 * sprintFrac or 0) + 1
-
-		local strafing = owner:KeyDown(IN_MOVELEFT) or owner:KeyDown(IN_MOVERIGHT)
-
-		local vel = owner:GetVelocity()
-		local velup = math.Clamp(vel.z, -300, 300)
-		local velmult = math.Clamp(vel:Length() / 170, 0.1,2)
-		local pi = math.Clamp(math.pi * math.Round(velmult) * swayspeed, 1, 6)
-		local movmt = (UCT * pi) / 0.5
-		local movmtcomp = ((UCT * pi) - 0.25) / 0.5
-
-		local xangdiff = m_angdif(eyeangles.x, lasteyeangles.x) * lookxmult
-		local yangdiff = m_angdif(eyeangles.y, lasteyeangles.y) * lookymult
-		local rollamount = (strafing and vel:Angle().y) or eyeangles.y
-		local rollangdiff = math.Clamp(m_angdif(eyeangles.y, rollamount ) / 180 * pi, -7, 7)
-
-		coolswaypos[1] = (0.25 * velmult) * m_cos(movmtcomp) * sprintmult * swayxmult * sightmult
-		coolswaypos[2] = -math.abs((1 * velmult) * m_cos(movmtcomp)) * swayymult * sightmult
-		coolswaypos[3] = -math.abs((0.25 * velmult) * m_cos(movmtcomp)) * swayzmult * sightmult
-
-		local l_swayangx_lerp = f_lerp(0.25, swayangx_lerp, xangdiff * sightmult)
-		local l_swayangy_lerp = f_lerp(0.25, swayangy_lerp, yangdiff * sightmult)
-		local l_swayangz_lerp = f_lerp(0.025, swayangz_lerp, rollangdiff)
-
-		if firstpred then
-			swayangx_lerp = l_swayangx_lerp
-			swayangy_lerp = l_swayangy_lerp
-			swayangz_lerp = l_swayangz_lerp
-		end
-
-		coolswayang.x = (math.abs((0.5 * velmult) * m_sin(movmt)) + swayangx_lerp * swayxmult) + (velup * -0.01 * swayzmult)
-		coolswayang.y = ((0.25 * velmult) * m_cos(movmt) * swayymult)
-		coolswayang.z = (math.min((2.5 * velmult) * m_cos(movmt), 0) + swayangy_lerp - swayangz_lerp * swayzmult) * swayrotate
-
-		target.ang:Add(coolswayang)
-		target.pos:Add(coolswaypos)
-	end]]
-
+	
 
 	-- For some reason, in multiplayer the sighting speed is twice as fast
 	speed = 1
@@ -939,20 +926,24 @@ function SWEP:GetViewModelPosition(pos, ang)
 		actual.evang:Set(angle_zero)
 	end
 
-	self.SwayScale = (coolsway and 0) or actual.sway
-	self.BobScale  = (coolsway and 0) or actual.bob
-	if coolsway then
-		swayxmult = GetConVar("arccw_vm_sway_zmult"):GetFloat() or 1
-		swayymult = GetConVar("arccw_vm_sway_xmult"):GetFloat() or 1
-		swayzmult = GetConVar("arccw_vm_sway_ymult"):GetFloat() or 1
-		swayspeed = GetConVar("arccw_vm_sway_speedmult"):GetFloat() or 1
+	t.SwayScale = (coolsway and 0) or actual.sway
+	t.BobScale  = (coolsway and 0) or actual.bob
 
-		lookxmult = GetConVar("arccw_vm_look_xmult"):GetFloat() or 1
-		lookymult = GetConVar("arccw_vm_look_ymult"):GetFloat() or 1
+	
+
+	if coolsway then
+		local temp = swayzmult
+		swayzmult = swayymult or 1
+		swayymult = swayxmult or 1
+		swayxmult = temp or 1
+
 		local npos, nang = self:GetVMPosition(oldpos, oldang)
 		pos:Set(npos)
 		ang:Set(nang)
 	end
+
+	
+
 
 	--oldang:Add(recoilMethod(self))
 
@@ -1010,8 +1001,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 		ang:Add(attang)
 		pos:Add(attpos)
 	end
-
-	--b:Close():print()
 
 	return pos, ang
 end
