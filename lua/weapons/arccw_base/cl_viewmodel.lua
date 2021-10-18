@@ -47,6 +47,9 @@ return a + (b - a) * math.pow(t,powa)
 
 end
 
+SWEP._LastVMZ = 0
+SWEP._LastVMY = 0
+
 function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 	local t = self:GetTable()
 
@@ -60,38 +63,87 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 	VMPos:Set(EyePos)
 	VMAng:Set(EyeAng)
 
-	self._LastVMZ = self._LastVMZ or 0
-	local lvm = self._LastVMZ
+	local lvv = t._LastVMZ
+	local lhv = t._LastVMY
+
 	local mx_vertvel = 700
+	local mx_horvel = 200
+
 	local vvel = loc_vel.z
+	local hvel = velocity.y
+	local hEase = 0.3
+
+	
 
 	if IsFirstTimePredicted() then
-		local land_mul = lvm < vvel and 2 or 1 -- going to 0 velocity is faster than going to 1
+		local land_mul = lvv < vvel and 2 or 1 -- going to 0 velocity is faster than going to 1
+		local are_opposite = math.Sign(hvel) ~= math.Sign(lhv)
+		local opposite_mul = are_opposite and 3 or 1
 
-		vvel = math.Approach(lvm, vvel, FrameTime() * 1500 * land_mul)
-		self._LastVMZ = vvel
+		local apprTo = math.min(mx_horvel, math.abs(hvel)) * math.Sign(hvel)
+
+		vvel = math.Approach(lvv, vvel, FrameTime() * 1500 * land_mul)
+		hvel = math.Approach(lhv, apprTo, FrameTime() * 500 * opposite_mul)
+
+		-- there is a math problem here; we don't know we'll be heading to opposite until
+		-- velocity flips over to the other sign, and assume we're going to 0 instead
+		-- the jump between eases causes a jump in the VM too
+
+		-- frametime lerp nerds COPE
+
+		hEase = --[[(are_opposite and 1) or ]](math.abs(lhv) > (math.abs(hvel) + 4) and 1.4) or 0.35
+
+		if t._LastVMYEase ~= hEase then
+
+			local pre = hvel
+
+			local linear_horFrac = t._lastHorFrac
+			local rev_frac = ReverseEase(linear_horFrac, hEase) -- easing this will result in linear_horFrac
+			hvel = Lerp(rev_frac, 0, mx_horvel) * math.Sign(hvel)
+
+			local hsign = hvel >= 0 and 1 or -1
+			local linear_horFrac2 = math.TimeFraction(0, mx_horvel, math.abs(hvel)) * hsign
+		end
+
+		t._LastVMYEase = hEase
+
+		t._LastVMZ = vvel
+		t._LastVMY = hvel
+	else
+		vvel = lvv
+		hvel = lhv
+		hEase = t._LastVMYEase or hEase
 	end
 
-	local sign = vvel >= 0 and 1 or -1
-	local linear_frac = math.TimeFraction(0, mx_vertvel, math.min(math.abs(vvel), mx_vertvel))
-	local frac = Ease(linear_frac, 0.2) * sign
+	local vsign = vvel >= 0 and 1 or -1
+	local hsign = hvel >= 0 and 1 or -1
 
-	local y = math.Clamp(velocity.y * -0.004, -1, 1) * sightedmult -- horizontal
-	local x = math.Clamp(frac * sightedmult, -1, 1) -- vertical
+	local linear_vertFrac = math.TimeFraction(0, mx_vertvel, math.min(math.abs(vvel), mx_vertvel))
+	local linear_horFrac = math.TimeFraction(0, mx_horvel, math.abs(hvel))
+
+	t._lastHorFrac = linear_horFrac
+
+	local horFrac = Ease(linear_horFrac, hEase) * -hsign
+	local vertFrac = Ease(linear_vertFrac, 0.2) * vsign
+
+	t._lastEased = horFrac
+
+	local y = math.Clamp(horFrac * sightedmult, -1, 1)  -- horizontal
+	local x = math.Clamp(vertFrac * sightedmult, -1, 1) -- vertical
 
 	--VMPosOffset_Lerp.x = Lerp(8*FT, VMPosOffset_Lerp.x, x)
 	--VMPosOffset_Lerp.y = Lerp(8*FT, VMPosOffset_Lerp.y, y)
 
 	local ang_x = x * 5 -- vertical
-	local ang_y = y * ((game.SinglePlayer() and 5) or -5) -- horizontal
-	local ang_z = y * 2 + (x * -7) -- roll
+	local ang_y = y * ((game.SinglePlayer() and 5) or -2) -- horizontal
+	local ang_z = y * 4 / sightedmult + (x * -7) -- roll
 
-	VMAngOffset_Lerp.x = LerpC(10*FT, VMAngOffset_Lerp.x, ang_x, 0.75)
-	VMAngOffset_Lerp.y = LerpC(5*FT, VMAngOffset_Lerp.y, ang_y, 0.6)
-	VMAngOffset_Lerp.z = Lerp(25*FT, VMAngOffset_Lerp.z, ang_z)
+	VMAngOffset_Lerp.x = ang_x--LerpC(10*FT, VMAngOffset_Lerp.x, ang_x, 0.75)
+	VMAngOffset_Lerp.y = ang_y--LerpC(5*FT, VMAngOffset_Lerp.y, ang_y, 0.6)
+	VMAngOffset_Lerp.z = ang_z--Lerp(25*FT, VMAngOffset_Lerp.z, ang_z)
 
-	VMPos:Add(VMAng:Up() * VMPosOffset_Lerp.x)
-	VMPos:Add(VMAng:Right() * y * -1)
+	VMPos:Add(VMAng:Up() * (VMPosOffset_Lerp.x + y * 0.25))
+	VMPos:Add(VMAng:Right() * y * 0.35)
 
 	VMAng:Add(VMAngOffset_Lerp)
 
