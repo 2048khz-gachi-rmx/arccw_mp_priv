@@ -351,6 +351,8 @@ end
 
 function SWEP:InSprint()
     local owner = self:GetOwner()
+    if !owner:KeyDown(IN_SPEED) then return false end
+    if !owner:OnGround() then return false end
 
     local sm = self.SpeedMult * self:GetBuff_Mult("Mult_SpeedMult") * self:GetBuff_Mult("Mult_MoveSpeed")
 
@@ -365,9 +367,7 @@ function SWEP:InSprint()
         return (owner.sprintProgress or 0) > 0 and owner:KeyDown(IN_SPEED) and curspeed > walkspeed and owner:OnGround()
     end
 
-    if !owner:KeyDown(IN_SPEED) then return false end
-    if curspeed < Lerp(0.5, walkspeed, sprintspeed) then return false end
-    if !owner:OnGround() then return false end
+    if curspeed < Lerp(0.25, walkspeed, sprintspeed) then return false end
 
     return true
 end

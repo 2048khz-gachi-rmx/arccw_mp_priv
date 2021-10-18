@@ -74,8 +74,6 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 	local hvel = velocity.y
 	local hEase = 0.3
 
-	
-
 	if IsFirstTimePredicted() then
 		local land_mul = lvv < vvel and 2 or 1 -- going to 0 velocity is faster than going to 1
 		local are_opposite = math.Sign(hvel) ~= math.Sign(lhv)
@@ -92,15 +90,15 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 
 		-- frametime lerp nerds COPE
 
-		hEase = --[[(are_opposite and 1) or ]](math.abs(lhv) > (math.abs(hvel) + 4) and 1.4) or 0.35
+		hEase = --[[(are_opposite and 1) or ]]--[[(math.abs(lhv) > (math.abs(hvel) + 4) and 1.4) or ]] 0.35
 
-		if t._LastVMYEase ~= hEase then
+		--[[if t._LastVMYEase ~= hEase then
 			local linear_horFrac = t._lastHorFrac or 0
 			local rev_frac = ReverseEase(linear_horFrac, hEase) -- easing this will result in linear_horFrac
 			hvel = Lerp(rev_frac, 0, mx_horvel) * math.Sign(hvel)
 
 			local hsign = hvel >= 0 and 1 or -1
-		end
+		end]]
 
 		t._LastVMYEase = hEase
 
