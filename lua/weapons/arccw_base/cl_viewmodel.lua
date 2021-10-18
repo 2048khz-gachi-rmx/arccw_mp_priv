@@ -49,6 +49,7 @@ end
 
 SWEP._LastVMZ = 0
 SWEP._LastVMY = 0
+SWEP._LastVMYEase = 0
 
 function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 	local t = self:GetTable()
@@ -94,15 +95,11 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 		hEase = --[[(are_opposite and 1) or ]](math.abs(lhv) > (math.abs(hvel) + 4) and 1.4) or 0.35
 
 		if t._LastVMYEase ~= hEase then
-
-			local pre = hvel
-
-			local linear_horFrac = t._lastHorFrac
+			local linear_horFrac = t._lastHorFrac or 0
 			local rev_frac = ReverseEase(linear_horFrac, hEase) -- easing this will result in linear_horFrac
 			hvel = Lerp(rev_frac, 0, mx_horvel) * math.Sign(hvel)
 
 			local hsign = hvel >= 0 and 1 or -1
-			local linear_horFrac2 = math.TimeFraction(0, mx_horvel, math.abs(hvel)) * hsign
 		end
 
 		t._LastVMYEase = hEase
@@ -125,8 +122,6 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 
 	local horFrac = Ease(linear_horFrac, hEase) * -hsign
 	local vertFrac = Ease(linear_vertFrac, 0.2) * vsign
-
-	t._lastEased = horFrac
 
 	local y = math.Clamp(horFrac * sightedmult, -1, 1)  -- horizontal
 	local x = math.Clamp(vertFrac * sightedmult, -1, 1) -- vertical
