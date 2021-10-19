@@ -613,7 +613,7 @@ function SWEP:DrawHUD()
                 end
             end
         end
-    elseif GetConVar("arccw_hud_minimal"):GetBool() then
+    elseif GetConVar("arccw_hud_minimal"):GetBool() and false then
         if GetConVar("arccw_hud_fcgbars"):GetBool() then
             local segcount = string.len( self:GetFiremodeBars() or "-----" )
             local bargap = ScreenScaleMulti(2)
