@@ -132,6 +132,8 @@ end
 
 if CLIENT then
     function ArcCW.LoadClientLanguage(files)
+        local pre_l = _G.L
+
         local lang = ArcCW.GetLanguage()
         files = files or file.Find("arccw/client/cl_languages/*", "LUA")
 
@@ -154,6 +156,8 @@ if CLIENT then
             print("Loaded ArcCW cl_language file " .. v .. " with " .. table.Count(L) .. " strings.")
             L = nil
         end
+
+        _G.L = pre_l
     end
 elseif SERVER then
     for _, v in pairs(file.Find("arccw/client/cl_languages/*", "LUA")) do
@@ -163,6 +167,8 @@ end
 
 function ArcCW.LoadLanguages()
     ArcCW.LangTable = {}
+    local pre_l = _G.L
+
     for _, v in pairs(file.Find("arccw/shared/languages/*", "LUA")) do
         include("arccw/shared/languages/" .. v)
         AddCSLuaFile("arccw/shared/languages/" .. v)
@@ -198,6 +204,8 @@ function ArcCW.LoadLanguages()
     end
 
     hook.Run("ArcCW_LocalizationLoaded")
+
+    _G.L = pre_l
 end
 ArcCW.LoadLanguages()
 

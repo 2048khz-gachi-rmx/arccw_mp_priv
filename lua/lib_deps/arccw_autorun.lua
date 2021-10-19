@@ -1,7 +1,7 @@
 AddCSLuaFile()
 
 -- the main object
-ArcCW = {}
+ArcCW = ArcCW or {}
 
 ArcCWInstalled = true
 
