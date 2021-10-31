@@ -2847,7 +2847,7 @@ do
 	att.AutoStats = true
 	att.Slot = "muzzle"
 
-	att.SortOrder = 15
+	att.SortOrder = 16
 
 	att.Model = "models/weapons/arccw_go/atts/supp_monster.mdl"
 
@@ -2855,13 +2855,18 @@ do
 	att.Override_MuzzleEffect = "muzzleflash_suppressed"
 	att.IsMuzzleDevice = true
 
+	-- better handling, worse ballistics than pbs
+	-- better for mobile
+
 	att.Mult_ShootPitch = 1
 	att.Mult_ShootVol = 0.75
-	att.Mult_AccuracyMOA = 0.8
-	att.Mult_Range = 1.1
+	att.Mult_AccuracyMOA = 0.85
+	att.Mult_Range = 1.15
+	att.Mult_Recoil = 0.75
+	att.Mult_MoveDispersion = 1.1
 
-	att.Mult_SightTime = 1.1
-	att.Mult_HipDispersion = 1.15
+	att.Mult_SightTime = 1.15
+	att.Mult_HipDispersion = 1.1
 
 	att.Add_BarrelLength = 8
 

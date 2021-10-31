@@ -2253,16 +2253,14 @@ do
 	att.IsMuzzleDevice = true
 
 	att.Add_BarrelLength = 3
+	att.Mult_ShootPitch = 1.15
+	att.Mult_SightTime = 1.1
+	att.Mult_MoveSpeed = 0.9
+	att.Mult_RPM = 1.15
 
-	att.Mult_ShootPitch = 1.1
+	att.Mult_Recoil = 1.25
+	att.Mult_RecoilSide = 1.2
 
-	att.Mult_SightTime = 1.05
-
-	att.Mult_MoveSpeed = 0.95
-
-	att.Mult_RPM = 1.1
-
-	att.Mult_Recoil = 1.15
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -2278,7 +2276,7 @@ do
 	att.Icon = Material("entities/acwatt_go_muzz_brake.png", "mips smooth")
 	att.Description = "Muzzle device that redirects firing gases to help stabilize recoil."
 
-	att.SortOrder = 1
+	att.SortOrder = 50
 
 	att.Desc_Pros = {
 	}
@@ -2291,15 +2289,11 @@ do
 
 	att.IsMuzzleDevice = true
 
-	att.Add_BarrelLength = 3
+	att.Mult_ShootPitch = 0.8
+	att.Mult_SightTime = 1.15
+	att.Mult_RecoilSide = 0.8
+	att.Mult_Recoil = 0.75
 
-	att.Mult_ShootPitch = 0.9
-
-	att.Mult_SightTime = 1.05
-
-	att.Mult_MoveSpeed = 0.95
-
-	att.Mult_RecoilSide = 0.85
 	ArcCW.LoadAttachmentType(att)
 end
 

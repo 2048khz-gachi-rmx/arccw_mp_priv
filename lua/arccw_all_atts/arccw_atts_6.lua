@@ -53,18 +53,15 @@ do
 
 	att.PrintName = "Osprey Suppressor"
 	att.Icon = Material("entities/acwatt_go_supp_osprey.png", "mips smooth")
-	att.Description = "Large sound suppressor with ballistic-enhancing qualities. Somewhat cumbersome. Can be used on shotguns."
+	att.Description = "Large sound suppressor with ballistic-enhancing qualities. Can be used on shotguns."
 
-	att.SortOrder = 2
+	att.Desc_Pros = {}
+	att.Desc_Cons = {}
 
-	att.Desc_Pros = {
-	}
-	att.Desc_Cons = {
-	}
 	att.AutoStats = true
 	att.Slot = "muzzle"
 
-	att.SortOrder = 15
+	att.SortOrder = 20
 
 	att.Model = "models/weapons/arccw_go/atts/supp_osprey.mdl"
 
@@ -73,14 +70,14 @@ do
 	att.IsMuzzleDevice = true
 
 	att.Mult_ShootPitch = 1
-	att.Mult_ShootVol = 0.75
-	att.Mult_AccuracyMOA = 0.8
-	att.Mult_Range = 1.1
+	att.Mult_ShootVol = 0.85
+	att.Mult_AccuracyMOA = 0.95
+	att.Mult_Range = 1.05
 
-	att.Mult_SightTime = 1.1
-	att.Mult_HipDispersion = 1.15
+	att.Mult_SightTime = 1.05
+	--att.Mult_HipDispersion = 1.15
 
-	att.Add_BarrelLength = 8
+	att.Add_BarrelLength = 4
 
 	att.Hook_Compatible = function(wep)
 	    if wep:GetIsShotgun() then return false end
@@ -141,7 +138,7 @@ do
 
 	att.PrintName = "PBS-1 Suppressor"
 	att.Icon = Material("entities/acwatt_go_supp_pbs1.png", "mips smooth")
-	att.Description = "Huge suppressor that makes shots whisper-quiet and enhances muzzle velocity. However, it is very bulky. A Russian equivalent to the Rotor43."
+	att.Description = "Huge suppressor that makes shots whisper-quiet and enhances muzzle velocity. However, it is very bulky."
 
 	att.SortOrder = 3
 
@@ -152,7 +149,7 @@ do
 	att.AutoStats = true
 	att.Slot = "muzzle"
 
-	att.SortOrder = 15
+	att.SortOrder = 17
 
 	att.Model = "models/weapons/arccw_go/atts/supp_pbs1.mdl"
 
@@ -160,15 +157,21 @@ do
 	att.Override_MuzzleEffect = "muzzleflash_suppressed"
 	att.IsMuzzleDevice = true
 
+	-- pbs-1: better ballistics, worse handling than monster
+	-- better for stationary
+
 	att.Mult_ShootPitch = 0.9
 	att.Mult_ShootVol = 0.75
-	att.Mult_AccuracyMOA = 0.75
-	att.Mult_Range = 1.25
+	att.Mult_AccuracyMOA = 0.6
+	att.Mult_Range = 1.4
+	att.Mult_Recoil = 0.9
+	att.Mult_RecoilSide = 0.85
+	att.Mult_MoveDispersion = 1.4
 
-	att.Mult_SightTime = 1.25
+	att.Mult_SightTime = 1.5
 	att.Mult_HipDispersion = 1.5
 
-	att.Add_BarrelLength = 16
+	att.Add_BarrelLength = 12
 
 	att.Hook_Compatible = function(wep)
 	    if wep:GetIsShotgun() then return false end
@@ -289,7 +292,7 @@ do
 	att.AutoStats = true
 	att.Slot = "muzzle"
 
-	att.SortOrder = 15
+	att.SortOrder = 18
 
 	att.Model = "models/weapons/arccw_go/atts/supp_large.mdl"
 
@@ -297,15 +300,16 @@ do
 	att.Override_MuzzleEffect = "muzzleflash_suppressed"
 	att.IsMuzzleDevice = true
 
-	att.Mult_ShootPitch = 0.9
 	att.Mult_ShootVol = 0.75
-	att.Mult_AccuracyMOA = 0.75
-	att.Mult_Range = 1.25
+	att.Mult_AccuracyMOA = 0.85
+	att.Mult_Range = 1.15
+	att.Mult_Recoil = 0.9
+	att.Mult_MoveDispersion = 1.15
 
-	att.Mult_SightTime = 1.25
-	att.Mult_HipDispersion = 1.5
+	att.Mult_HipDispersion = 1.2
+	att.Mult_SightTime = 1.35
 
-	att.Add_BarrelLength = 16
+	att.Add_BarrelLength = 8
 
 	att.Hook_Compatible = function(wep)
 	    if wep:GetIsShotgun() then return false end
@@ -377,7 +381,7 @@ do
 	att.AutoStats = true
 	att.Slot = "muzzle"
 
-	att.SortOrder = 15
+	att.SortOrder = 19
 
 	att.Model = "models/weapons/arccw_go/atts/supp_ssq.mdl"
 
@@ -385,11 +389,17 @@ do
 	att.Override_MuzzleEffect = "muzzleflash_suppressed"
 	att.IsMuzzleDevice = true
 
-	att.Mult_ShootPitch = 1.1
-	att.Mult_ShootVol = 0.75
-	att.Mult_Range = 0.9
+	att.Mult_ShootPitch = 1
+	att.Mult_ShootVol = 0.8
+	att.Mult_AccuracyMOA = 0.9
+	att.Mult_Range = 1.1
+	att.Mult_Recoil = 0.95
+	att.Mult_MoveDispersion = 1.1
 
-	att.Add_BarrelLength = 8
+	att.Mult_SightTime = 1.15
+	--att.Mult_HipDispersion = 1.15
+
+	att.Add_BarrelLength = 6
 
 	att.Hook_Compatible = function(wep)
 	    if wep:GetIsShotgun() then return false end

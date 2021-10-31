@@ -584,7 +584,7 @@ end
 -- muzz_brake.lua
 ------
 
-do
+--[[do
 	local att = {}
 	ArcCW.SetShortName("muzz_brake")
 
@@ -612,7 +612,7 @@ do
 	att.Mult_Recoil = 0.8
 	att.Mult_RecoilSide = 1.5
 	ArcCW.LoadAttachmentType(att)
-end
+end]]
 
 ------
 -- muzz_breacher.lua
@@ -715,6 +715,7 @@ end
 -- muzz_compensator.lua
 ------
 
+--[[
 do
 	local att = {}
 	ArcCW.SetShortName("muzz_compensator")
@@ -743,7 +744,7 @@ do
 	att.Mult_RecoilSide = 0.7
 	ArcCW.LoadAttachmentType(att)
 end
-
+]]
 ------
 -- muzz_crosschoke.lua
 ------
@@ -877,13 +878,13 @@ do
 	att.SortOrder = 5
 
 	att.Mult_ShootPitch = 0.95
-	att.Mult_AccuracyMOA = 0.5
+	att.Mult_AccuracyMOA = 0.65
 	att.Mult_Range = 1.5
-	att.Mult_Recoil = 0.9
+	--att.Mult_Recoil = 0.9
 
-	att.Mult_SightTime = 1.25
+	att.Mult_SightTime = 1.2
 
-	att.Mult_SpeedMult = 0.95
+	att.Mult_SpeedMult = 0.9
 	att.Mult_SightedSpeedMult = 0.9
 	ArcCW.LoadAttachmentType(att)
 end
@@ -898,7 +899,7 @@ do
 
 	att.PrintName = "Light Barrel"
 	att.Icon = Material("entities/acwatt_muzz_lbar.png")
-	att.Description = "Lightweight barrel with reduced weight with reduced precision compared to stock barrels."
+	att.Description = "Lightweight barrel with reduced weight, at the cost of reduced precision and ballistics."
 	att.Desc_Pros = {
 	}
 	att.Desc_Cons = {
@@ -908,15 +909,17 @@ do
 
 	att.SortOrder = 5
 
-	att.Mult_ShootPitch = 1.02
-	att.Mult_AccuracyMOA = 1.5
+	att.Mult_ShootPitch = 1.05
+	att.Mult_AccuracyMOA = 1.2
 
 	att.Mult_Range = 0.85
-	att.Mult_Recoil = 1.15
+	att.Mult_Recoil = 1.1
 
 	att.Mult_SightTime = 0.75
-	att.Mult_SightedSpeedMult = 1.4
-	att.Mult_SpeedMult = 1.15
+	att.Mult_SightedSpeedMult = 1.5
+	att.Mult_SpeedMult = 1.25
+	att.Mult_DrawTime = 0.8
+
 	ArcCW.LoadAttachmentType(att)
 end
 
