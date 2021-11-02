@@ -855,6 +855,13 @@ local function easeOut(x, intensity)
     return (x <= 0 and 0) or (x == 1 and 1) or 1 - (2 ^ (intensity * x))
 end
 
+local c1 = 1.70158;
+local c3 = c1 + 1;
+
+local function easeOutBack(x)
+    return 1 + c3 * math.pow(x - 1, 5) + c1 * math.pow(x - 1, 2);
+end
+
 -- happens after every recoil change due to pred - we don't need to network a purely-clientside thing
 function SWEP:RecalculatePunch(recv)
     if not CLIENT then return end -- oye this is a client thing
@@ -918,8 +925,8 @@ function SWEP:PunchRecoil()
             return 0, 0
         end
 
-        local curFrac = easeOut(passed / self.RecoilTRecovery, self.RecoilTEaseOutIntensity)
-        local sinceFrac = easeOut(sincePassed / self.RecoilTRecovery, self.RecoilTEaseOutIntensity)
+        local curFrac = easeOutBack(passed / self.RecoilTRecovery, self.RecoilTEaseOutIntensity)
+        local sinceFrac = easeOutBack(sincePassed / self.RecoilTRecovery, self.RecoilTEaseOutIntensity)
 
         local vRec = (mxR * (curFrac - sinceFrac))
         local hRec = (mxSR * (curFrac - sinceFrac))
