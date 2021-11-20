@@ -17,17 +17,20 @@ function ArcCW.DoorBust(ent, vel)
 
         -- Make a busted door prop and fling it
         local prop = ents.Create("prop_physics")
+
         prop:SetModel(ent:GetModel())
         prop:SetPos(ent:GetPos())
         prop:SetAngles(ent:GetAngles())
         prop:SetSkin(ent:GetSkin())
         prop:Spawn()
         prop:GetPhysicsObject():SetVelocity(vel)
+        prop.CanTakeDamage = false
 
         -- Make it not collide with players after a bit cause that's annoying
         timer.Create("ArcCW_DoorBust_" .. prop:EntIndex(), 2, 1, function()
             if IsValid(prop) then
                 prop:SetCollisionGroup(COLLISION_GROUP_WEAPON)
+                prop.CanTakeDamage = true
             end
         end)
 
