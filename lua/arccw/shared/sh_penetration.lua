@@ -22,7 +22,11 @@ end
 
 function ArcCW:IsPenetrating(ptr, ptrent)
     if ptrent:IsWorld() then
-        return !ptr.StartSolid or ptr.AllSolid
+        --[[svprint(util.IsInWorld(ptr.StartPos))
+        debugoverlay.Cross(ptr.StartPos, 8, 4,
+            util.IsInWorld(ptr.StartPos) and Colors.Green or Colors.Red, true)]]
+
+        return !ptr.StartSolid or ptr.AllSolid or not util.IsInWorld(ptr.StartPos)
     elseif IsValid(ptrent) then
         local mins, maxs = ptrent:WorldSpaceAABB()
         local withinbounding = ptr.HitPos:WithinAABox(mins, maxs)
@@ -112,8 +116,13 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
 
     if !GetConVar("arccw_enable_penetration"):GetBool() then return end
 
-    while !skip and penleft > 0 and ArcCW:IsPenetrating(ptr, ptrent) and ptr.Fraction < 1 and ptrent == curr_ent do
+    while !skip and penleft > 0 and ArcCW:IsPenetrating(ptr, ptrent)
+        --[[and ptr.Fraction < 1]] -- https://i.imgur.com/mtDYkEp.png
+        and ptrent == curr_ent do
         penleft = penleft - (pentracelen * penmult)
+
+        --debugoverlay.Sphere(ptr.StartPos, math.max(0, penleft), 4, color_white, true)
+        --debugoverlay.Text(ptr.StartPos, ("%.1f"):format(penleft), 3)
 
         td.start  = endpos
         td.endpos = endpos + (dir * pentracelen)
@@ -121,6 +130,7 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
 
         ptr = util.TraceLine(td)
 
+        debugoverlay.Text(ptr.EndPos, ("%.1f"):format(penleft), 3)
         -- This is never called because curr_ent is never updated, genius
         -- Damage is handled in abullet.Callback anyways
         --[[]
@@ -155,14 +165,18 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
         if GetConVar("developer"):GetBool() then
             local pdeltap = penleft / bullet.Penetration
             local colorlr = m_lerp(pdeltap, 0, 255)
-            debugoverlay.Line(endpos, endpos + (dir * pentracelen), 10, Color(255, colorlr, colorlr), true)
+
+            debugoverlay.Line(endpos, endpos + (dir * pentracelen), 10,
+                Color(255, colorlr, colorlr), true)
         end
 
         endpos = endpos + (dir * pentracelen)
 
         dir = dir + (VectorRand() * 0.025 * penmult)
-
     end
+
+    print("Penleft:", penleft, ArcCW:IsPenetrating(ptr, ptrent), ptr.Fraction)
+    debugoverlay.Cross(endpos, 8, 4, Colors.Sky, true)
 
     if penleft > 0 then
         if (dir:Length() == 0) then return end
@@ -224,7 +238,6 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
                 local dist = bullet.Travelled * ArcCW.HUToM
                 bullet.Travelled = bullet.Travelled + (btr.HitPos - endpos):Length()
 
-
                 if alreadypenned[btr.Entity:EntIndex()] then
                     dmg:SetDamage(0)
                 else
@@ -236,6 +249,8 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
                 ArcCW:DoPenetration(btr, damage, bullet, penleft, false, alreadypenned)
 
                 if GetConVar("developer"):GetBool() then
+                    --debugoverlay.Cross(endpos, 8, 4, Colors.Sky, true)
+                    --debugoverlay.Cross(btr.HitPos, 8, 4, Colors.Red, true)
                     debugoverlay.Line(endpos, btr.HitPos, 10, Color(150, 150, 150), true)
                 end
 
