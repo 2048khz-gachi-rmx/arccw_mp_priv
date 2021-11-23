@@ -448,10 +448,9 @@ function SWEP:GetBuff_Mult(buff)
         end
     end
 
-    if Inventory then
-        local invbuff = Inventory.DoBuffMult(self, buff, mult)
-        if invbuff then mult = mult * invbuff end
-    end
+
+    local invbuff = Inventory.DoBuffMult(self, buff, mult)
+    if invbuff then mult = mult * invbuff end
 
     tbl.TickCache_Mults[buff] = mult
 
@@ -534,10 +533,9 @@ function SWEP:GetBuff_Add(buff)
         end
     end
 
-    if Inventory then
-        local invbuff = Inventory.DoBuffAdd(self, buff, add)
-        if invbuff then add = add + invbuff end
-    end
+
+    local invbuff = Inventory.DoBuffAdd(self, buff, add)
+    if invbuff then add = add + invbuff end
 
     tbl.TickCache_Adds[buff] = add
 
