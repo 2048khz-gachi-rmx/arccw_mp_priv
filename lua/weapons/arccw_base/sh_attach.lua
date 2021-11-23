@@ -247,7 +247,9 @@ function SWEP:GetBuff_Hook(buff, data)
     end
 
     data = hook.Call(buff, nil, self, data) or data
-    Inventory.DoBuffHook(self, buff, data)
+    if Inventory then
+        Inventory.DoBuffHook(self, buff, data)
+    end
 
     return data
 end
