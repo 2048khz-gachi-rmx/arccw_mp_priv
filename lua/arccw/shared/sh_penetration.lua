@@ -175,7 +175,6 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
         dir = dir + (VectorRand() * 0.025 * penmult)
     end
 
-    print("Penleft:", penleft, ArcCW:IsPenetrating(ptr, ptrent), ptr.Fraction)
     debugoverlay.Cross(endpos, 8, 4, Colors.Sky, true)
 
     if penleft > 0 then

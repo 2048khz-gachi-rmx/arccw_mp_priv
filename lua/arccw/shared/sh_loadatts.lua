@@ -223,7 +223,7 @@ elseif SERVER then
             k.Blacklisted = ArcCW.AttachmentBlacklistTable[i] or false
         end
 
-        file.Write("arccw_blacklist" .. Settings.Get("ServerID", "UNKNOWN_ID") .. ".txt", util.TableToJSON(ArcCW.AttachmentBlacklistTable))
+        file.Write("arccw_blacklist" .. Settings.GetStored("ServerID", "UNKNOWN_ID") .. ".txt", util.TableToJSON(ArcCW.AttachmentBlacklistTable))
         ArcCW_SendBlacklist()
     end)
 end
