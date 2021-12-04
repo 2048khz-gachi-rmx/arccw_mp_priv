@@ -991,8 +991,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 	t.SwayScale = (coolsway and 0) or actual.sway
 	t.BobScale  = (coolsway and 0) or actual.bob
 
-	
-
 	if coolsway then
 		local temp = swayzmult
 		swayzmult = swayymult or 1
@@ -1004,16 +1002,14 @@ function SWEP:GetViewModelPosition(pos, ang)
 		ang:Set(nang)
 	end
 
-	
-
-
-	--oldang:Add(recoilMethod(self))
 
 	pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
 
-	--pos:Add( self.RecoilPunchSide * oldang:Right() )
-	-- upward recoil is terrible on some guns, wtf?
-	--pos:Add( self.RecoilPunchUp   * -oldang:Up() )
+	-- position recoil only if not aiming through irons
+	local sght = self:GetActiveSights()
+	if sght.HolosightModel then
+		pos:Add( self:GetRecoil() * oldang:Up() / 4 )
+	end
 
 	--oldang:Add(recoilMethod(self))
 
