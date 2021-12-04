@@ -929,11 +929,13 @@ function SWEP:PunchRecoil()
         local sinceFrac = easeOutBack(sincePassed / self.RecoilTRecovery, self.RecoilTEaseOutIntensity)
 
         local vRec = (mxR * (curFrac - sinceFrac))
-        local hRec = (mxSR * (curFrac - sinceFrac))
+
+        local horTotalCur = mxSR * Ease(curFrac, 0.5)
+        local horToApply = horTotalCur - (mxSR * Ease(sinceFrac, 0.5))
 
         self._LastVerticalRec = mxR * curFrac
-        self._LastHorizontalRec = mxSR * curFrac
-        return vRec, hRec
+        self._LastHorizontalRec = horTotalCur
+        return vRec, horToApply
     end
 end
 
