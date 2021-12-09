@@ -747,7 +747,9 @@ function SWEP:DoRecoil()
     local single = game.SinglePlayer()
     --if !single and !IsFirstTimePredicted() then return end
 
-    if single and self:GetOwner():IsValid() and SERVER then self:CallOnClient("DoRecoil") end
+    if single and self:GetOwner():IsValid() and SERVER then
+        self:CallOnClient("DoRecoil")
+    end
 
     -- math.randomseed(self:GetBurstLength() + (self.Recoil * 409) + (self.RecoilSide * 519))
 
@@ -763,6 +765,7 @@ function SWEP:DoRecoil()
     local visual = rec.VisualRecoilMul
 
     local rmul = (recoil or 1) * self:GetBuff_Mult("Mult_Recoil")
+    local rvert = (recoil or 1) * self:GetBuff_Mult("Mult_RecoilVertical")
     local recv = (visual or 1) * self:GetBuff_Mult("Mult_VisualRecoilMult")
     local recs = (side or 1)   * self:GetBuff_Mult("Mult_RecoilSide")
 
@@ -771,7 +774,10 @@ function SWEP:DoRecoil()
     -- local irec = math.Rand(rrange - 1, rrange + 1)
     -- local recu = math.Rand(0.5, 1)
 
-    local irec = math.Rand(-1, 1)
+    local minIntensity = 0.3
+    local irec = math.random() * (1 - minIntensity) + minIntensity
+    irec = irec * (math.random() < 0.5 and -1 or 1)
+
     local recu = 1
 
     if self:InBipod() then
@@ -781,6 +787,7 @@ function SWEP:DoRecoil()
         local b = ((biprec or 1) * bipmul or 0.25)
 
         rmul = rmul * b
+        rvert = rvert * b
         recs = recs * b
         recv = recv * b
     end
@@ -803,7 +810,7 @@ function SWEP:DoRecoil()
     if CLIENT and IsFirstTimePredicted() then self:OurViewPunch(punch) end
 
     local curRec = self:GetRecoil()
-    local addRec = self.Recoil * rmul * recu
+    local addRec = self.Recoil * rmul * recu * rvert
 
     local curSideRec = self:GetSideRecoil()
     local addSideRec = self.RecoilSide * irec * recs * rmul
@@ -915,6 +922,8 @@ function SWEP:PunchRecoil()
 
 
     local timedMethod = true --(mxR / rec) > self.RecoilTRecovery
+
+    --print("PunchRecoil", mxR, mxSR)
 
     if timedMethod then
         if passed > self.RecoilTRecovery then
