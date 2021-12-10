@@ -318,7 +318,7 @@ function SWEP:CreateCustomize2HUD()
                 self:ToggleCustomizeHUD(false)
             end
         end
-        -- e
+
         ArcCW.RememberCursor()
         gui.EnableScreenClicker(false)
 
