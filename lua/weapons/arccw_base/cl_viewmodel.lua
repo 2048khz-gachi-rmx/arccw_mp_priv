@@ -1007,7 +1007,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 	-- position recoil only if not aiming through irons
 	local sght = self:GetActiveSights()
-	if sght.HolosightModel then
+	if sght and sght.HolosightModel then
 		pos:Add( self:GetRecoil() * oldang:Up() / 4 )
 	end
 
