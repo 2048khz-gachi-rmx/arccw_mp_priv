@@ -864,35 +864,36 @@ local cvar = GetConVar("arccw_override_nearwall")
 
 function SWEP:BarrelHitWall(visual)
     cvar = cvar or GetConVar("arccw_override_nearwall")
-
+    local t = self:GetTable()
+   
     if cvar:GetBool() then
-        local offset = self.BarrelOffsetHip
+        local offset = t.BarrelOffsetHip
 
         if vrmod and vrmod.IsPlayerInVR(self:GetOwner()) then
             return 0 -- Never block barrel in VR
         end
 
         if self:GetState() == ArcCW.STATE_SIGHTS then
-            offset = self.BarrelOffsetSighted
+            offset = t.BarrelOffsetSighted
         end
 
         local ow = self:GetOwner()
         local dir = ow:EyeAngles()
         local src = ow:EyePos()
 
-        src = src + dir:Right() * offset[1]
-        src = src + dir:Forward() * offset[2]
-        src = src + dir:Up() * offset[3]
+        src:Add(dir:Right() 	* offset[1])
+        src:Add(dir:Forward() 	* offset[2])
+        src:Add(dir:Up() 		* offset[3])
 
         local mask = MASK_SOLID
 
         local filter = {ow}
 
-        if self.Shields and #self.Shields > 0 then
-            table.Add(filter, self.Shields)
+        if t.Shields and #t.Shields > 0 then
+            table.Add(filter, t.Shields)
         end
 
-        local barrelLength = self.BarrelLength + self:GetBuff_Add("Add_BarrelLength")
+        local barrelLength = t.BarrelLength + self:GetBuff_Add("Add_BarrelLength")
         local max = 0
 
         if visual then

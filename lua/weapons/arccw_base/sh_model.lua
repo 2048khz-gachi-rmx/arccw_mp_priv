@@ -667,8 +667,16 @@ function SWEP:KillModel(models)
     end
 end
 
+local b = bench("DrawCustomModel", 600)
+
 function SWEP:DrawCustomModel(wm,origin,angle)
-    if ArcCW.VM_OverDraw then return end
+    --b:Open()
+
+    if ArcCW.VM_OverDraw then
+        --b:Close():print()
+        return
+    end
+
     local disttoeye = self:GetPos():DistToSqr(EyePos())
     local visibility = math.pow(GetConVar("arccw_visibility"):GetInt(), 2)
     local always = false
@@ -710,7 +718,10 @@ function SWEP:DrawCustomModel(wm,origin,angle)
             vscale = self.WorldModelOffset.scale or 1
         end
 
-        if !vm or !IsValid(vm) then return end
+        if !vm or !vm:IsValid() then
+            -- b:Close():print()
+            return
+        end
     else
         if !self.VM then
             self:SetupModel(wm)
@@ -718,7 +729,10 @@ function SWEP:DrawCustomModel(wm,origin,angle)
 
         vm = self:GetOwner():GetViewModel()
 
-        if !vm or !IsValid(vm) then return end
+        if !vm or !vm:IsValid() then
+            -- b:Close():print()
+            return
+        end
 
         models = self.VM
 
@@ -728,8 +742,9 @@ function SWEP:DrawCustomModel(wm,origin,angle)
     end
 
     for i, k in pairs(models) do
-        if !IsValid(k.Model) then
+        if !k.Model:IsValid() then
             self:SetupModel(wm)
+            -- b:Close():print()
             return
         end
 
@@ -822,7 +837,7 @@ function SWEP:DrawCustomModel(wm,origin,angle)
                 local wmelemod = nil
                 local slidemod = nil
 
-                for _, e in pairs(self:GetActiveElements(true)) do
+                for _, e in pairs(self:GetActiveElements()) do
                     local ele = self.AttachmentElements[e]
 
                     if !ele then continue end
@@ -884,9 +899,9 @@ function SWEP:DrawCustomModel(wm,origin,angle)
                 local ang = k.CharmAngle
                 local scale = k.CharmScale or Vector(1, 1, 1)
 
-                apos = apos + aang:Forward() * pos.x * scale.x
-                apos = apos + aang:Right() * pos.y * scale.y
-                apos = apos + aang:Up() * pos.z * scale.z
+                apos:Add(aang:Forward() * (pos.x * scale.x))
+                apos:Add(aang:Right() * (pos.y * scale.y))
+                apos:Add(aang:Up() * (pos.z * scale.z))
 
                 aang:RotateAroundAxis(aang:Right(), ang.p)
                 aang:RotateAroundAxis(aang:Up(), ang.y)
@@ -902,8 +917,8 @@ function SWEP:DrawCustomModel(wm,origin,angle)
             local moffset = (k.ModelOffset or Vector(0, 0, 0))
 
             apos = bpos + bang:Forward() * pos.x
-            apos = apos + bang:Right() * pos.y
-            apos = apos + bang:Up() * pos.z
+            apos:Add(bang:Right() * pos.y)
+            apos:Add(bang:Up() * pos.z)
 
             aang = Angle()
             aang:Set(bang)
@@ -912,14 +927,21 @@ function SWEP:DrawCustomModel(wm,origin,angle)
             aang:RotateAroundAxis(aang:Up(), ang.y)
             aang:RotateAroundAxis(aang:Forward(), ang.r)
 
-            apos = apos + aang:Forward() * moffset.x
-            apos = apos + aang:Right() * moffset.y
-            apos = apos + aang:Up() * moffset.z
+            --[[aang:RotateAroundAxis(br, ang[1])
+            aang:RotateAroundAxis(bu, ang[2])
+            aang:RotateAroundAxis(bf, ang[3])]]
+
+            apos:Add(aang:Forward() * moffset.x)
+            apos:Add(aang:Right() * moffset.y)
+            apos:Add(aang:Up() * moffset.z)
         else
             continue
         end
 
-        if !apos or !aang then return end
+        if !apos or !aang then
+            --b:Close():print()
+            return
+        end
 
         k.Model:SetPos(apos)
         k.Model:SetAngles(aang)
@@ -952,6 +974,7 @@ function SWEP:DrawCustomModel(wm,origin,angle)
         self:DrawFlashlightsVM()
     end
 
+    --b:Close():print()
     -- self:RefreshBGs()
 end
 

@@ -439,14 +439,19 @@ local function recoilMethod(self)
 end
 
 local b = bench("vm_calc", 600)
+local oldpos, oldang = Vector(), Angle()
 
 function SWEP:GetViewModelPosition(pos, ang)
+
+	-- b:Open()
+
 	local owner = self:GetOwner()
 	local t = self:GetTable()
 
-	if !IsValid(owner) or !owner:Alive() then return end
-
-	-- local SP = game.SinglePlayer()
+	if !owner or !owner:IsValid() or !owner:Alive() then
+		-- b:Close():print()
+		return
+	end
 
 	local CT = CurTime()
 	local UCT = UnPredictedCurTime()
@@ -454,8 +459,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 	local firstpred = IsFirstTimePredicted()
 
 	local gunbone, gbslot = self:GetBuff_Override("LHIK_GunDriver")
-
-	local oldpos, oldang = Vector(), Angle()
 
 	-- local asight = self:GetActiveSights()
 	local state  = self:GetState()
@@ -613,9 +616,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 		target.sway = 0.2
 	end
-
-	
-
 	
 	addElem(target.pos, vm_right, vm_forward, vm_up)
 
@@ -653,9 +653,7 @@ function SWEP:GetViewModelPosition(pos, ang)
 	local sprinted  = state == ArcCW.STATE_SPRINT or (UCT - t.LastExitSprintTimeUnpred) < recovery
 	local sprintFrac = 0
 
-
 	if sprinted then
-
 		local from = t.VM_SprintChange
 		local exit = t.LastExitSprintTimeUnpred >= t.LastEnterSprintTimeUnpred
 
@@ -666,7 +664,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 			-- lerping [0 -> x -> 1]
 			sprintFrac = calculateSwitchableFrac(from, 1, UCT - t.LastEnterSprintTimeUnpred, recovery)
 		end
-
 	end
 
 	t.VM_SprintCurrent = sprintFrac
@@ -803,12 +800,13 @@ function SWEP:GetViewModelPosition(pos, ang)
 		target.ang = LerpAngle(sprd, target.ang, sang or hang)
 	end]]
 
+
 	local deg = self:BarrelHitWall(true)
 
 	local stanceRecover = self:GetSightTime() ^ 0.4 / 2     -- how fast the stance will recover
 	local stanceRuin = self:GetSightTime() ^ 0.2            -- how fast the stance will break
 
-	
+
 
 	if firstpred then
 		if deg > 0 then
@@ -831,8 +829,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 		t.VM_BarrelWallFrac = t.VM_MaxBarrelFrac * easeOut( (UCT - t.VM_LastBarrelHit) / stanceRuin, 1 )
 	end
 
-	
-
 	if t.VM_BarrelWallFrac > 0 then
 		local fr = t.VM_BarrelWallFrac
 
@@ -846,9 +842,9 @@ function SWEP:GetViewModelPosition(pos, ang)
 		target.bob  = target.bob + int
 	end
 
-	if !isangle(target.ang) then target.ang = Angle(target.ang) end
-
-
+	if !isangle(target.ang) then
+		target.ang = Angle(target.ang)
+	end
 	
 	if t.InProcDraw then
 		t.InProcHolster = false
@@ -878,8 +874,8 @@ function SWEP:GetViewModelPosition(pos, ang)
 		if delta == 0 then t.InProcHolster = false end
 	end
 
-	if self.InProcBash then
-		self.InProcDraw = false
+	if t.InProcBash then
+		t.InProcDraw = false
 
 		local mult  = self:GetBuff_Mult("Mult_MeleeTime")
 		local mtime = self.MeleeTime * mult
@@ -950,8 +946,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 	--target.pos:Add(randVec)
 
-	
-
 	local speed = target.speed or 3
 
 	local coolsway = GetConVar("arccw_vm_coolsway"):GetBool()
@@ -964,8 +958,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 	swayzmult = GetConVar("arccw_vm_sway_zmult"):GetFloat()
 	swayspeed = GetConVar("arccw_vm_sway_speedmult"):GetFloat()
 	swayrotate = GetConVar("arccw_vm_sway_rotatemult"):GetFloat()
-
-	
 
 	-- For some reason, in multiplayer the sighting speed is twice as fast
 	speed = 1
@@ -1015,29 +1007,36 @@ function SWEP:GetViewModelPosition(pos, ang)
 
 	oldang:Add(recoilMethod(self))
 
-	ang:RotateAroundAxis(oldang:Right(),   actual.ang.x)
-	ang:RotateAroundAxis(oldang:Up(),      actual.ang.y)
-	ang:RotateAroundAxis(oldang:Forward(), actual.ang.z)
+	local OR, OU, OF = oldang:Right(), oldang:Up(), oldang:Forward()
 
-	ang:RotateAroundAxis(oldang:Right(),   actual.evang.x)
-	ang:RotateAroundAxis(oldang:Up(),      actual.evang.y)
-	ang:RotateAroundAxis(oldang:Forward(), actual.evang.z)
+	ang:RotateAroundAxis(OR,   actual.ang[1] + actual.evang[1])
+	ang:RotateAroundAxis(OU,   actual.ang[2] + actual.evang[2])
+	ang:RotateAroundAxis(OF,   actual.ang[3] + actual.evang[3])
+
+	--[[ang:RotateAroundAxis(OR,   actual.evang[1])
+	ang:RotateAroundAxis(OU,   actual.evang[2])
+	ang:RotateAroundAxis(OF,   actual.evang[3])]]
 
 	ang:Sub(recoilMethod(self))
 
-	pos:Add( oldang:Right()   * actual.evpos.x)
-	pos:Add( oldang:Forward() * actual.evpos.y)
-	pos:Add( oldang:Up()      * actual.evpos.z)
+	OR:Mul(actual.evpos[1])
+	OF:Mul(actual.evpos[2])
+	OU:Mul(actual.evpos[3])
 
-	pos:Add( actual.pos.x * ang:Right() )
-	pos:Add( actual.pos.y * ang:Forward() )
-	pos:Add( actual.pos.z * ang:Up() )
+	pos:Add(OR)
+	pos:Add(OF)
+	pos:Add(OU)
 
+	pos:Add(actual.pos[1] * ang:Right())
+	pos:Add(actual.pos[2] * ang:Forward())
+	pos:Add(actual.pos[3] * ang:Up())
 
 	pos[3] = pos[3] - actual.down
 
 	self.ActualVMData = actual
-	if coolsway then lasteyeangles = LerpAngle(m_min(FT * 100, 1), lasteyeangles, eyeangles) end
+	if coolsway then
+		LerpSource(m_min(FT * 100, 1), lasteyeangles, eyeangles)
+	end
 	-- end
 
 	if gunbone then
@@ -1059,6 +1058,8 @@ function SWEP:GetViewModelPosition(pos, ang)
 		ang:Add(attang)
 		pos:Add(attpos)
 	end
+	
+	--b:Close():print()
 
 	return pos, ang
 end
@@ -1122,14 +1123,17 @@ function SWEP:ShouldCheapScope()
 	if !self:GetConVar("arccw_cheapscopes"):GetBool() then return end
 end
 
-function SWEP:PreDrawViewModel(vm)
+local b = bench("predraw", 600)
+
+function SWEP:PreDrawViewModel(vm, fl)
+	--b:Open()
 	if ArcCW.VM_OverDraw then return end
 	if !vm then return end
 
 	if self:GetState() == ArcCW.STATE_CUSTOMIZE then self:BlurNotWeapon() end
 
 	if GetConVar("arccw_cheapscopesautoconfig"):GetBool() then
-		local fps    = 1 / m_min(FrameTime(), FrameTime())
+		local fps    = 1 / FrameTime()
 		local lowfps = fps <= 45
 
 		GetConVar("arccw_cheapscopes"):SetBool(lowfps)
@@ -1156,10 +1160,14 @@ function SWEP:PreDrawViewModel(vm)
 
 	self:DrawCustomModel(false)
 
-	self:DoLHIK()
+	self:DoLHIK() -- !! expensive !!
+	--b:Close():print()
 end
 
+local b = bench("postdraw", 600)
+
 function SWEP:PostDrawViewModel()
+	--b:Open()
 	if ArcCW.VM_OverDraw then return end
 	render.SetBlend(1)
 
@@ -1172,9 +1180,10 @@ function SWEP:PostDrawViewModel()
 	if ArcCW.Overdraw then
 		ArcCW.Overdraw = false
 	else
-		self:DoLaser()
+		self:DoLaser() -- !! expensive !!
 		self:DoHolosight()
 	end
 
 	cam.End3D()
+	--b:Close():print()
 end

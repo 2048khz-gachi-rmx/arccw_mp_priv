@@ -835,6 +835,7 @@ function SWEP:DoRecoil()
                                         -- since GM:Move calls itself more than SWEP:Think (making us predict recoil incorrectly for viewpunch)
                                         -- and we need it to be a predicted var...
 
+    hook.Run("ArcCW_Punch", self, addRec)
     self:SetRecoil( curRec + addRec )
     self:SetSideRecoil( curSideRec + addSideRec )
 

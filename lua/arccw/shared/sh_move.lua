@@ -99,10 +99,11 @@ function ArcCW.CreateMove(cmd)
 
     local ang2 = cmd:GetViewAngles()
 
-
     local recoil, siderecoil = wpn:PunchRecoil()
+    if recoil == 0 and siderecoil == 0 then return end
 
-    ang2 = ang2 - Angle(recoil * 3.5, siderecoil * 2, 0)
+    local rec =  Angle(recoil * 3.5, siderecoil * 2, 0)
+    ang2 = ang2 - rec
 
     cmd:SetViewAngles(ang2)
 

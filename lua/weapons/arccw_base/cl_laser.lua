@@ -60,12 +60,11 @@ function SWEP:DrawLaser(laser, model, color, world)
     local behav = ArcCW.LaserBehavior
 
     if !owner then return end
-
-    if !IsValid(owner) then return end
+    if !owner:IsValid() then return end
 
     if !model then return end
 
-    if !IsValid(model) then return end
+    if !model:IsValid() then return end
 
     local att = model:LookupAttachment(laser.LaserBone or "laser")
 
@@ -135,7 +134,7 @@ function SWEP:DrawLaser(laser, model, color, world)
     local strength = laser.LaserStrength or 1
     local laserpos = solid and tr.StartPos or hitpos
 
-    laserpos = laserpos - (EyeAngles():Forward())
+    laserpos = laserpos - EyeVector()
 
     if solid then return end
 
