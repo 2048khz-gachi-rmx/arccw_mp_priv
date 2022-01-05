@@ -242,8 +242,10 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
                 else
                     dmg:SetDamageType(bullet.DamageType)
                     dmg:SetDamage(bullet.Weapon:GetDamage(dist, true) * pdelta, true)
+                    alreadypenned[btr.Entity:EntIndex()] = dmg:GetDamage()
                 end
-                alreadypenned[btr.Entity:EntIndex()] = true
+
+                hook.Run("ArcCW_BulletPenned", bullet.Weapon, att, btr, dmg, alreadypenned)
 
                 ArcCW:DoPenetration(btr, damage, bullet, penleft, false, alreadypenned)
 
@@ -275,5 +277,7 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
             supbullet.Tracer   = 0
             supbullet.Force    = 0
         ]]
+    else
+    	hook.Run("ArcCW_BulletLanded", bullet.Weapon, alreadypenned)
     end
 end

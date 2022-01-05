@@ -186,7 +186,6 @@ function SWEP:PrimaryAttack()
         hit.penleft = pen
 
         hit = self:GetBuff_Hook("Hook_BulletHit", hit)
-
         if !hit then return end
 
         dmg:SetDamageType(hit.dmgtype)
@@ -212,7 +211,7 @@ function SWEP:PrimaryAttack()
 
         if SERVER then self:TryBustDoor(trent, dmg) end
 
-        self:DoPenetration(tr, hit.penleft, { [trent:EntIndex()] = true })
+        self:DoPenetration(tr, hit.penleft, { [trent:EntIndex()] = hit.damage })
 
         effect = self:GetBuff_Override("Override_ImpactEffect") or effect
 
@@ -351,6 +350,7 @@ function SWEP:PrimaryAttack()
     self:AddHeat(1)
 
     self:GetBuff_Hook("Hook_PostFireBullets")
+    hook.Run("ArcCW_FiredBullets", self)
 
     if shouldsupp then SuppressHostEvents(nil) end
 end
@@ -493,6 +493,7 @@ function SWEP:DoPrimaryFire(isent, data)
                 if SERVER and !game.SinglePlayer() then SuppressHostEvents(owner) end
             end
             owner:FireBullets(data)
+
             if owner:IsPlayer() then
                 owner:LagCompensation(false)
                 if SERVER and !game.SinglePlayer() then SuppressHostEvents(nil) end
