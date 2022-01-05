@@ -498,6 +498,7 @@ local mtrx = Matrix()
 local scvec = Vector()
 local trvec = Vector()
 
+
 function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	-- holosight structure
 	-- holosight model
@@ -640,62 +641,32 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 	local dir = ang:Up()
 
-	local pdiff = (pos - EyePos()):Length()
+	local ep = EyePos()
+
+	local pdiff = (pos - ep):Length()
 	local d = (8 + pdiff)
 	d = hs.HolosightConstDist or d
 
-	pos = LerpVector(delta, EyePos(), pos)
+	pos = LerpVector(delta, ep, pos)
 
 	local vpA = self:GetOurViewPunchAngles()
-	local eyeangs = self:GetOwner():EyeAngles()
+	local eyeangs = dir:Angle() + vpA
 
-	eyeangs[1] = eyeangs[1] + self:GetRecoil() * -0.1
-	eyeangs[2] = eyeangs[2] + vpA[2] * 0.5
+	eyeangs[1] = eyeangs[1] - self:GetRecoil() * 1 -- self:GetRecoil() * 1
+	eyeangs[2] = eyeangs[2] - vpA[2] * 0.5
 
-	-- local vm = hsm or hsp
-
-	-- eyeangs = eyeangs + (eyeangs - vm:GetAngles())
-
-	pdiff = Lerp(delta, pdiff, 0)
+	eyeangs:Normalize()
 
 	dir = LerpVector(delta, eyeangs:Forward(), dir:GetNormalized())
 
-	local vmscale = (self.Attachments[asight.Slot] or {}).VMScale or Vector(1, 1, 1)
+	dir:Mul(d)
+	pos:Add(dir)
 
-	if hs.HolosightConstDist then
-		vmscale = Vector(1, 1, 1)
-	end
-
-	local hsx = vmscale[2] or 1
-	local hsy = vmscale[3] or 1
-
-	pos = pos + (dir * d)
-
-	--pos = pos + Vector(ArcCW.StrafeTilt(self), 0, 0)
-
-	-- local corner1, corner2, corner3, corner4
-
-	-- corner2 = pos + (ang:Right() * (-0.5 * size)) + (ang:Forward() * (0.5 * size))
-	-- corner1 = pos + (ang:Right() * (-0.5 * size)) + (ang:Forward() * (-0.5 * size))
-	-- corner4 = pos + (ang:Right() * (0.5 * size)) + (ang:Forward() * (-0.5 * size))
-	-- corner3 = pos + (ang:Right() * (0.5 * size)) + (ang:Forward() * (0.5 * size))
-
-	-- render.SetColorMaterialIgnoreZ()
-	-- render.DrawScreenQuad()
-
-	-- render.SetStencilEnable( false )
-	-- local fovmag = asight.Magnification or 1
+	-- render.DrawSphere(pos, 4, 4, 4, color_white)
+	-- debugoverlay.Cross(pos, 4, 0.02, Colors.Red)
 
 	if hsmag and hsmag > 1 and delta < 1 then
 		local screen = rtmat
-
-		-- local sw2 = ScrH()
-		-- local sh2 = sw2
-
-		-- local sx2 = (ScrW() - sw2) / 2
-		-- local sy2 = (ScrH() - sh2) / 2
-
-		-- render.SetScissorRect( sx2, sy2, sx2 + sw2, sy2 + sh2, true )
 
 		if GetConVar("arccw_cheapscopes"):GetBool() then
 
@@ -717,7 +688,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 			local sx = ts.x - (sw / 2)
 			local sy = ts.y - (sh / 2)
-			print(cpos, sx, sy)
+
 			render.SetMaterial(black)
 			render.DrawScreenQuad()
 
@@ -737,35 +708,14 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 			render.DrawTextureToScreenRect(screen, sx, sy, sw, sh)
 
 		end
-
-		-- warp:SetFloat("$refractamount", -0.015)
-		-- render.UpdateRefractTexture()
-		-- render.SetMaterial(warp)
-		-- render.DrawScreenQuad()
-
-		-- render.SetScissorRect( sx2, sy2, sx2 + sw2, sy2 + sh2, false )
 	end
 
-	-- cam.Start3D()
-
-	-- render.SetColorMaterialIgnoreZ()
-	-- render.DrawScreenQuad()
-
-	-- render.DrawQuad( corner1, corner2, corner3, corner4, hsc or hs.HolosightColor )
 	cam.IgnoreZ( true )
 
 	render.SetStencilReferenceValue(ref)
 
-	-- render.SetMaterial(hs.HolosightReticle or defaultdot)
-	-- render.DrawSprite( pos, size * hsx, size * hsy, hsc or Color(255, 255, 255) )
-	-- if !hs.HolosightNoFlare then
-	--     render.SetMaterial(hs.HolosightFlare or hs.HolosightReticle or defaultdot)
-	--     local hss = 0.75
-	--     if hs.HolosightFlare then
-	--         hss = 1
-	--     end
-	--     render.DrawSprite( pos, size * hss * hsx, size * hss * hsy, Color(255, 255, 255, 255) )
-	-- end
+	cam.End3D()
+	cam.Start3D()
 
 	local a = pos:ToScreen()
 	local x = math.Round(a.x)
@@ -857,7 +807,8 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	end
 
 	cam.End2D()
-
+	cam.End3D()
+	self:StartVM3D()
 	render.SetStencilEnable( false )
 
 	cam.IgnoreZ( false )

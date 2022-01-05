@@ -99,15 +99,16 @@ function SWEP:PrimaryAttack()
     self.Primary.Automatic = true
 
     local aimvec = owner:GetAimVector()
-    local aimang = aimvec:Angle() + Angle(self:GetRecoil() * -2 * (1 - self:GetSightDelta()), 0, 0)
+    local aimang = aimvec:Angle()
 
+    aimang[1] = aimang[1] + self:GetRecoil() * -2 * (1 - self:GetSightDelta())
     aimang:Normalize()
     local dir = aimang:Forward()
+
     local src = self:GetShootSrc()
 
     if bit.band(util.PointContents(src), CONTENTS_WATER) == CONTENTS_WATER and !(self.CanFireUnderwater or self:GetBuff_Override("Override_CanFireUnderwater")) then
         self:DryFire()
-
         return
     end
 
@@ -133,6 +134,7 @@ function SWEP:PrimaryAttack()
         tracernum = 1
     end
 
+    -- debugoverlay.Cross(src + dir * 128, 4, 1)
 
     local bullet      = {}
     bullet.Attacker   = owner
@@ -325,9 +327,7 @@ function SWEP:PrimaryAttack()
 
     if self:HasBottomlessClip() and self:Clip1() > 0 then
         self:Unload()
-    end
-
-    
+    end 
 
     self:DoShootSound()
     self:DoPrimaryAnim()

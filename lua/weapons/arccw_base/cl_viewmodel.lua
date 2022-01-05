@@ -433,7 +433,7 @@ end
 local recoilAng = Angle()
 
 local function recoilMethod(self)
-	recoilAng[1] = self:GetRecoil() * 0.6
+	recoilAng[1] = self:GetRecoil() * 1
 
 	return recoilAng -- self:GetOurViewPunchAngles()
 end
@@ -1003,9 +1003,9 @@ function SWEP:GetViewModelPosition(pos, ang)
 		pos:Add( self:GetRecoil() * oldang:Up() / 4 )
 	end
 
-	--oldang:Add(recoilMethod(self))
-
 	oldang:Add(recoilMethod(self))
+
+	--oldang:Add(recoilMethod(self))
 
 	local OR, OU, OF = oldang:Right(), oldang:Up(), oldang:Forward()
 
@@ -1125,6 +1125,10 @@ end
 
 local b = bench("predraw", 600)
 
+function SWEP:StartVM3D()
+	cam.Start3D(nil, nil, self.CurrentViewModelFOV or self.ViewModelFOV, nil, nil, nil, nil, 1.5, 15000) --EyePos(), EyeAngles(), self.CurrentViewModelFOV or self.ViewModelFOV, nil, nil, nil, nil, 1.5, 15000)
+end
+
 function SWEP:PreDrawViewModel(vm, fl)
 	--b:Open()
 	if ArcCW.VM_OverDraw then return end
@@ -1155,7 +1159,7 @@ function SWEP:PreDrawViewModel(vm, fl)
 		self:FormCheapScope()
 	end
 
-	cam.Start3D(EyePos(), EyeAngles(), self.CurrentViewModelFOV or self.ViewModelFOV, nil, nil, nil, nil, 1.5, 15000)
+	self:StartVM3D()
 	cam.IgnoreZ(true)
 
 	self:DrawCustomModel(false)
@@ -1173,7 +1177,7 @@ function SWEP:PostDrawViewModel()
 
 	cam.End3D()
 
-	cam.Start3D(EyePos(), EyeAngles(), self.CurrentViewModelFOV or self.ViewModelFOV, nil, nil, nil, nil, 0.1, 15000)
+	self:StartVM3D()
 
 	cam.IgnoreZ(true)
 

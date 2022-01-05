@@ -60,6 +60,7 @@ end
 
 function SWEP:DoHeat()
     if self.NextHeatDissipateTime > CurTime() then return end
+    if self:GetHeat() == 0 then return end
 
     --local diss = self.HeatDissipation or 2
     --diss = diss * self:GetBuff_Mult("Mult_HeatDissipation")
