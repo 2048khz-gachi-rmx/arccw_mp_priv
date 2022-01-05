@@ -99,7 +99,7 @@ function SWEP:PrimaryAttack()
     self.Primary.Automatic = true
 
     local aimvec = owner:GetAimVector()
-    local aimang = aimvec:Angle() + Angle(self:GetRecoil() * -3, 0, 0)
+    local aimang = aimvec:Angle() + Angle(self:GetRecoil() * -2 * (1 - self:GetSightDelta()), 0, 0)
 
     aimang:Normalize()
     local dir = aimang:Forward()

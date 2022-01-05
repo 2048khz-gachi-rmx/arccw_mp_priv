@@ -646,9 +646,11 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 	pos = LerpVector(delta, EyePos(), pos)
 
-	local eyeangs = self:GetOwner():EyeAngles() --+ (self:GetOurViewPunchAngles() * 0.5)
+	local vpA = self:GetOurViewPunchAngles()
+	local eyeangs = self:GetOwner():EyeAngles()
 
-	eyeangs[1] = eyeangs[1] + self:GetRecoil() * -0.45
+	eyeangs[1] = eyeangs[1] + self:GetRecoil() * -0.1
+	eyeangs[2] = eyeangs[2] + vpA[2] * 0.5
 
 	-- local vm = hsm or hsp
 
