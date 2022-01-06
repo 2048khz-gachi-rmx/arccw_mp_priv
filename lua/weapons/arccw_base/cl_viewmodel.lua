@@ -88,8 +88,6 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 		-- velocity flips over to the other sign, and assume we're going to 0 instead
 		-- the jump between eases causes a jump in the VM too
 
-		-- frametime lerp nerds COPE
-
 		hEase = --[[(are_opposite and 1) or ]]--[[(math.abs(lhv) > (math.abs(hvel) + 4) and 1.4) or ]] 0.35
 
 		--[[if t._LastVMYEase ~= hEase then
@@ -310,6 +308,7 @@ function SWEP:GetVMPosition(EyePos, EyeAng)
 	self.LastEyeAng = EyeAng
 	self.LastEyePos = EyePos
 	self.LastVelocity = glob_velocity
+
 	return self.VMPos, self.VMAng
 end
 
@@ -441,9 +440,10 @@ end
 local b = bench("vm_calc", 600)
 local oldpos, oldang = Vector(), Angle()
 
-function SWEP:GetViewModelPosition(pos, ang)
-
-	-- b:Open()
+function SWEP:CalculateVMPos(pos, ang)
+	local CT = CurTime()
+	local tick = engine.TickCount()
+	local UCT = UnPredictedCurTime()
 
 	local owner = self:GetOwner()
 	local t = self:GetTable()
@@ -453,8 +453,8 @@ function SWEP:GetViewModelPosition(pos, ang)
 		return
 	end
 
-	local CT = CurTime()
-	local UCT = UnPredictedCurTime()
+	
+	
 	local FT = FrameTime()
 	local firstpred = IsFirstTimePredicted()
 
@@ -959,9 +959,6 @@ function SWEP:GetViewModelPosition(pos, ang)
 	swayspeed = GetConVar("arccw_vm_sway_speedmult"):GetFloat()
 	swayrotate = GetConVar("arccw_vm_sway_rotatemult"):GetFloat()
 
-	-- For some reason, in multiplayer the sighting speed is twice as fast
-	speed = 1
-
 	actual.pos:Set(target.pos)
 	actual.ang   = target.ang
 	actual.down  = target.down
@@ -1058,8 +1055,12 @@ function SWEP:GetViewModelPosition(pos, ang)
 		ang:Add(attang)
 		pos:Add(attpos)
 	end
-	
-	--b:Close():print()
+
+	return pos, ang
+end
+
+function SWEP:GetViewModelPosition(pos, ang)
+	self:CalculateVMPos(pos, ang)
 
 	return pos, ang
 end
@@ -1129,6 +1130,9 @@ function SWEP:StartVM3D()
 	cam.Start3D(nil, nil, self.CurrentViewModelFOV or self.ViewModelFOV, nil, nil, nil, nil, 1.5, 15000) --EyePos(), EyeAngles(), self.CurrentViewModelFOV or self.ViewModelFOV, nil, nil, nil, nil, 1.5, 15000)
 end
 
+local v1, a1 = Vector(), Angle()
+local st = false
+
 function SWEP:PreDrawViewModel(vm, fl)
 	--b:Open()
 	if ArcCW.VM_OverDraw then return end
@@ -1164,8 +1168,10 @@ function SWEP:PreDrawViewModel(vm, fl)
 
 	self:DrawCustomModel(false)
 
-	self:DoLHIK() -- !! expensive !!
+	self:DoLHIK() -- !! expensive !!  ~3.5 garbage per call
 	--b:Close():print()
+
+	st = true
 end
 
 local b = bench("postdraw", 600)
@@ -1173,6 +1179,7 @@ local b = bench("postdraw", 600)
 function SWEP:PostDrawViewModel()
 	--b:Open()
 	if ArcCW.VM_OverDraw then return end
+	if not st then return end
 	render.SetBlend(1)
 
 	cam.End3D()

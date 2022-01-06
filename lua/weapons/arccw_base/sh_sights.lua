@@ -565,6 +565,7 @@ end
 
 function SWEP:TranslateFOV(fov)
 	local t = self:GetTable()
+
 	local irons = self:GetActiveSights()
 	--if !irons then return end
 	--if !irons.Magnification then return fov end

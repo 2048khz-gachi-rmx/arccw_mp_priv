@@ -17,7 +17,7 @@ function SWEP:DoLaser(world)
     if world then
         cam.Start3D()
     else
-        cam.Start3D(EyePos(), EyeAngles(), self.CurrentViewModelFOV)
+        cam.Start3D(nil, nil, self.CurrentViewModelFOV)
     end
 
     for slot, k in pairs(self.Attachments) do
@@ -55,6 +55,8 @@ function SWEP:DoLaser(world)
     cam.End3D()
 end
 
+local tlOut, trOut = {}, {}
+
 function SWEP:DrawLaser(laser, model, color, world)
     local owner = self:GetOwner()
     local behav = ArcCW.LaserBehavior
@@ -86,10 +88,9 @@ function SWEP:DrawLaser(laser, model, color, world)
         dir = owner:IsNPC() and (-ang:Right()) or dir
     else
         ang:RotateAroundAxis(ang:Up(), 90)
-
         dir = ang:Forward()
 
-        local eyeang   = self:GetOwner():EyeAngles() - self:GetOurViewPunchAngles()
+        local eyeang   = owner:EyeAngles() - self:GetOurViewPunchAngles()
         local canlaser = self:GetCurrentFiremode().Mode != 0 and !self:GetReloading() and self:BarrelHitWall() <= 0
 
         delta = Lerp(0, delta, canlaser and self:GetSightDelta() or 1)
@@ -107,23 +108,32 @@ function SWEP:DrawLaser(laser, model, color, world)
         -- local cheap = GetConVar("arccw_cheapscopes"):GetBool()
         local punch = self:GetOurViewPunchAngles()
 
-        ang = self:GetOwner():EyeAngles() - punch
+        ang = owner:EyeAngles() - punch
 
-        tracepos = EyePos() - Vector(0, 0, 1)
+        tracepos = EyePos()
+        tracepos[3] = tracepos[3] - 1
         pos, dir = tracepos, ang:Forward()
         beamdir  = dir
     end
 
     local dist = 128
 
+    dir:Mul(33000)
+
+    local v2 = lazy.GetSet("laservec", Vector)
+    v2:Set(tracepos)
+    v2:Add(dir)
+
     local tl = {}
     tl.start  = tracepos
-    tl.endpos = tracepos + (dir * 33000)
+    tl.endpos = v2
     tl.filter = owner
+    tl.output = tlOut
 
     local tr = util.TraceLine(tl)
 
     tl.endpos = tracepos + (beamdir * dist)
+    tl.output = trOut
 
     local btr = util.TraceLine(tl)
 
@@ -134,7 +144,7 @@ function SWEP:DrawLaser(laser, model, color, world)
     local strength = laser.LaserStrength or 1
     local laserpos = solid and tr.StartPos or hitpos
 
-    laserpos = laserpos - EyeVector()
+    laserpos:Sub(EyeVector())
 
     if solid then return end
 
