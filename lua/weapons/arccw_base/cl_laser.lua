@@ -90,14 +90,19 @@ function SWEP:DrawLaser(laser, model, color, world)
         ang:RotateAroundAxis(ang:Up(), 90)
         dir = ang:Forward()
 
-        local eyeang   = owner:EyeAngles() - self:GetOurViewPunchAngles()
+        local eyeang   = owner:EyeAngles()
+        local va = self:GetOurViewPunchAngles()
+        eyeang[1] = eyeang[1] - self:GetRecoil() * 0.4 -- this makes no sense due to fov, but we cant just start a proper 3d context
+        eyeang[2] = eyeang[2] + va[2] * 0.4
+
         local canlaser = self:GetCurrentFiremode().Mode != 0 and !self:GetReloading() and self:BarrelHitWall() <= 0
 
-        delta = Lerp(0, delta, canlaser and self:GetSightDelta() or 1)
+        delta = canlaser and self:GetSightDelta() or 1
 
-        if self.GuaranteeLaser then delta = 1 end
+        -- whats the point of this?
+        --if self.GuaranteeLaser then delta = 1 end
 
-        dir = Lerp(delta, eyeang:Forward(), dir)
+        dir = LerpVector(delta, eyeang:Forward(), dir)
     end
 
     local beamdir, tracepos = dir, pos
@@ -108,7 +113,9 @@ function SWEP:DrawLaser(laser, model, color, world)
         -- local cheap = GetConVar("arccw_cheapscopes"):GetBool()
         local punch = self:GetOurViewPunchAngles()
 
-        ang = owner:EyeAngles() - punch
+        ang   = owner:EyeAngles()
+        ang[1] = ang[1] - self:GetRecoil() * -2
+        ang[2] = ang[2] + punch[2] * 1
 
         tracepos = EyePos()
         tracepos[3] = tracepos[3] - 1

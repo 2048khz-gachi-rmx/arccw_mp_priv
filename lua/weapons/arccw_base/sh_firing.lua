@@ -837,6 +837,8 @@ function SWEP:DoRecoil()
                                         -- and we need it to be a predicted var...
 
     hook.Run("ArcCW_Punch", self, addRec)
+
+    addRec = addRec * 0.7
     self:SetRecoil( curRec + addRec )
     self:SetSideRecoil( curSideRec + addSideRec )
 

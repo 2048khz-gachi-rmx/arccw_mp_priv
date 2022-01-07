@@ -7,6 +7,9 @@ ArcCW.CSModelPile    = {} -- { {Model = NULL, Weapon = NULL} }
 ArcCW.FlashlightPile = {} -- { {Weapon = NULL, ProjectedTexture = NULL}}
 ArcCW.ReferenceModel = NULL
 
+collectgarbage("setstepmul", 150)
+collectgarbage("setpause", 300)
+
 local function ArcCW_CollectGarbage()
     local removed, removedents = 0, {}
 

@@ -541,16 +541,12 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	local ret, pos, ang
 
 	if attid != 0 then
-
 		ret = hsm:GetAttachment(attid)
 		pos = ret.Pos
 		ang = ret.Ang
-
 	else
-
 		pos = EyePos()
 		ang = EyeAngles()
-
 	end
 
 	local size = hs.HolosightSize or 1
@@ -650,9 +646,9 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	pos = LerpVector(delta, ep, pos)
 
 	local vpA = self:GetOurViewPunchAngles()
-	local eyeangs = dir:Angle() + vpA
+	local eyeangs = EyeAngles() -- + vpA
 
-	eyeangs[1] = eyeangs[1] - self:GetRecoil() * 1 -- self:GetRecoil() * 1
+	eyeangs[1] = eyeangs[1] - self:GetRecoil() * 2 -- self:GetRecoil() * 1
 	eyeangs[2] = eyeangs[2] - vpA[2] * 0.5
 
 	eyeangs:Normalize()
@@ -791,7 +787,11 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	surface.SetDrawColor(255, 255, 255)
 
 	cam.PushModelMatrix(mtrx, true)
-		surface.DrawTexturedRect(x - (hss / 2), y - (hss / 2), hss, hss)
+		surface.DrawTexturedRect(
+			math.ceil(x - (hss / 2)),
+			math.ceil(y - (hss / 2)),
+			hss,
+			hss)
 	cam.PopModelMatrix()
 
 	render.PopFilterMag()

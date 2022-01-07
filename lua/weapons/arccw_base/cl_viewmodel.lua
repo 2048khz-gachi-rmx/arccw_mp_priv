@@ -1060,6 +1060,7 @@ function SWEP:CalculateVMPos(pos, ang)
 end
 
 function SWEP:GetViewModelPosition(pos, ang)
+
 	self:CalculateVMPos(pos, ang)
 
 	return pos, ang
