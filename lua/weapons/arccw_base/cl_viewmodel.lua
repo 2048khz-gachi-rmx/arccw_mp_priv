@@ -1000,8 +1000,12 @@ function SWEP:CalculateVMPos(pos, ang)
 		pos:Add( self:GetRecoil() * oldang:Up() / 4 )
 	end
 
-	oldang:Add(recoilMethod(self))
+	local vpa = self:GetOurViewPunchAngles() -- horizontal recoil of viewpunch looks shite
+	vpa[1] = 0
+	vpa:Mul(0.5) -- (1 - this)% of recoil is kept
 
+	oldang:Add(recoilMethod(self))
+	oldang:Add(vpa)
 	--oldang:Add(recoilMethod(self))
 
 	local OR, OU, OF = oldang:Right(), oldang:Up(), oldang:Forward()
@@ -1010,11 +1014,13 @@ function SWEP:CalculateVMPos(pos, ang)
 	ang:RotateAroundAxis(OU,   actual.ang[2] + actual.evang[2])
 	ang:RotateAroundAxis(OF,   actual.ang[3] + actual.evang[3])
 
+
 	--[[ang:RotateAroundAxis(OR,   actual.evang[1])
 	ang:RotateAroundAxis(OU,   actual.evang[2])
 	ang:RotateAroundAxis(OF,   actual.evang[3])]]
 
 	ang:Sub(recoilMethod(self))
+	ang:Add(vpa) -- i have no clue why adding it twice cancels it out bro
 
 	OR:Mul(actual.evpos[1])
 	OF:Mul(actual.evpos[2])
@@ -1060,7 +1066,6 @@ function SWEP:CalculateVMPos(pos, ang)
 end
 
 function SWEP:GetViewModelPosition(pos, ang)
-
 	self:CalculateVMPos(pos, ang)
 
 	return pos, ang
