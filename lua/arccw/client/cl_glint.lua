@@ -5,12 +5,18 @@ local glintmat = Material("effects/blueflare1")
 
 local players
 local playerssaver = {}
+local color = Color(0, 0, 0)
 
 hook.Add("PostDrawEffects", "ArcCW_ScopeGlint", function()
+	-- this is not how it works arctic
+    --[[
     if playerssaver != players then -- less calls on GetAll
         players      = player.GetAll()
         playerssaver = players
     end
+    ]]
+
+    do return end -- actually fuck glint
 
     cam.Start3D()
         for _, ply in pairs(players) do
@@ -39,12 +45,19 @@ hook.Add("PostDrawEffects", "ArcCW_ScopeGlint", function()
             local _, scope_i = wep:GetBuff_Override("ScopeGlint")
 
             if scope_i then
-                local world = (wep.Attachments[scope_i].WElement or {}).Model
+                local world = wep.Attachments[scope_i].WElement
+                world = world and world.Model
 
-                if world and IsValid(world) then
-                    local att = world:LookupAttachment("holosight") or world:LookupAttachment("scope")
+                if IsValid(world) then
+                    local att = world:LookupAttachment("holosight")
+                    if not att or att <= 0 then
+                    	att = world:LookupAttachment("scope")
+                    end
 
-                    if att then pos = world:GetAttachment(att).Pos end
+                    if att and att > 0 then
+                    	local attDat = world:GetAttachment(att)
+                    	pos = attDat and attDat.Pos or pos
+                    end
                 end
             end
 
@@ -56,7 +69,8 @@ hook.Add("PostDrawEffects", "ArcCW_ScopeGlint", function()
             local col       = 255 * intensity
 
             rnd.SetMaterial(glintmat)
-            rnd.DrawSprite(pos, 96 * dot, 96 * dot, Color(col, col, col))
+            color:Set(col, col, col)
+            rnd.DrawSprite(pos, 96 * dot, 96 * dot, color)
         end
     cam.End3D()
 end)
