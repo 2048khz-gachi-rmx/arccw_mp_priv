@@ -70,8 +70,13 @@ function SWEP:OurViewPunch(angle)
     ang[3] = math.Clamp(ang[3], -180, 180)
 end
 
+local ang = Angle()
+
 function SWEP:GetOurViewPunchAngles()
-    return (self.ViewPunchAngle * 10) + self:GetOwner():GetViewPunchAngles()
+	ang:Set(self.ViewPunchAngle)
+	ang:Mul(10)
+	ang:Add(self:GetOwner():GetViewPunchAngles())
+    return ang
 end
 
 local function lensqr(ang)
