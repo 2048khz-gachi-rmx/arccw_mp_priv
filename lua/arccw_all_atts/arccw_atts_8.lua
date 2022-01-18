@@ -77,7 +77,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 7, -1.43107 * 0.75),
+	        Pos = Vector(0, 9, -1.43107 * 0.75),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 1.1,
 	        ScrollFunc = ArcCW.SCROLL_NONE
@@ -86,7 +86,7 @@ do
 
 	att.Holosight = true
 	att.HolosightReticle = Material("holosights/dot.png")
-	att.HolosightSize = 0.3
+	att.HolosightSize = 0.4
 	att.HolosightBone = "holosight"
 
 	att.Mult_SightTime = 1.05
@@ -251,7 +251,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 7, -0.7),
+	        Pos = Vector(0, 11, -0.7),
 	        Ang = Angle(0, -0.1, 0),
 	        Magnification = 1.1,
 	        ScrollFunc = ArcCW.SCROLL_NONE
@@ -260,7 +260,7 @@ do
 
 	att.Holosight = true
 	att.HolosightReticle = Material("holosights/dot.png")
-	att.HolosightSize = 0.4
+	att.HolosightSize = 0.3
 	att.HolosightBone = "holosight"
 
 	att.Colorable = true
@@ -339,7 +339,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 7, -0.579),
+	        Pos = Vector(0, 11, -0.579),
 	        Ang = Angle(0, -0.1, 0),
 	        Magnification = 1.1,
 	        ScrollFunc = ArcCW.SCROLL_NONE
@@ -519,9 +519,9 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 7, -1.433),
+	        Pos = Vector(0, 12, -1.433),
 	        Ang = Angle(0, 0, 0),
-	        Magnification = 1.25,
+	        Magnification = 1.15,
 	        ScrollFunc = ArcCW.SCROLL_NONE
 	    }
 	}
@@ -529,7 +529,7 @@ do
 	att.Holosight = true
 	att.HolosightReticle = Material("holosights/eotech.png", "mips smooth")
 	att.HolosightFlare = Material("holosights/eotech_flare.png", "mips smooth")
-	att.HolosightSize = 1.5
+	att.HolosightSize = 1
 	att.HolosightBone = "holosight"
 	att.Colorable = true
 
@@ -865,7 +865,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 4, -1.278),
+	        Pos = Vector(0, 10, -1.278),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 1.1,
 	        ScrollFunc = ArcCW.SCROLL_NONE
@@ -875,7 +875,7 @@ do
 	att.Holosight = true
 	att.HolosightReticle = Material("holosights/mrs.png", "smooth")
 	att.HolosightFlare = Material("holosights/mrs_flare.png", "smooth")
-	att.HolosightSize = 1.5
+	att.HolosightSize = 0.75
 	att.HolosightBone = "holosight"
 
 	att.Mult_SightTime = 1.05
@@ -958,7 +958,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 7, -0.867),
+	        Pos = Vector(0, 13, -0.867),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 1.1,
 	        ScrollFunc = ArcCW.SCROLL_NONE
@@ -968,7 +968,7 @@ do
 	att.Holosight = true
 	att.HolosightReticle = Material("holosights/okp7.png")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 1.8
+	att.HolosightSize = 1.3
 	att.HolosightBone = "holosight"
 
 	att.Mult_SightTime = 1.05
@@ -1090,9 +1090,9 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 4, -0.594),
+	        Pos = Vector(0, 10, -0.594),
 	        Ang = Angle(0, 0, 0),
-	        Magnification = 1.4,
+	        Magnification = 1.1,
 	        ScrollFunc = ArcCW.SCROLL_NONE
 	    }
 	}
@@ -1101,8 +1101,6 @@ do
 	att.HolosightReticle = Material("holosights/dot.png")
 	att.HolosightSize = 0.3
 	att.HolosightBone = "holosight"
-
-	att.HolosightMagnification = 1
 
 	att.Mult_SightTime = 1.03
 

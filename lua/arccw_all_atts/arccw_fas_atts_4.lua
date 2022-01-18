@@ -2537,6 +2537,7 @@ end
 ------
 
 do
+	--[[
 	local att = {}
 	ArcCW.SetShortName("mifl_fas2_optic_g36")
 
@@ -2577,6 +2578,7 @@ do
 	att.ModelScale = Vector(2.2, 2.2, 2.2)
 	att.ModelOffset = Vector(0, 0, -0.1)
 	ArcCW.LoadAttachmentType(att)
+	]]
 end
 
 ------
