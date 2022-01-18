@@ -126,7 +126,7 @@ SWEP.RecoilPunch = 1.5
 SWEP.RecoilPunchRecovery = 0.7 -- time to recover the VM punch
 
 -- timed recoil: recoil will kick to 100% within SWEP.RecoilTRecovery seconds
-SWEP.RecoilTRecovery = 0.8
+SWEP.RecoilTRecovery = 0.5
 SWEP.RecoilTEaseOutIntensity = 1.3 -- <1 not recommended
 
 SWEP.RecoilPunchBackMax = 1
@@ -767,6 +767,7 @@ function SWEP:SetupDataTables()
 	-- kill me
 	self:NetworkVar("Float", 10, "MaxRecoil")
 	self:NetworkVar("Float", 11, "MaxSideRecoil")
+	self:NetworkVar("Float", 12, "RecoilFrac")
 
 	self._StateChanges = {}
 end
@@ -867,6 +868,8 @@ end
 
 local cvar = GetConVar("arccw_override_nearwall")
 
+local filter = {}
+
 function SWEP:BarrelHitWall(visual)
 	cvar = cvar or GetConVar("arccw_override_nearwall")
 	local t = self:GetTable()
@@ -886,25 +889,29 @@ function SWEP:BarrelHitWall(visual)
 		local dir = ow:EyeAngles()
 		local src = ow:EyePos()
 
+		-- nghhh
 		src:Add(dir:Right() 	* offset[1])
 		src:Add(dir:Forward() 	* offset[2])
 		src:Add(dir:Up() 		* offset[3])
 
 		local mask = MASK_SOLID
 
-		local filter = {ow}
+		filter[1] = ow
 
-		if t.Shields and #t.Shields > 0 then
+		--[[if t.Shields and #t.Shields > 0 then
 			table.Add(filter, t.Shields)
-		end
+		end]]
 
 		local barrelLength = t.BarrelLength + self:GetBuff_Add("Add_BarrelLength")
 		local max = 0
 
 		if visual then
-			local hmin, hmax = ow:GetHull()
+			--[[local hmin, hmax = ow:GetHull()
 			-- it's probably guaranteed that mins are - and maxs are + but I'M NOT TAKIN ANY CHANCES
-			max = math.max(math.abs(hmin[1]), math.abs(hmin[2]), math.abs(hmax[1]), math.abs(hmax[2])) / 2
+			max = math.max(
+				math.abs(hmin[1]), math.abs(hmin[2]),
+				math.abs(hmax[1]), math.abs(hmax[2])
+			) / 2]] max = 16
 		end
 
 		local tr = ow:GetEyeTrace()

@@ -101,7 +101,7 @@ function SWEP:PrimaryAttack()
     local aimvec = owner:GetAimVector()
     local aimang = aimvec:Angle()
 
-    aimang[1] = aimang[1] + self:GetRecoil() * -2 * (1 - self:GetSightDelta())
+    aimang[1] = aimang[1] + self:GetAimRecoil() * -2 * (1 - self:GetSightDelta())
     aimang:Normalize()
     local dir = aimang:Forward()
 
@@ -814,7 +814,7 @@ function SWEP:DoRecoil()
 
     if CLIENT and IsFirstTimePredicted() then self:OurViewPunch(punch) end
 
-    local curRec = self:GetRecoil()
+    local curRec = 0 -- self:GetRecoil()
     local addRec = self.Recoil * rmul * recu * rvert
 
     local curSideRec = self:GetSideRecoil()
@@ -924,7 +924,9 @@ function SWEP:PunchRecoil()
     local rWhen = self.UnpredRecoiledWhen or 0
     if ct < rWhen then return 0, 0 end -- not supposed to happen?
 
-    local mxR, mxSR = self:GetMaxRecoil() - self._CarryVerticalRec, self.MaxSideRecoilAmount - self._CarryHorizontalRec
+    local mxR, mxSR = self:GetMaxRecoil() - self._CarryVerticalRec,
+    	self:GetMaxSideRecoil() - self._CarryHorizontalRec
+
     self._LastPunch = ct
     local passed = ct - rWhen
     local sincePassed = since - rWhen

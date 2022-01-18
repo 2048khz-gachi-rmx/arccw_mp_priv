@@ -92,7 +92,8 @@ function SWEP:DrawLaser(laser, model, color, world)
 
         local eyeang   = owner:EyeAngles()
         local va = self:GetOurViewPunchAngles()
-        eyeang[1] = eyeang[1] - self:GetRecoil() * 0.4 -- this makes no sense due to fov, but we cant just start a proper 3d context
+        -- this makes no sense due to fov, but we cant just start a proper 3d context
+        eyeang[1] = eyeang[1] - self:GetAimRecoil() * 0.4
         eyeang[2] = eyeang[2] + va[2] * 0.4
 
         local canlaser = self:GetCurrentFiremode().Mode != 0 and !self:GetReloading() and self:BarrelHitWall() <= 0

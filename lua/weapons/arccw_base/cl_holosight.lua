@@ -436,7 +436,7 @@ function SWEP:FormRTScope()
 	ArcCW.Overdraw = true
 	ArcCW.LaserBehavior = true
 
-	recAng[1] = self:GetRecoil() * -0.6
+	recAng[1] = self:GetAimRecoil() * -0.6
 
 	local rt = {
 		w = rtsize,
@@ -648,8 +648,10 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	local vpA = self:GetOurViewPunchAngles()
 	local eyeangs = EyeAngles() -- + vpA
 
-	eyeangs[1] = eyeangs[1] - self:GetRecoil() * 2 -- self:GetRecoil() * 1
-	eyeangs[2] = eyeangs[2] - vpA[2] * 0.5
+	local v, h = self:GetAimRecoil()
+
+	eyeangs[1] = eyeangs[1] - v * 2 -- self:GetRecoil() * 1
+	eyeangs[2] = eyeangs[2] - vpA[2] * 0.5 + h * 55
 
 	eyeangs:Normalize()
 
