@@ -482,16 +482,14 @@ function SWEP:GetBuff_Mult(buff)
 		mult = mult * GetConVar(ArcCW.ConVar_BuffMults[buff]):GetFloat()
 	end
 
-	local data = {
-		buff = buff,
-		mult = mult
-	}
+	SHARED_DATA.buff = buff
+	SHARED_DATA.mult = mult
 
 	if !ArcCW.BuffStack then
 
 		ArcCW.BuffStack = true
 
-		mult = (self:GetBuff_Hook("M_Hook_" .. buff, data) or {}).mult or mult
+		mult = (self:GetBuff_Hook("M_Hook_" .. buff, SHARED_DATA) or {}).mult or mult
 
 		ArcCW.BuffStack = false
 
@@ -507,16 +505,14 @@ function SWEP:GetBuff_Add(buff)
 	if tbl.TickCache_Adds[buff] then
 		add = tbl.TickCache_Adds[buff]
 
-		local data = {
-			buff = buff,
-			add = add
-		}
+		SHARED_DATA.buff = buff
+		SHARED_DATA.add = add
 
 		if !ArcCW.BuffStack then
 
 			ArcCW.BuffStack = true
 
-			add = (self:GetBuff_Hook("A_Hook_" .. buff, data) or {}).add or add
+			add = (self:GetBuff_Hook("A_Hook_" .. buff, SHARED_DATA) or {}).add or add
 
 			ArcCW.BuffStack = false
 
@@ -567,16 +563,14 @@ function SWEP:GetBuff_Add(buff)
 		add = add + GetConVar(ArcCW.ConVar_BuffAdds[buff]):GetFloat()
 	end
 
-	local data = {
-		buff = buff,
-		add = add
-	}
+	SHARED_DATA.buff = buff
+	SHARED_DATA.add = add
 
 	if !ArcCW.BuffStack then
 
 		ArcCW.BuffStack = true
 
-		add = (self:GetBuff_Hook("A_Hook_" .. buff, data) or {}).add or add
+		add = (self:GetBuff_Hook("A_Hook_" .. buff, SHARED_DATA) or {}).add or add
 
 		ArcCW.BuffStack = false
 

@@ -440,7 +440,10 @@ end
 local b = bench("vm_calc", 600)
 local oldpos, oldang = Vector(), Angle()
 
+local target = {}
+
 function SWEP:CalculateVMPos(pos, ang)
+	--GCMark("acw vm calc")
 	local CT = CurTime()
 	local tick = engine.TickCount()
 	local UCT = UnPredictedCurTime()
@@ -453,26 +456,28 @@ function SWEP:CalculateVMPos(pos, ang)
 		return
 	end
 
-	
-	
 	local FT = FrameTime()
 	local firstpred = IsFirstTimePredicted()
 
 	local gunbone, gbslot = self:GetBuff_Override("LHIK_GunDriver")
 
 	-- local asight = self:GetActiveSights()
+
 	local state  = self:GetState()
-
 	local sightTime = self:GetSightTime()
-
 	local sgtd = self:GetSightDelta()
+
 
 	oldpos:Set(pos)
 	oldang:Set(ang)
 
-	actual = t.ActualVMData or { pos = Vector(), ang = Angle(), down = 1, sway = 1, bob = 1, evpos = Vector(), evang = Angle() }
+	actual = t.ActualVMData
 
-	local target = {}
+	if not actual then
+		actual = { pos = Vector(), ang = Angle(), down = 1, sway = 1, bob = 1, evpos = Vector(), evang = Angle() }
+	end
+
+	t.ActualVMData = actual
 
 	target.pos  = sharedVector
 	target.pos:Set(self:GetBuff_Override("Override_ActivePos") or self.ActivePos)
@@ -497,7 +502,6 @@ function SWEP:CalculateVMPos(pos, ang)
 	local crouching = owner:Crouching() or owner:KeyDown(IN_DUCK)
 	local crotchTime = t.VM_CrouchTime -- lul
 	local uncrotchTime = t.VM_UncrouchTime
-
 
 	--[[
 		This is ugly, holy fuck
@@ -574,8 +578,6 @@ function SWEP:CalculateVMPos(pos, ang)
 		end
 	end
 
-	
-
 	local inBipod = self:InBipod()
 	local bipodTime = 0.8
 	local bipodDelta = inBipod and
@@ -616,7 +618,7 @@ function SWEP:CalculateVMPos(pos, ang)
 
 		target.sway = 0.2
 	end
-	
+
 	addElem(target.pos, vm_right, vm_forward, vm_up)
 
 	local inSightTime, outSightTime = t.LastEnterSightTimeUnpred, t.LastExitSightTimeUnpred
@@ -666,13 +668,14 @@ function SWEP:CalculateVMPos(pos, ang)
 		end
 	end
 
+
 	t.VM_SprintCurrent = sprintFrac
 
 	local holstered = self:GetCurrentFiremode().Mode == 0
 
 	if self:IsCustomizing() then
-		target.pos  = Vector()
-		target.ang  = Angle()
+		target.pos:Zero()
+		target.ang:Zero()
 		target.down = 1
 		target.sway = 3
 		target.bob  = 1
@@ -792,6 +795,8 @@ function SWEP:CalculateVMPos(pos, ang)
 		end
 	end
 
+	
+
 	--[[if sprd > 0 and !self:GetBuff("ShootWhileSprint") then
 		local hpos, spos = self:GetBuff("HolsterPos", true), self:GetBuff("SprintPos", true)
 		local hang, sang = self:GetBuff("HolsterAng", true), self:GetBuff("SprintAng", true)
@@ -800,13 +805,15 @@ function SWEP:CalculateVMPos(pos, ang)
 		target.ang = LerpAngle(sprd, target.ang, sang or hang)
 	end]]
 
+	
 
+	-- !! this makes quite a bit of garbage
 	local deg = self:BarrelHitWall(true)
 
 	local stanceRecover = self:GetSightTime() ^ 0.4 / 2     -- how fast the stance will recover
 	local stanceRuin = self:GetSightTime() ^ 0.2            -- how fast the stance will break
 
-
+	-- do GCPrint("acw vm calc") return end
 
 	if firstpred then
 		if deg > 0 then
@@ -992,12 +999,17 @@ function SWEP:CalculateVMPos(pos, ang)
 	end
 
 
-	pos:Add( math.min(self.RecoilPunchBack, 1) * -oldang:Forward() )
+	local OF = oldang:Forward()
+	OF:Mul(-math.min(self.RecoilPunchBack, 1))
+	pos:Add(OF)
 
 	-- position recoil only if not aiming through irons
 	local sght = self:GetActiveSights()
-	if sght and sght.HolosightModel then
-		pos:Add( self:GetRecoil() * oldang:Up() / 4 )
+	if sght and sght.HolosightModel and self:GetRecoil() ~= 0 then
+		local OU = oldang:Up()
+		OU:Mul(self:GetRecoil() / 4)
+
+		pos:Add(OU)
 	end
 
 	local vpa = self:GetOurViewPunchAngles() -- horizontal recoil of viewpunch looks shite
@@ -1022,21 +1034,28 @@ function SWEP:CalculateVMPos(pos, ang)
 	ang:Sub(recoilMethod(self))
 	ang:Add(vpa) -- i have no clue why adding it twice cancels it out bro
 
-	OR:Mul(actual.evpos[1])
-	OF:Mul(actual.evpos[2])
-	OU:Mul(actual.evpos[3])
+
+	local aepx, aepy, aepz = actual.evpos:Unpack()
+
+	OR:Mul(aepx)
+	OF:Mul(aepy)
+	OU:Mul(aepz)
 
 	pos:Add(OR)
 	pos:Add(OF)
 	pos:Add(OU)
 
-	pos:Add(actual.pos[1] * ang:Right())
-	pos:Add(actual.pos[2] * ang:Forward())
-	pos:Add(actual.pos[3] * ang:Up())
+	local R, F, U = ang:Right(), ang:Forward(), ang:Up()
+	local apx, apy, apz = actual.pos:Unpack()
+	R:Mul(apx) F:Mul(apy) U:Mul(apz)
+
+	pos:Add(R)
+	pos:Add(F)
+	pos:Add(U)
 
 	pos[3] = pos[3] - actual.down
 
-	self.ActualVMData = actual
+
 	if coolsway then
 		LerpSource(m_min(FT * 100, 1), lasteyeangles, eyeangles)
 	end
@@ -1062,6 +1081,7 @@ function SWEP:CalculateVMPos(pos, ang)
 		pos:Add(attpos)
 	end
 
+	-- GCPrint("acw vm calc")
 	return pos, ang
 end
 
@@ -1141,6 +1161,7 @@ local st = false
 
 function SWEP:PreDrawViewModel(vm, fl)
 	--b:Open()
+	-- GCMark("acw vm pre")
 	if ArcCW.VM_OverDraw then return end
 	if !vm then return end
 
@@ -1172,18 +1193,20 @@ function SWEP:PreDrawViewModel(vm, fl)
 	self:StartVM3D()
 	cam.IgnoreZ(true)
 
-	self:DrawCustomModel(false)
+	self:DrawCustomModel(false) -- ~7kb garbage per call
 
 	self:DoLHIK() -- !! expensive !!  ~3.5 garbage per call
 	--b:Close():print()
 
 	st = true
+	-- GCPrint("acw vm pre")
 end
 
 local b = bench("postdraw", 600)
 
 function SWEP:PostDrawViewModel()
 	--b:Open()
+	-- GCMark("acw vm post")
 	if ArcCW.VM_OverDraw then return end
 	if not st then return end
 	render.SetBlend(1)
@@ -1203,4 +1226,5 @@ function SWEP:PostDrawViewModel()
 
 	cam.End3D()
 	--b:Close():print()
+	-- GCPrint("acw vm post")
 end

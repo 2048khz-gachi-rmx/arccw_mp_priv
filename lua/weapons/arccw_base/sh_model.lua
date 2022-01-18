@@ -675,6 +675,7 @@ local EMPTY_TBL = {}
 
 function SWEP:DrawCustomModel(wm, origin, angle)
 	--b:Open()
+	--GCMark("acw custommdl")
 
 	if ArcCW.VM_OverDraw then
 		--b:Close():print()
@@ -689,6 +690,7 @@ function SWEP:DrawCustomModel(wm, origin, angle)
 	end
 	local models = self.VM
 	local vm
+
 
 	if origin and !angle then
 		angle = Angle()
@@ -744,22 +746,15 @@ function SWEP:DrawCustomModel(wm, origin, angle)
 		--     self.HSPElement.Model:DrawModel()
 		-- end
 	end
+	-- do GCPrint("acw custommdl") return end
 
 	for i, k in pairs(models) do
+		-- GCMark("acw custommdl: " .. i)
+
 		if !k.Model:IsValid() then
 			self:SetupModel(wm)
-			-- b:Close():print()
 			return
 		end
-
-		-- local asight = self:GetActiveSights()
-
-		-- if asight then
-		--     local activeslot = asight.Slot
-		--     if k.Slot == activeslot and ArcCW.Overdraw then
-		--         continue
-		--     end
-		-- end
 
 		if k.IsBaseVM and !custompos then
 			k.Model:SetParent(self:GetOwner():GetViewModel())
@@ -915,7 +910,6 @@ function SWEP:DrawCustomModel(wm, origin, angle)
 				aang:RotateAroundAxis(aang:Forward(), ang.r)
 			end
 		elseif bang and bpos then
-
 			local pos = offset or Vector(0, 0, 0)
 			local ang = k.OffsetAng or Angle(0, 0, 0)
 
@@ -949,13 +943,19 @@ function SWEP:DrawCustomModel(wm, origin, angle)
 			aang:RotateAroundAxis(bf, ang[3])]]
 
 			if not moffset:IsZero() then
-				apos:Add(aang:Forward() * moffset.x)
-				apos:Add(aang:Right() * moffset.y)
-				apos:Add(aang:Up() * moffset.z)
+				local F, R, U = aang:Forward(), aang:Right(), aang:Up()
+				local x, y, z = moffset:Unpack()
+				F:Mul(x) R:Mul(y) U:Mul(z)
+
+				apos:Add(F)
+				apos:Add(R)
+				apos:Add(U)
 			end
 		else
 			continue
 		end
+
+		--GCPrint("acw custommdl: " .. i)
 
 		if !apos or !aang then
 			--b:Close():print()
