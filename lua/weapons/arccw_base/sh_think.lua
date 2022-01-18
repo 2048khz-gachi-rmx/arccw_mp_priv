@@ -307,16 +307,11 @@ function SWEP:Think()
 end
 
 function SWEP:ProcessRecoil()
-
     local owner = self:GetOwner()
     local ft = FrameTime()
     local newang = owner:EyeAngles()
-    -- local r = self.RecoilAmount -- self:GetNWFloat("recoil", 0)
-    -- local rs = self.RecoilAmountSide -- self:GetNWFloat("recoilside", 0)
 
-    -- not doing autistic shit like basing off of frametime and framerate
-
-    if not self.MaxRecoilAmount or self.MaxRecoilAmount == 0 then
+    if self:GetMaxRecoil() == 0 then
         self:SetRecoil( 0 )
         self:SetSideRecoil( 0 )
         self:RecalculatePunch()
@@ -328,18 +323,20 @@ function SWEP:ProcessRecoil()
     local passed = now - when
     local recFrac = 1 - math.min(passed / self.RecoilTRecovery, 1) -- linear
 
-    local newRec = math.max(self:GetRecoil() * recFrac, 0)
-    local newSideRec = math.max(self:GetSideRecoil() * recFrac, 0)
+    local newRec = math.Round(math.max(self:GetMaxRecoil() * recFrac, 0), 5)
+    local newSideRec = math.Round(math.max(self:GetMaxSideRecoil() * recFrac, 0), 5)
 
     self:SetRecoil( newRec )
     self:SetSideRecoil( newSideRec )
 
-    if newRec == 0 then
-        self.MaxRecoilAmount = 0
+    if recFrac == 0 then
+        self:SetMaxRecoil(0)
+        self:SetRecoil( 0 )
     end
 
-    if newSideRec == 0 then
-        self.MaxSideRecoilAmount = 0
+    if recFrac == 0 then
+        self:SetMaxSideRecoil(0)
+        self:SetSideRecoil( 0 )
     end
 
     self:RecalculatePunch()

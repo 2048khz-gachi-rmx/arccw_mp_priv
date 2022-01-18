@@ -747,12 +747,16 @@ end
 function SWEP:DoRecoil()
     local single = game.SinglePlayer()
     --if !single and !IsFirstTimePredicted() then return end
+    local ow = self:GetOwner()
 
-    if single and self:GetOwner():IsValid() and SERVER then
+    if single and ow:IsValid() and SERVER then
         self:CallOnClient("DoRecoil")
     end
 
     -- math.randomseed(self:GetBurstLength() + (self.Recoil * 409) + (self.RecoilSide * 519))
+    math.randomseed(
+    	(ow:GetCurrentCommand():CommandNumber() or CurTime()) 
+    )
 
     local rec = {
         Recoil = 1,
@@ -820,7 +824,7 @@ function SWEP:DoRecoil()
         -- don't predict any of this: working with predicted CurTime() in sh_move will be a pain
         self.UnpredRecoiledWhen = UnPredictedCurTime()
 
-        local unpunchedVLeft = self.MaxRecoilAmount - self._LastVerticalRec - self._CarryVerticalRec
+        local unpunchedVLeft = self:GetMaxRecoil() - self._LastVerticalRec - self._CarryVerticalRec
         self._CarryVerticalRec = curRec - unpunchedVLeft
 
         local unpunchedHLeft = self.MaxSideRecoilAmount - self._LastHorizontalRec - self._CarryHorizontalRec
@@ -828,7 +832,7 @@ function SWEP:DoRecoil()
     end
 
     self.MaxSideRecoilAmount = curSideRec + addSideRec
-    self.MaxRecoilAmount = curRec + addRec
+    self:SetMaxRecoil(curRec + addRec)
 
     recv = recv * self.VisualRecoilMult
 
@@ -839,6 +843,7 @@ function SWEP:DoRecoil()
     hook.Run("ArcCW_Punch", self, addRec)
 
     addRec = addRec * 0.7
+
     self:SetRecoil( curRec + addRec )
     self:SetSideRecoil( curSideRec + addSideRec )
 
@@ -919,7 +924,7 @@ function SWEP:PunchRecoil()
     local rWhen = self.UnpredRecoiledWhen or 0
     if ct < rWhen then return 0, 0 end -- not supposed to happen?
 
-    local mxR, mxSR = self.MaxRecoilAmount - self._CarryVerticalRec, self.MaxSideRecoilAmount - self._CarryHorizontalRec
+    local mxR, mxSR = self:GetMaxRecoil() - self._CarryVerticalRec, self.MaxSideRecoilAmount - self._CarryHorizontalRec
     self._LastPunch = ct
     local passed = ct - rWhen
     local sincePassed = since - rWhen

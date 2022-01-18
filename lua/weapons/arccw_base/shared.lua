@@ -21,10 +21,10 @@ SWEP.MirrorWorldModel = nil -- must have the same bones as the viewmodel. Use wi
 
 --[[
 SWEP.WorldModelOffset = {
-    pos        =    Vector(0, 0, 0),
-    ang        =    Angle(0, 0, 0),
-    bone    =    "ValveBiped.Bip01_R_Hand",
-    scale   =   1
+	pos        =    Vector(0, 0, 0),
+	ang        =    Angle(0, 0, 0),
+	bone    =    "ValveBiped.Bip01_R_Hand",
+	scale   =   1
 }]]
 
 SWEP.PresetBase = nil -- make this weapon share saves with this one.
@@ -150,23 +150,23 @@ SWEP.Delay = 60 / 750 -- 60 / RPM.
 SWEP.Num = 1 -- number of shots per trigger pull.
 SWEP.Firemode = 1 -- 0: safe, 1: semi, 2: auto, negative: burst
 SWEP.Firemodes = {
-    -- {
-    --     Mode = 1,
-    --     CustomBars = "---_#!",
+	-- {
+	--     Mode = 1,
+	--     CustomBars = "---_#!",
 --[[ 
-                Custom bar setup
-        Colored variants        Classic
-        'a' Filled              '-' Filled
-        'b' Outline             '_' Outline
-        'd' CLR w Outline       '!' Red w Outline        
-                    '#' Empty
+				Custom bar setup
+		Colored variants        Classic
+		'a' Filled              '-' Filled
+		'b' Outline             '_' Outline
+		'd' CLR w Outline       '!' Red w Outline        
+					'#' Empty
 ]]
-    --     PrintName = "PUMP",
-    --     RunAwayBurst = false,
-    --     AutoBurst = false, -- hold fire to continue firing bursts
-    --     PostBurstDelay = 0,
-    --     ActivateElements = {}
-    -- }
+	--     PrintName = "PUMP",
+	--     RunAwayBurst = false,
+	--     AutoBurst = false, -- hold fire to continue firing bursts
+	--     PostBurstDelay = 0,
+	--     ActivateElements = {}
+	-- }
 }
 
 SWEP.ShotRecoilTable = nil -- {[1] = 0.25, [2] = 2} etc.
@@ -244,8 +244,8 @@ SWEP.SightedSpeedMult = 0.75
 SWEP.ShootSpeedMult = 1
 
 SWEP.BulletBones = { -- the bone that represents bullets in gun/mag
-    -- [0] = "bulletchamber",
-    -- [1] = "bullet1"
+	-- [0] = "bulletchamber",
+	-- [1] = "bullet1"
 }
 SWEP.CaseBones = {}
 -- Unlike BulletBones, these bones are determined by the missing bullet amount when reloading
@@ -261,15 +261,15 @@ SWEP.StripperClipBGs = {}
 SWEP.KeepBaseIrons = false -- do not override iron sights when scope installed
 
 SWEP.IronSightStruct = {
-    Pos = Vector(-8.728, -13.702, 4.014),
-    Ang = Angle(-1.397, -0.341, -2.602),
-    Magnification = 1,
-    BlackBox = false,
-    ScopeTexture = nil,
-    SwitchToSound = "", -- sound that plays when switching to this sight
-    SwitchFromSound = "",
-    ScrollFunc = ArcCW.SCROLL_NONE,
-    CrosshairInSights = false,
+	Pos = Vector(-8.728, -13.702, 4.014),
+	Ang = Angle(-1.397, -0.341, -2.602),
+	Magnification = 1,
+	BlackBox = false,
+	ScopeTexture = nil,
+	SwitchToSound = "", -- sound that plays when switching to this sight
+	SwitchFromSound = "",
+	ScrollFunc = ArcCW.SCROLL_NONE,
+	CrosshairInSights = false,
 }
 
 -- add lasers to your weapon without attachments
@@ -374,78 +374,78 @@ SWEP.DefaultWMPoseParams = {}
 SWEP.DefaultElements = {} -- {"ele1", "ele2"}
 
 SWEP.AttachmentElements = {
-    -- ["name"] = {
-    --     RequireFlags = {}, -- same as attachments
-    --     ExcludeFlags = {},
-    --     NamePriority = 0, -- higher = more likely to be chosen
-    --     NameChange = "",
-    --     TrueNameChange = "",
-    --     AddPrefix = "",
-    --     AddSuffix = "",
-    --     VMPoseParams = {}, -- {["pose"] = 0.5}
-    --     VMColor = Color(),
-    --     VMMaterial = "",
-    --     VMBodygroups = {{ind = 1, bg = 1}},
-    --     VMElements = {
-    --         {
-    --             Model = "",
-    --             Bone = "",
-    --             Offset = {
-    --                 pos = Vector(),
-    --                 ang = Angle(),
-    --             },
-    --             ModelSkin = 0,
-    --             ModelBodygroups = "",
-    --             Scale = Vector(1, 1, 1),
-    --             IsMuzzleDevice = false -- this element is a muzzle device, and the muzzle flash should come from here.
-    --         }
-    --     },
-    --     VMOverride = "", -- change the view model to something else. Please make sure it's compatible with the last one.
-    --     VMBoneMods = {
-    --         ["bone"] = Vector(0, 0, 0)
-    --     },
-    --     WMPoseParams = {}, -- {["pose"] = 0.5}
-    --     WMColor = Color(),
-    --     WMMaterial = "",
-    --     WMBodygroups = {},
-    --     WMElements = {
-    --         {
-    --             Model = "",
-    --             Offset = {
-    --                 pos = Vector(),
-    --                 ang = Angle(),
-    --             },
-    --             IsMuzzleDevice = false -- this element is a muzzle device, and the muzzle flash should come from here.
-    --         }
-    --     },
-    --     WMOverride = "", -- change the world model to something else. Please make sure it's compatible with the last one.
-    --     WMBoneMods = {
-    --         ["bone"] = Vector(0, 0, 0)
-    --     },
-    --     AttPosMods = {
-    --         [1] = {
-    --             bone = "", -- optional
-    --             vpos = Vector(0, 0, 0),
-    --             vang = Angle(0, 0, 0),
-    --             wpos = Vector(0, 0, 0),
-    --             wang = Angle(0, 0, 0),
-    --             SlideAmount = { -- only if base att has slideable
-    --                 vmin = Vector(0, 0, 0),
-    --                 vmax = Vector(0, 0, 0),
-    --                 wmin = Vector(0, 0, 0),
-    --                 wmax = Vector(0, 0, 0)
-    --             }
-    --         }
-    --     }
-    -- }
+	-- ["name"] = {
+	--     RequireFlags = {}, -- same as attachments
+	--     ExcludeFlags = {},
+	--     NamePriority = 0, -- higher = more likely to be chosen
+	--     NameChange = "",
+	--     TrueNameChange = "",
+	--     AddPrefix = "",
+	--     AddSuffix = "",
+	--     VMPoseParams = {}, -- {["pose"] = 0.5}
+	--     VMColor = Color(),
+	--     VMMaterial = "",
+	--     VMBodygroups = {{ind = 1, bg = 1}},
+	--     VMElements = {
+	--         {
+	--             Model = "",
+	--             Bone = "",
+	--             Offset = {
+	--                 pos = Vector(),
+	--                 ang = Angle(),
+	--             },
+	--             ModelSkin = 0,
+	--             ModelBodygroups = "",
+	--             Scale = Vector(1, 1, 1),
+	--             IsMuzzleDevice = false -- this element is a muzzle device, and the muzzle flash should come from here.
+	--         }
+	--     },
+	--     VMOverride = "", -- change the view model to something else. Please make sure it's compatible with the last one.
+	--     VMBoneMods = {
+	--         ["bone"] = Vector(0, 0, 0)
+	--     },
+	--     WMPoseParams = {}, -- {["pose"] = 0.5}
+	--     WMColor = Color(),
+	--     WMMaterial = "",
+	--     WMBodygroups = {},
+	--     WMElements = {
+	--         {
+	--             Model = "",
+	--             Offset = {
+	--                 pos = Vector(),
+	--                 ang = Angle(),
+	--             },
+	--             IsMuzzleDevice = false -- this element is a muzzle device, and the muzzle flash should come from here.
+	--         }
+	--     },
+	--     WMOverride = "", -- change the world model to something else. Please make sure it's compatible with the last one.
+	--     WMBoneMods = {
+	--         ["bone"] = Vector(0, 0, 0)
+	--     },
+	--     AttPosMods = {
+	--         [1] = {
+	--             bone = "", -- optional
+	--             vpos = Vector(0, 0, 0),
+	--             vang = Angle(0, 0, 0),
+	--             wpos = Vector(0, 0, 0),
+	--             wang = Angle(0, 0, 0),
+	--             SlideAmount = { -- only if base att has slideable
+	--                 vmin = Vector(0, 0, 0),
+	--                 vmax = Vector(0, 0, 0),
+	--                 wmin = Vector(0, 0, 0),
+	--                 wmax = Vector(0, 0, 0)
+	--             }
+	--         }
+	--     }
+	-- }
 }
 
 SWEP.RejectAttachments = {
-    -- ["optic_docter"] = true -- stop this attachment from being usable on this gun
+	-- ["optic_docter"] = true -- stop this attachment from being usable on this gun
 }
 
 SWEP.AttachmentOverrides = {
-    -- ["optic_docter"] = {} -- allows you to overwrite atttbl values
+	-- ["optic_docter"] = {} -- allows you to overwrite atttbl values
 }
 
 SWEP.TTT_DoNotAttachOnBuy = false -- don't give all attachments when bought
@@ -549,67 +549,67 @@ SWEP.AutosolveSourceSeq = "idle"
 -- If you prefer, LHIK can stand for "Left Hand Individual Kinematics" or some shit
 
 SWEP.Animations = {
-    -- ["idle"] = {
-    --     Source = "idle",
-    --     Time = 10
-    -- },
-    -- ["draw"] = {
-    --     RestoreAmmo = 1, -- only used by shotgun empty insert reload
-    --     Source = "deploy",
-    --     RareSource = "", -- 1/RareSourceChance of playing this animation instead
-    --     RareSourceChance = 100, -- Chance the rapper
-    --     Time = 0.5, -- Overwrites the duration of the animation (changes speed). Don't set to use sequence length
-    --     Mult = 1, -- Multiplies the rate of animation.
-    --     TPAnim = ACT_HL2MP_GESTURE_RELOAD_AR2, -- third person animation to play when this animation is played
-    --     TPAnimStartTime = 0, -- when to start it from
-    --     Checkpoints = {}, -- time checkpoints. If weapon is unequipped, the animation will continue to play from these checkpoints when reequipped.
-    --     ShellEjectAt = 0, -- animation includes a shell eject at these times
-    --     LHIKIn = 0.25, -- In/Out controls how long it takes to switch to regular animation.
-    --     LHIKOut = 0.25, -- (not actually inverse kinematics)
-    --     LHIKEaseIn = 0.1, -- how long LHIK eases in.
-    --     LHIKEaseOut = 0.1, -- if no value is specified then ease = lhikin
-    --     LHIKTimeline = { -- allows arbitrary LHIK values to be interpolated between
-    --         {
-    --             t = 0.1,
-    --             lhik = 0,
-    --         },
-    --         {
-    --             t = 0.25,
-    --             lhik = 1
-    --         }
-    --     },
-    --     LHIK = true, -- basically disable foregrips on this anim
-    --     SoundTable = {
-    --         {
-    --             s = "", -- sound; can be string or table
-    --             p = 100, -- pitch
-    --             v = 75, -- volume
-    --             t = 1, -- time at which to play relative to Animations.Time
-    --             c = CHAN_ITEM, -- channel to play the sound
+	-- ["idle"] = {
+	--     Source = "idle",
+	--     Time = 10
+	-- },
+	-- ["draw"] = {
+	--     RestoreAmmo = 1, -- only used by shotgun empty insert reload
+	--     Source = "deploy",
+	--     RareSource = "", -- 1/RareSourceChance of playing this animation instead
+	--     RareSourceChance = 100, -- Chance the rapper
+	--     Time = 0.5, -- Overwrites the duration of the animation (changes speed). Don't set to use sequence length
+	--     Mult = 1, -- Multiplies the rate of animation.
+	--     TPAnim = ACT_HL2MP_GESTURE_RELOAD_AR2, -- third person animation to play when this animation is played
+	--     TPAnimStartTime = 0, -- when to start it from
+	--     Checkpoints = {}, -- time checkpoints. If weapon is unequipped, the animation will continue to play from these checkpoints when reequipped.
+	--     ShellEjectAt = 0, -- animation includes a shell eject at these times
+	--     LHIKIn = 0.25, -- In/Out controls how long it takes to switch to regular animation.
+	--     LHIKOut = 0.25, -- (not actually inverse kinematics)
+	--     LHIKEaseIn = 0.1, -- how long LHIK eases in.
+	--     LHIKEaseOut = 0.1, -- if no value is specified then ease = lhikin
+	--     LHIKTimeline = { -- allows arbitrary LHIK values to be interpolated between
+	--         {
+	--             t = 0.1,
+	--             lhik = 0,
+	--         },
+	--         {
+	--             t = 0.25,
+	--             lhik = 1
+	--         }
+	--     },
+	--     LHIK = true, -- basically disable foregrips on this anim
+	--     SoundTable = {
+	--         {
+	--             s = "", -- sound; can be string or table
+	--             p = 100, -- pitch
+	--             v = 75, -- volume
+	--             t = 1, -- time at which to play relative to Animations.Time
+	--             c = CHAN_ITEM, -- channel to play the sound
 
-    --             -- Can also play an effect at the same time
-    --             e = "", -- effect name
-    --             att = nil, -- attachment, defaults to shell attachment
-    --             mag = 100, -- magnitude
-    --             -- also capable of modifying bodygroups
-    --             ind = 0,
-    --             bg = 0,
-    --             -- and poseparams
-    --             pp = "pose",
-    --             ppv = 0.25,
-    --         }
-    --     },
-    --     ViewPunchTable = {
-    --         {
-    --             p = Vector(0, 0, 0),
-    --             t = 1
-    --         }
-    --     },
-    --     ProcDraw = false, -- for draw/deploy animations, always procedurally draw in addition to playing animation
-    --     ProcHolster = false, -- procedural holster weapon, THEN play animation
-    --     LastClip1OutTime = 0, -- when should the belt visually replenish on a belt fed
-    --     MinProgress = 0, -- how much time in seconds must pass before the animation can be cancelled
-    -- }
+	--             -- Can also play an effect at the same time
+	--             e = "", -- effect name
+	--             att = nil, -- attachment, defaults to shell attachment
+	--             mag = 100, -- magnitude
+	--             -- also capable of modifying bodygroups
+	--             ind = 0,
+	--             bg = 0,
+	--             -- and poseparams
+	--             pp = "pose",
+	--             ppv = 0.25,
+	--         }
+	--     },
+	--     ViewPunchTable = {
+	--         {
+	--             p = Vector(0, 0, 0),
+	--             t = 1
+	--         }
+	--     },
+	--     ProcDraw = false, -- for draw/deploy animations, always procedurally draw in addition to playing animation
+	--     ProcHolster = false, -- procedural holster weapon, THEN play animation
+	--     LastClip1OutTime = 0, -- when should the belt visually replenish on a belt fed
+	--     MinProgress = 0, -- how much time in seconds must pass before the animation can be cancelled
+	-- }
 }
 
 -- don't change any of this stuff
@@ -622,7 +622,7 @@ SWEP.Secondary.Automatic = false
 SWEP.Secondary.Ammo = "none"
 SWEP.DrawCrosshair = true
 SWEP.m_WeaponDeploySpeed = 80.08135 -- 8008135 boobies is funny but it'll bitch in console :(
-        -- We don't do that here
+		-- We don't do that here
 
 SWEP.ArcCW = true
 SWEP.BurstCount = 0
@@ -654,8 +654,8 @@ SWEP.Bodygroups = {} -- [0] = 1, [1] = 0...
 -- SWEP.RegularClipSize = 0
 
 function SWEP:AddDTRestoreHook(state, key, func)
-    self[state .. "_RestoreHooks"] = self[state .. "_RestoreHooks"] or {}
-    self[state .. "_RestoreHooks"][key] = func
+	self[state .. "_RestoreHooks"] = self[state .. "_RestoreHooks"] or {}
+	self[state .. "_RestoreHooks"][key] = func
 end
 
 if SERVER then
@@ -717,211 +717,216 @@ AddCSLuaFile("cl_presets.lua")
 AddCSLuaFile("cl_light.lua")
 
 if CLIENT then
-    include("cl_customize2.lua")
-    include("cl_viewmodel.lua")
-    include("cl_scope.lua")
-    include("cl_crosshair.lua")
-    include("cl_hud.lua")
-    include("cl_holosight.lua")
-    include("cl_lhik.lua")
-    include("cl_laser.lua")
-    include("cl_blur.lua")
-    include("cl_presets.lua")
-    include("cl_light.lua")
+	include("cl_customize2.lua")
+	include("cl_viewmodel.lua")
+	include("cl_scope.lua")
+	include("cl_crosshair.lua")
+	include("cl_hud.lua")
+	include("cl_holosight.lua")
+	include("cl_lhik.lua")
+	include("cl_laser.lua")
+	include("cl_blur.lua")
+	include("cl_presets.lua")
+	include("cl_light.lua")
 end
 
 function SWEP:SetupDataTables()
-    self:NetworkVar("Int", 0, "NWState")
-    self:NetworkVar("Int", 1, "FireMode")
-    self:NetworkVar("Int", 2, "BurstCountUM")
-    self:NetworkVar("Int", 3, "LastLoad")
-    self:NetworkVar("Int", 4, "NthReload")
-    self:NetworkVar("Int", 5, "NthShot")
+	self:NetworkVar("Int", 0, "NWState")
+	self:NetworkVar("Int", 1, "FireMode")
+	self:NetworkVar("Int", 2, "BurstCountUM")
+	self:NetworkVar("Int", 3, "LastLoad")
+	self:NetworkVar("Int", 4, "NthReload")
+	self:NetworkVar("Int", 5, "NthShot")
 
-    -- 2 = insert
-    -- 3 = cancelling
-    -- 4 = insert empty
-    -- 5 = cancelling empty
-    self:NetworkVar("Int", 6, "ShotgunReloading")
+	-- 2 = insert
+	-- 3 = cancelling
+	-- 4 = insert empty
+	-- 5 = cancelling empty
+	self:NetworkVar("Int", 6, "ShotgunReloading")
 
-    self:NetworkVar("Bool", 0, "HeatLocked")
-    self:NetworkVar("Bool", 1, "NeedCycle")
-    self:NetworkVar("Bool", 2, "InBipod")
-    self:NetworkVar("Bool", 3, "InUBGL")
-    self:NetworkVar("Bool", 4, "InCustomize")
-    self:NetworkVar("Bool", 5, "GrenadePrimed")
+	self:NetworkVar("Bool", 0, "HeatLocked")
+	self:NetworkVar("Bool", 1, "NeedCycle")
+	self:NetworkVar("Bool", 2, "InBipod")
+	self:NetworkVar("Bool", 3, "InUBGL")
+	self:NetworkVar("Bool", 4, "InCustomize")
+	self:NetworkVar("Bool", 5, "GrenadePrimed")
 
-    self:NetworkVar("Float", 0, "Heat")
-    self:NetworkVar("Float", 1, "WeaponOpDelay")
-    self:NetworkVar("Float", 2, "ReloadingREAL")
-    self:NetworkVar("Float", 3, "MagUpIn")
-    self:NetworkVar("Float", 4, "NextPrimaryFireSlowdown")
+	self:NetworkVar("Float", 0, "Heat")
+	self:NetworkVar("Float", 1, "WeaponOpDelay")
+	self:NetworkVar("Float", 2, "ReloadingREAL")
+	self:NetworkVar("Float", 3, "MagUpIn")
+	self:NetworkVar("Float", 4, "NextPrimaryFireSlowdown")
 
-    self:NetworkVar("Float", 5, "Recoil")
-    self:NetworkVar("Float", 6, "SideRecoil")
-    self:NetworkVar("Float", 7, "RecoiledWhen")
+	self:NetworkVar("Float", 5, "Recoil")
+	self:NetworkVar("Float", 6, "SideRecoil")
+	self:NetworkVar("Float", 7, "RecoiledWhen")
 
-    self:NetworkVar("Float", 8, "NextIdle")
-    self:NetworkVar("Float", 9, "SightTimeChanged")
+	self:NetworkVar("Float", 8, "NextIdle")
+	self:NetworkVar("Float", 9, "SightTimeChanged")
 
-    self._StateChanges = {}
+	-- kill me
+	self:NetworkVar("Float", 10, "MaxRecoil")
+	self:NetworkVar("Float", 11, "MaxSideRecoil")
+
+	self._StateChanges = {}
 end
 
 function SWEP:OnRestore()
-    self:SetNthReload(0)
-    self:SetNthShot(0)
-    self:SetBurstCountUM(0)
-    self:SetReloadingREAL(0)
-    self:SetWeaponOpDelay(0)
-    self:SetMagUpIn(0)
-    self:SetRecoil(0)
+	self:SetNthReload(0)
+	self:SetNthShot(0)
+	self:SetBurstCountUM(0)
+	self:SetReloadingREAL(0)
+	self:SetWeaponOpDelay(0)
+	self:SetMagUpIn(0)
+	self:SetRecoil(0)
 
-    self:KillTimers()
-    self:Initialize()
+	self:KillTimers()
+	self:Initialize()
 
-    self.UnReady = false
+	self.UnReady = false
+	print("restoring arccw!!!")
 end
 
 
 function SWEP:SetReloading( v )
-    if isbool(v) then
-        if v then
-            self:SetReloadingREAL(math.huge)
-        else
-            self:SetReloadingREAL(0)
-        end
-    elseif isnumber(v) and v > self:GetReloadingREAL() then
-        self:SetReloadingREAL( v )
-    end
+	if isbool(v) then
+		if v then
+			self:SetReloadingREAL(math.huge)
+		else
+			self:SetReloadingREAL(0)
+		end
+	elseif isnumber(v) and v > self:GetReloadingREAL() then
+		self:SetReloadingREAL( v )
+	end
 end
 
 function SWEP:GetReloading()
-    local decide
+	local decide
 
-    if self:GetReloadingREAL() > CurTime() then
-        decide = true
-    else
-        decide = false
-    end
+	if self:GetReloadingREAL() > CurTime() then
+		decide = true
+	else
+		decide = false
+	end
 
-    self:GetBuff_Hook("Hook_GetReloading", decide)
+	self:GetBuff_Hook("Hook_GetReloading", decide)
 
-    return decide
+	return decide
 end
 
 function SWEP:SetBurstCount(b)
-    self:SetBurstCountUM(b)
+	self:SetBurstCountUM(b)
 end
 
 function SWEP:GetBurstCount()
-    return self:GetBuff_Hook("Hook_GetBurstCount", self:GetBurstCountUM()) or self:GetBurstCountUM() or 0
+	return self:GetBuff_Hook("Hook_GetBurstCount", self:GetBurstCountUM()) or self:GetBurstCountUM() or 0
 end
 
 SWEP._LatestState = 0
 SWEP._LatestStateWhen = 0
 
 function SWEP:SetState(v)
-    self:SetNWState(v)
-    if CLIENT then
-        local t = self:GetTable()
-        t._StateChanges[CurTime()] = v
-        if IsFirstTimePredicted() then
-            t._LatestState = v
-            t._LatestStateWhen = CurTime()
-        end
-    end
+	self:SetNWState(v)
+	if CLIENT then
+		local t = self:GetTable()
+		t._StateChanges[CurTime()] = v
+		if IsFirstTimePredicted() then
+			t._LatestState = v
+			t._LatestStateWhen = CurTime()
+		end
+	end
 end
 
 function SWEP:IsCustomizing()
-    if CLIENT then return self.ArcCW_Customizing end
-    return self:GetState() == ArcCW.STATE_CUSTOMIZE
+	if CLIENT then return self.ArcCW_Customizing end
+	return self:GetState() == ArcCW.STATE_CUSTOMIZE
 end
 
 function SWEP:SetCustomizing(b)
-    if CLIENT then self.ArcCW_Customizing = b end
-    return self:SetState(b and ArcCW.STATE_CUSTOMIZE or ArcCW.STATE_IDLE)
+	if CLIENT then self.ArcCW_Customizing = b end
+	return self:SetState(b and ArcCW.STATE_CUSTOMIZE or ArcCW.STATE_IDLE)
 end
 
 function SWEP:GetState(v)
-    if !game.SinglePlayer() and CLIENT then self.State = v end
+	if !game.SinglePlayer() and CLIENT then self.State = v end
 end
 
 function SWEP:GetState(v)
-    if !game.SinglePlayer() and CLIENT and self.State then return self.State end
+	if !game.SinglePlayer() and CLIENT and self.State then return self.State end
 
-    return self:GetNWState(v)
+	return self:GetNWState(v)
 end
 
 function SWEP:IsProne()
-    if PRONE_INPRONE then
-        return self:GetOwner().IsProne and self:GetOwner():IsProne()
-    else
-        return false
-    end
+	if PRONE_INPRONE then
+		return self:GetOwner().IsProne and self:GetOwner():IsProne()
+	else
+		return false
+	end
 end
 
 local cvar = GetConVar("arccw_override_nearwall")
 
 function SWEP:BarrelHitWall(visual)
-    cvar = cvar or GetConVar("arccw_override_nearwall")
-    local t = self:GetTable()
+	cvar = cvar or GetConVar("arccw_override_nearwall")
+	local t = self:GetTable()
    
-    if cvar:GetBool() then
-        local offset = t.BarrelOffsetHip
+	if cvar:GetBool() then
+		local offset = t.BarrelOffsetHip
 
-        if vrmod and vrmod.IsPlayerInVR(self:GetOwner()) then
-            return 0 -- Never block barrel in VR
-        end
+		if vrmod and vrmod.IsPlayerInVR(self:GetOwner()) then
+			return 0 -- Never block barrel in VR
+		end
 
-        if self:GetState() == ArcCW.STATE_SIGHTS then
-            offset = t.BarrelOffsetSighted
-        end
+		if self:GetState() == ArcCW.STATE_SIGHTS then
+			offset = t.BarrelOffsetSighted
+		end
 
-        local ow = self:GetOwner()
-        local dir = ow:EyeAngles()
-        local src = ow:EyePos()
+		local ow = self:GetOwner()
+		local dir = ow:EyeAngles()
+		local src = ow:EyePos()
 
-        src:Add(dir:Right() 	* offset[1])
-        src:Add(dir:Forward() 	* offset[2])
-        src:Add(dir:Up() 		* offset[3])
+		src:Add(dir:Right() 	* offset[1])
+		src:Add(dir:Forward() 	* offset[2])
+		src:Add(dir:Up() 		* offset[3])
 
-        local mask = MASK_SOLID
+		local mask = MASK_SOLID
 
-        local filter = {ow}
+		local filter = {ow}
 
-        if t.Shields and #t.Shields > 0 then
-            table.Add(filter, t.Shields)
-        end
+		if t.Shields and #t.Shields > 0 then
+			table.Add(filter, t.Shields)
+		end
 
-        local barrelLength = t.BarrelLength + self:GetBuff_Add("Add_BarrelLength")
-        local max = 0
+		local barrelLength = t.BarrelLength + self:GetBuff_Add("Add_BarrelLength")
+		local max = 0
 
-        if visual then
-            local hmin, hmax = ow:GetHull()
-            -- it's probably guaranteed that mins are - and maxs are + but I'M NOT TAKIN ANY CHANCES
-            max = math.max(math.abs(hmin[1]), math.abs(hmin[2]), math.abs(hmax[1]), math.abs(hmax[2])) / 2
-        end
+		if visual then
+			local hmin, hmax = ow:GetHull()
+			-- it's probably guaranteed that mins are - and maxs are + but I'M NOT TAKIN ANY CHANCES
+			max = math.max(math.abs(hmin[1]), math.abs(hmin[2]), math.abs(hmax[1]), math.abs(hmax[2])) / 2
+		end
 
-        local tr = ow:GetEyeTrace()
+		local tr = ow:GetEyeTrace()
 
-        --[[
-        util.TraceLine({
-            start = src,
-            endpos = src + (dir:Forward() * (barrelLength + max)),
-            filter = filter,
-            mask = mask
-        })
-        ]]
+		--[[
+		util.TraceLine({
+			start = src,
+			endpos = src + (dir:Forward() * (barrelLength + max)),
+			filter = filter,
+			mask = mask
+		})
+		]]
 
-        if tr.Hit and tr.Fraction * 32768 < barrelLength + max
-            and not tr.Entity.ArcCWProjectile then
+		if tr.Hit and tr.Fraction * 32768 < barrelLength + max
+			and not tr.Entity.ArcCWProjectile then
 
-            local l = tr.Fraction * 32768 - max
-            return 1 - math.max(l / barrelLength, 0)
-        else
-            return 0
-        end
-    else
-        return 0
-    end
+			local l = tr.Fraction * 32768 - max
+			return 1 - math.max(l / barrelLength, 0)
+		else
+			return 0
+		end
+	else
+		return 0
+	end
 end
