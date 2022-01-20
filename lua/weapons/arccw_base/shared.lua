@@ -768,8 +768,6 @@ function SWEP:SetupDataTables()
 	self:NetworkVar("Float", 10, "MaxRecoil")
 	self:NetworkVar("Float", 11, "MaxSideRecoil")
 	self:NetworkVar("Float", 12, "RecoilFrac")
-
-	self._StateChanges = {}
 end
 
 function SWEP:OnRestore()
@@ -785,7 +783,6 @@ function SWEP:OnRestore()
 	self:Initialize()
 
 	self.UnReady = false
-	print("restoring arccw!!!")
 end
 
 
@@ -830,7 +827,7 @@ function SWEP:SetState(v)
 	self:SetNWState(v)
 	if CLIENT then
 		local t = self:GetTable()
-		t._StateChanges[CurTime()] = v
+
 		if IsFirstTimePredicted() then
 			t._LatestState = v
 			t._LatestStateWhen = CurTime()

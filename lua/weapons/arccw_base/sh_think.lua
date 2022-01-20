@@ -12,8 +12,8 @@ function SWEP:Think()
 	if --[[IsFirstTimePredicted() and]] CLIENT then
 		--print(t._LatestState, CurTime() - t._LatestStateWhen, self:GetNWState())
 		if t._LatestStateWhen < CurTime() and self:GetNWState() ~= t._LatestState then
+			-- misprediction?
 			local key = self:GetNWState() .. "_RestoreHooks"
-			-- print("lol state mismatch restoring", t._LatestState, self:GetNWState())
 			if self[key] then
 				for k,v in pairs(self[key]) do
 					v(self)
