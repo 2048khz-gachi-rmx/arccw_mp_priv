@@ -983,8 +983,8 @@ do
 
 	att.SortOrder = 30
 
-	att.Mult_Recoil = 0.8
-	att.Mult_HipDispersion = 0.1
-	att.Mult_AccuracyMOA = 2.5
+	att.Mult_Recoil = 0.7
+	att.Mult_HipDispersion = 0.2
+	att.Mult_AccuracyMOA = 1.5
 	ArcCW.LoadAttachmentType(att)
 end
