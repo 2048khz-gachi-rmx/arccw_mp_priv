@@ -7,28 +7,6 @@ ArcCW.CSModelPile    = {} -- { {Model = NULL, Weapon = NULL} }
 ArcCW.FlashlightPile = {} -- { {Weapon = NULL, ProjectedTexture = NULL}}
 ArcCW.ReferenceModel = NULL
 
-collectgarbage("setstepmul", 150)
-collectgarbage("setpause", 300)
-
-local allocateShit = 5e6 -- 5e6 = raises to ~550mb
-local t = {}
-
-for i=1, allocateShit do
-	t[i] = {}
-end
-
-t = nil
-
-timer.Create("fuck_you_luajit", 5, 0, function()
-	if collectgarbage("count") < 500e3 then
-		collectgarbage("setstepmul", 200)
-		collectgarbage("setpause", 500)
-	else
-		collectgarbage("setstepmul", 150)
-		collectgarbage("setpause", 300)
-	end
-end)
-
 local function ArcCW_CollectGarbage()
     local removed, removedents = 0, {}
 
