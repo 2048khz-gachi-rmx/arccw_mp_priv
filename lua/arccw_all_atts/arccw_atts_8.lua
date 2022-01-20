@@ -912,7 +912,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 4, -1.278),
+	        Pos = Vector(0, 10, -1.278),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 1.1,
 	        ScrollFunc = ArcCW.SCROLL_NONE
