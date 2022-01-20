@@ -443,7 +443,8 @@ local oldpos, oldang = Vector(), Angle()
 local target = {}
 
 function SWEP:CalculateVMPos(pos, ang)
-	--GCMark("acw vm calc")
+
+	GCMark("acw vm calc")
 	local CT = CurTime()
 	local tick = engine.TickCount()
 	local UCT = UnPredictedCurTime()
@@ -805,7 +806,6 @@ function SWEP:CalculateVMPos(pos, ang)
 		target.ang = LerpAngle(sprd, target.ang, sang or hang)
 	end]]
 
-	
 
 	-- !! this makes quite a bit of garbage
 	local deg = self:BarrelHitWall(true)
@@ -828,7 +828,6 @@ function SWEP:CalculateVMPos(pos, ang)
 		end
 	end
 
-	
 	if t.VM_LastBarrelRecover then
 		t.VM_BarrelWallFrac = t.VM_LastBarrelRecoverFrom * (1 - easeOut( (UCT - t.VM_LastBarrelRecover) / stanceRecover, 1 ))
 		t.VM_MaxBarrelFrac = t.VM_BarrelWallFrac
@@ -1081,7 +1080,7 @@ function SWEP:CalculateVMPos(pos, ang)
 		pos:Add(attpos)
 	end
 
-	-- GCPrint("acw vm calc")
+	GCPrint("acw vm calc")
 	return pos, ang
 end
 
@@ -1161,7 +1160,7 @@ local st = false
 
 function SWEP:PreDrawViewModel(vm, fl)
 	--b:Open()
-	-- GCMark("acw vm pre")
+	GCMark("acw vm pre")
 	if ArcCW.VM_OverDraw then return end
 	if !vm then return end
 
@@ -1199,14 +1198,14 @@ function SWEP:PreDrawViewModel(vm, fl)
 	--b:Close():print()
 
 	st = true
-	-- GCPrint("acw vm pre")
+	GCPrint("acw vm pre")
 end
 
 local b = bench("postdraw", 600)
 
 function SWEP:PostDrawViewModel()
 	--b:Open()
-	-- GCMark("acw vm post")
+	GCMark("acw vm post")
 	if ArcCW.VM_OverDraw then return end
 	if not st then return end
 	render.SetBlend(1)
@@ -1226,5 +1225,5 @@ function SWEP:PostDrawViewModel()
 
 	cam.End3D()
 	--b:Close():print()
-	-- GCPrint("acw vm post")
+	GCPrint("acw vm post")
 end

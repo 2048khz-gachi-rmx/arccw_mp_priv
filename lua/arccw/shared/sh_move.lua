@@ -59,6 +59,8 @@ end
 
 hook.Add("SetupMove", "ArcCW_SetupMove", ArcCW.Move)
 
+local ang = Angle()
+
 function ArcCW.CreateMove(cmd)
 	local ply = LocalPlayer()
 	local wpn = ply:GetActiveWeapon()
@@ -102,8 +104,9 @@ function ArcCW.CreateMove(cmd)
 	local recoil, siderecoil = wpn:PunchRecoil()
 	if recoil == 0 and siderecoil == 0 then return end
 
-	local rec =  Angle(recoil * 3.5, siderecoil * 2, 0)
-	ang2 = ang2 - rec
+	ang[1] = recoil * 3.5
+	ang[2] = siderecoil * 2
+	ang2:Sub(ang)
 
 	ang2[1] = math.Clamp(ang2[1], -90, 90)
 	ang2:Normalize()
@@ -138,6 +141,7 @@ function ArcCW.StartCommand(ply, ucmd)
 		ucmd:SetButtons(ucmd:GetButtons() - IN_SPEED)
 	end
 
+	--[[
 	-- Aim assist
 	if CLIENT and IsValid(wep) and wep.ArcCW
 			and (wep:GetBuff("AimAssist", true) or (GetConVar("arccw_aimassist"):GetBool() and ply:GetInfoNum("arccw_aimassist_cl", 0) == 1))  then
@@ -186,6 +190,7 @@ function ArcCW.StartCommand(ply, ucmd)
 			end
 		end
 	end
+	]]
 end
 
 hook.Add("StartCommand", "ArcCW_StartCommand", ArcCW.StartCommand)
