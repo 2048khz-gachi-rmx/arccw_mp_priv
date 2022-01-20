@@ -101,6 +101,7 @@ function SWEP:DoDrawCrosshair(x, y)
 			sp = fwd:ToScreen()
 		cam.End3D()
 	end
+	]]
 
 	if GetConVar("arccw_crosshair_trueaim"):GetBool() then
 		aimtr.start = self:GetShootSrc()
@@ -125,9 +126,8 @@ function SWEP:DoDrawCrosshair(x, y)
 	end
 
 	util.TraceLine(aimtr)
-	]]
 
-	aimtr_result = self:GetOwner():GetEyeTrace()
+	--aimtr_result = self:GetOwner():GetEyeTrace()
 
 	cam.Start3D()
 	local w2s = aimtr_result.HitPos:ToScreen()
