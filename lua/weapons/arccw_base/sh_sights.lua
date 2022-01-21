@@ -136,6 +136,7 @@ function SWEP:EnterSights()
 		self.LastEnterSightTimeUnpred = UnPredictedCurTime()
 		--self.LastSwitchSightTimeUnpred = UnPredictedCurTime()
 		self.VM_SightsChange = self.VM_SightsCurrent
+		self.SightsFOVChange = self.CurrentFOV
 	end
 
 	local anim = self:SelectAnimation("enter_sight")
@@ -181,6 +182,7 @@ function SWEP:ExitSights()
 	if IsFirstTimePredicted() then
 		self.LastExitSightTimeUnpred = UnPredictedCurTime()
 		self.VM_SightsChange = self.VM_SightsCurrent
+		self.SightsFOVChange = self.CurrentFOV
 	end
 
 	local anim = self:SelectAnimation("exit_sight")
@@ -563,6 +565,10 @@ function SWEP:GetActiveSights()
 	end
 end
 
+local function ubLerp(f, from, to)
+	return from + ( to - from ) * f
+end
+
 function SWEP:TranslateFOV(fov)
 	local t = self:GetTable()
 
@@ -594,19 +600,26 @@ function SWEP:TranslateFOV(fov)
 	-- if game.SinglePlayer() then self.CurrentFOV = self.CurrentFOV + (self.RecoilAmount * -0.1 * self:GetSightDelta()) end
 	-- it also fucking sucks
 
+	local enter = self.LastEnterSightTimeUnpred
+	local exit = self.LastExitSightTimeUnpred
+
 	t.ApproachFOV = fov / div
 
-	t.CurrentFOV = math.Approach(t.CurrentFOV, t.ApproachFOV, FrameTime() * (t.CurrentFOV - t.ApproachFOV))
+	local fovTime = math.Clamp(self:GetSightTime() * 1.2, 0.2, 0.6)
+	local from = t.SightsFOVChange or t.CurrentFOV
+	local to = t.ApproachFOV
+
+	local timePoint = math.max(enter, exit)
+	local passed = UnPredictedCurTime() - timePoint
+	local fr = math.Clamp(passed / fovTime, 0, 1)
+
+	fr = math.ease.OutExpo(fr)
+	t.CurrentFOV = ubLerp(fr, from, to)
 
 	t.CurrentViewModelFOV = t.CurrentViewModelFOV or t.ViewModelFOV
 	t.CurrentViewModelFOV = math.Approach(t.CurrentViewModelFOV, app_vm, FrameTime() * (t.CurrentViewModelFOV - app_vm))
-	if CLIENT and self:GetState() != ArcCW.STATE_SIGHTS and math.abs(GetConVar("fov_desired"):GetFloat() - t.CurrentFOV) > 0.0001 then
-		-- This mainly exists to handle suitzoom, as you can now hold USE to use it
-		t.CurrentViewModelFOV = app_vm * (t.CurrentFOV / GetConVar("fov_desired"):GetFloat())
-	end
+	
 	return t.CurrentFOV
-
-	-- return 90
 end
 
 function SWEP:SetShouldHoldType()
