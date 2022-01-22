@@ -316,16 +316,16 @@ local function easeOutCubic(x)
 end
 
 
-function SWEP:GetRecoilTimeFrac(t)
+function SWEP:GetRecoilTimeFrac()
 	local when = self:GetRecoiledWhen()
 	local now = CurTime()
 	local passed = now - when
 
-	return math.min(passed / self.RecoilTRecovery, 1)
+	return math.Clamp(passed / self.RecoilTRecovery, 0, 1)
 end
 
 function SWEP:GetAimRecoil(t)
-	local recFrac = 1 - Ease(self:GetRecoilFrac(t), 0.4)
+	local recFrac = 1 - Ease(self:GetRecoilFrac(), 0.4)
 
 	local rec = math.Round(math.max(self:GetMaxRecoil() * recFrac, 0), 5)
 	local sideRec = math.Round(math.max(self:GetMaxSideRecoil() * recFrac, 0), 5)

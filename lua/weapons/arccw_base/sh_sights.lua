@@ -582,10 +582,10 @@ function SWEP:TranslateFOV(fov)
 
 	local div = 1
 	local app_vm = t.ViewModelFOV + self:GetOwner():GetInfoNum("arccw_vm_fov", 0) + 10
+	local sght_vm = irons.ViewModelFOV or 45
 
 	if self:GetState() == ArcCW.STATE_SIGHTS then
 		fov = 75
-		app_vm = irons.ViewModelFOV or 45
 		local sgr = self:GetShotgunReloading()
 		div = math.max(irons.Magnification * (
 				(
@@ -617,9 +617,11 @@ function SWEP:TranslateFOV(fov)
 	t.CurrentFOV = ubLerp(fr, from, to)
 
 	t.CurrentViewModelFOV = t.CurrentViewModelFOV or t.ViewModelFOV
-	t.CurrentViewModelFOV = math.Approach(t.CurrentViewModelFOV, app_vm, FrameTime() * (t.CurrentViewModelFOV - app_vm))
-	
-	return t.CurrentFOV
+
+	local fr = t.VM_SightsCurrent and (1 - t.VM_SightsCurrent) or self:GetSightDelta()
+	t.CurrentViewModelFOV = Lerp(fr, sght_vm, app_vm) --math.Approach(t.CurrentViewModelFOV, app_vm, FrameTime() * (t.CurrentViewModelFOV - app_vm))
+
+	return t.CurrentFOV - self:GetAimRecoil() * 2.5
 end
 
 function SWEP:SetShouldHoldType()
