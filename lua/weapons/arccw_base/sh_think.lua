@@ -333,6 +333,10 @@ function SWEP:GetAimRecoil(t)
 	return rec, sideRec
 end
 
+function SWEP:LetMeHandleTheRecoil()
+	return self:GetRecoilFrac(), self:GetMaxRecoil(), self:GetMaxSideRecoil()
+end
+
 function SWEP:ProcessRecoil()
 	if self:GetMaxRecoil() == 0 then
 		self:SetRecoil( 0 )

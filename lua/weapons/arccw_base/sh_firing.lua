@@ -831,6 +831,8 @@ function SWEP:DoRecoil()
         self._CarryHorizontalRec = curSideRec - unpunchedHLeft
     end
 
+    addRec = addRec * 0.7
+
     self.MaxSideRecoilAmount = curSideRec + addSideRec
     self:SetMaxRecoil(curRec + addRec)
 
@@ -840,9 +842,8 @@ function SWEP:DoRecoil()
                                         -- since GM:Move calls itself more than SWEP:Think (making us predict recoil incorrectly for viewpunch)
                                         -- and we need it to be a predicted var...
 
-    hook.Run("ArcCW_Punch", self, addRec)
 
-    addRec = addRec * 0.7
+    hook.Run("ArcCW_Punch", self, addRec)
 
     self:SetRecoil( curRec + addRec )
     self:SetSideRecoil( curSideRec + addSideRec )
@@ -871,11 +872,11 @@ local function easeOut(x, intensity)
     return (x <= 0 and 0) or (x == 1 and 1) or 1 - (2 ^ (intensity * x))
 end
 
-local c1 = 1.70158;
-local c3 = c1 + 1;
+local c1 = 1.70158
+local c3 = c1 + 1
 
 local function easeOutBack(x)
-    return 1 + c3 * math.pow(x - 1, 5) + c1 * math.pow(x - 1, 2);
+    return 1 + c3 * math.pow(x - 1, 5) + c1 * math.pow(x - 1, 2)
 end
 
 -- happens after every recoil change due to pred - we don't need to network a purely-clientside thing
@@ -955,6 +956,8 @@ function SWEP:PunchRecoil()
 
         self._LastVerticalRec = mxR * curFrac
         self._LastHorizontalRec = horTotalCur
+
+        -- print("applying", vRec, self._LastVerticalRec)
         return vRec, horToApply
     end
 end

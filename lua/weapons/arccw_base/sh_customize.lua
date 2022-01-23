@@ -56,7 +56,7 @@ end
 
 function SWEP:ToggleCustomizeHUD(ic)
     if ic then
-        if not self:CanOpenCustomize() then print('cant', Realm()) return end
+        if not self:CanOpenCustomize() then return end
 
         self:SetCustomizing(true)
         self:SetState(ArcCW.STATE_CUSTOMIZE)

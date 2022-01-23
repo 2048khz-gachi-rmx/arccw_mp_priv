@@ -569,6 +569,20 @@ local function ubLerp(f, from, to)
 	return from + ( to - from ) * f
 end
 
+function SWEP:GetRecoilFOV()
+	local fr, ver, hor = self:LetMeHandleTheRecoil()
+
+	if ver > 1 then
+		ver = ver ^ 0.7 -- strong recoil shouldnt make your fov the equivalent of a telescope
+	else
+		ver = ver ^ 0.8
+	end
+
+	fr = 1 - Ease(fr, 0.2)
+
+	return (fr * ver) * -2
+end
+
 function SWEP:TranslateFOV(fov)
 	local t = self:GetTable()
 
@@ -621,7 +635,7 @@ function SWEP:TranslateFOV(fov)
 	local fr = t.VM_SightsCurrent and (1 - t.VM_SightsCurrent) or self:GetSightDelta()
 	t.CurrentViewModelFOV = Lerp(fr, sght_vm, app_vm) --math.Approach(t.CurrentViewModelFOV, app_vm, FrameTime() * (t.CurrentViewModelFOV - app_vm))
 
-	return t.CurrentFOV - self:GetAimRecoil() * 2.5
+	return t.CurrentFOV + self:GetRecoilFOV()
 end
 
 function SWEP:SetShouldHoldType()

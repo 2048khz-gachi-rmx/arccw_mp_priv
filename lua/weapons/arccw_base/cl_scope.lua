@@ -262,7 +262,9 @@ function SWEP:CalcView(ply, pos, ang, fov)
 	end
 
 	tempAng:Set(self.ViewPunchAngle)
+	local hor = tempAng[2]
 	tempAng:Mul(10)
+	tempAng[2] = tempAng[2] - hor * 5 -- horizontal viewpunch looks wack imo
 
 	ang:Add(tempAng)
 

@@ -111,7 +111,9 @@ function ArcCW.CreateMove(cmd)
 	ang2[1] = math.Clamp(ang2[1], -90, 90)
 	ang2:Normalize()
 
-	cmd:SetViewAngles(ang2)
+	if not ArcCW.DisableRecoil then
+		cmd:SetViewAngles(ang2)
+	end
 
 	local ft = FrameTime()
 	local r = wpn.RecoilAmount
