@@ -327,7 +327,7 @@ function SWEP:PrimaryAttack()
 
     if self:HasBottomlessClip() and self:Clip1() > 0 then
         self:Unload()
-    end 
+    end
 
     self:DoShootSound()
     self:DoPrimaryAnim()

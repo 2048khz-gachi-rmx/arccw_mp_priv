@@ -650,7 +650,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 	local v, h = self:GetAimRecoil()
 
-	eyeangs[1] = eyeangs[1] - v * 2 - vpA[1] 
+	eyeangs[1] = eyeangs[1] - v * 2 - vpA[1]
 	eyeangs[2] = eyeangs[2] + vpA[2] * 0.5 -- counteract horizontal viewpunch
 
 	eyeangs:Normalize()

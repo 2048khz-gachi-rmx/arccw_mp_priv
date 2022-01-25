@@ -39,14 +39,6 @@ SWEP.VelocityLastDiff = 0
 SWEP.Breath_Intensity = 1
 SWEP.Breath_Rate = 1
 
-
-local coolswayCT = 0
-local function LerpC(t,a,b,powa)
-
-return a + (b - a) * math.pow(t,powa)
-
-end
-
 SWEP._LastVMZ = 0
 SWEP._LastVMY = 0
 SWEP._LastVMYEase = 0
@@ -167,11 +159,11 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 	local ow = self:GetOwner()
 	
 	local sightedmult = (state == ArcCW.STATE_SIGHTS and 0.25) or 1
-	local in_sprint = (state == ArcCW.STATE_SPRINT and 1) or 0
+	local in_sprint = (state == ArcCW.STATE_SPRINT and t.VM_SprintCurrent) or 0
 
 	local sprint_freqmult = in_sprint * 0.8 + 1
 	local sprint_posmult = in_sprint * 0.7 + 1
-	local sprint_angmult = in_sprint * 10 + 1
+	local sprint_angmult = in_sprint * 3 + 1
 
 	local onground = ow:OnGround()
 	local firstPred = IsFirstTimePredicted()
@@ -199,16 +191,38 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 
 	VMPosOffset:Zero()
 
-	if onground then	
-		VMPosOffset.x = (math.sin(sb) * velocity * 0.0005 * sightedmult * swayxmult * sprint_posmult) * t.StepRandomX
-		VMPosOffset.y = (math.cos(sb * 0.5) * velocity * 0.0003 * sightedmult  * swayymult) * t.StepRandomY
-		VMPosOffset.z = math.sin(sb * 0.75) * velocity * 0.001 * sightedmult * swayzmult
+	local bouncy = GetConVar("arccw_vm_bouncy"):GetBool()
+
+	if onground then
+		local xWave = math.sin(sb)
+		if bouncy then
+			xWave = Ease(math.abs(xWave), 0.2) * math.Sign(xWave)
+		end
+
+		VMPosOffset.x = xWave * (velocity * -0.0008 * sightedmult * swayxmult * sprint_posmult)
+			* t.StepRandomX * (0.7 + in_sprint * -0.2)
+
+		local yWave = math.cos(sb * 0.5)
+		if bouncy then
+			yWave = Ease(math.abs(yWave), 0.2) * math.Sign(yWave)
+		end
+
+		VMPosOffset.y = (yWave * velocity * -0.0006 * sightedmult  * swayymult)
+			* t.StepRandomY * (0.6 + in_sprint * 0.5)
+
+		local zWave = math.cos(sb * 0.75)
+		if bouncy then
+			zWave = Ease(math.abs(zWave), 0.2) * math.Sign(zWave)
+		end
+	
+		VMPosOffset.z = zWave * velocity * 0.001 * sightedmult * swayzmult
+			* (0.4 + in_sprint * 0.6)
 
 		VMPosOffset_Lerp:Add(VMPosOffset)
 
-		VMAngOffset.x = VMPosOffset.x / 2 -- vertical
-		VMAngOffset.y = VMPosOffset.y * -7.5 / 5 * sprint_angmult -- horizontal
-		VMAngOffset.z = VMPosOffset.y * 5 -- tilt
+		VMAngOffset.x = VMPosOffset.x * -(1 + in_sprint * 0.4) -- vertical
+		VMAngOffset.y = VMPosOffset.y * -2.5 * sprint_angmult -- horizontal
+		VMAngOffset.z = VMPosOffset.y * 5 * (0.8 + in_sprint * 0.4) -- tilt
 	end
 
 	--[[VMPosOffset_Lerp.x = Lerp(16*FT, VMPosOffset_Lerp.x, VMPosOffset.x)
@@ -442,10 +456,16 @@ local oldpos, oldang = Vector(), Angle()
 
 local target = {}
 
-function SWEP:CalculateVMPos(pos, ang)
+local cache = {}
 
+timer.Create("fuck", 1, 0, function() table.Empty(cache) end)
+
+function SWEP:CalculateVMPos(pos, ang)
 	GCMark("acw vm calc")
 	local CT = CurTime()
+
+	if cache[CT] then return unpack(cache[CT]) end
+
 	local tick = engine.TickCount()
 	local UCT = UnPredictedCurTime()
 
@@ -695,9 +715,6 @@ function SWEP:CalculateVMPos(pos, ang)
 		if self.InAttMenu then target.ang = target.ang + Angle(0, -5, 0) end
 	else
 		if (sprinted and !(self:GetBuff_Override("Override_ShootWhileSprint") or t.ShootWhileSprint)) or holstered then
-
-			local intensity = math.Clamp(0.8 / self:GetSightTime(), 1, 5)
-
 			local prePos = target.pos
 			local preAng = target.ang
 
