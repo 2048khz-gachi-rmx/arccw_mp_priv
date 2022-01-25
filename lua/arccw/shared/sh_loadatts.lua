@@ -114,7 +114,7 @@ local function ArcCW_LoadAtts()
     ArcCW.NumAttachments = 1
     ArcCW.AttachmentBits = nil
 
-    local files = file.Find("arccw_all_atts/*", "LUA")
+    local files = file.Find("arccw_all_atts/*", "LUA", "nameasc")
 
     for k, v in pairs(files) do
         include("arccw_all_atts/" .. v)
