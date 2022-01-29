@@ -260,7 +260,7 @@ function SWEP:Breath_Process(EyePos, EyeAng)
 
 	local ow = self:GetOwner()
 
-	local ct = CurTime()
+	local ct = SysTime() -- fuck you you will breathe off system time
 
 	self:Breath_Health(ow, t)
 	self:Breath_StateMult(ow, t)
@@ -271,8 +271,14 @@ function SWEP:Breath_Process(EyePos, EyeAng)
 	VMAngOffset.x = x * 1.5
 	VMAngOffset.y = y * 2
 
-	VMPos:Add(VMAng:Up() * x)
-	VMPos:Add(VMAng:Right() * y)
+	local up = VMAng:Up()
+	up:Mul(x)
+
+	local right = VMAng:Right()
+	right:Mul(y)
+
+	VMPos:Add(up)
+	VMPos:Add(right)
 
 	VMAng:Add(VMAngOffset)
 
@@ -1101,11 +1107,38 @@ function SWEP:CalculateVMPos(pos, ang)
 	return pos, ang
 end
 
+local cv, ca = Vector(), Angle()
+local ccv, cca = Vector(), Angle()
+
+local fn = FrameNumber()
+local offs = {}
+
+local mct = CurTime()
+
 function SWEP:GetViewModelPosition(pos, ang)
+
+	--[[
+	local ct = CurTime()
+	if offs[ct] then --FrameNumber() == fn then
+		pos:Sub(offs[ct][1]) ang:Sub(offs[ct][2])
+		return pos, ang
+	end
+
+	cv:Set(pos) ca:Set(ang)
+	ccv:Set(pos) cca:Set(ang)
+	]]
+
 	self:CalculateVMPos(pos, ang)
+	--[[cv:Sub(pos) ca:Sub(ang)
+
+	if IsFirstTimePredicted() and CurTime() > mct then
+		fn = FrameNumber()
+		offs[CurTime()] = {Vector(cv), Angle(ca)}
+	end]]
 
 	return pos, ang
 end
+
 
 function SWEP:ShouldCheapWorldModel()
 	local lp = LocalPlayer()
@@ -1155,10 +1188,11 @@ function SWEP:DrawWorldModel()
 
 	if self:ShouldGlint() then self:DoScopeGlint()  end
 
-	if !self.CertainAboutAtts then
+	if !self.CertainAboutAtts and (not self.SentReq or CurTime() - self.SentReq > 1) then
 		net.Start("arccw_rqwpnnet")
 		net.WriteEntity(self)
 		net.SendToServer()
+		self.SentReq = CurTime()
 	end
 end
 
@@ -1181,6 +1215,7 @@ function SWEP:PreDrawViewModel(vm, fl)
 	if ArcCW.VM_OverDraw then return end
 	if !vm then return end
 
+	--print("predraw vm", CurTime())
 	if self:GetState() == ArcCW.STATE_CUSTOMIZE then self:BlurNotWeapon() end
 
 	if GetConVar("arccw_cheapscopesautoconfig"):GetBool() then
@@ -1205,6 +1240,12 @@ function SWEP:PreDrawViewModel(vm, fl)
 	if self:GetSightDelta() < 1 and asight.ScopeTexture then
 		self:FormCheapScope()
 	end
+
+	--[[for k,v in pairs(calc) do
+		if v[1] == vm:GetPos() and v[2] == vm:GetAngles() then
+			print(k, CurTime())
+		end
+	end]]
 
 	self:StartVM3D()
 	cam.IgnoreZ(true)
