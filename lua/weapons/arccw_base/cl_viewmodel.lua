@@ -8,6 +8,8 @@ local m_angdif = mth.AngleDifference
 local f_lerp   = Lerp
 local srf      = surface
 
+local dirVec = Vector()
+
 SWEP.ActualVMData = false
 
 local eyeangles, lasteyeangles, coolswayang = Angle(), Angle(), Angle()
@@ -125,13 +127,12 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 	VMAngOffset_Lerp.y = ang_y * sightedmult --LerpC(5*FT, VMAngOffset_Lerp.y, ang_y, 0.6)
 	VMAngOffset_Lerp.z = ang_z --Lerp(25*FT, VMAngOffset_Lerp.z, ang_z)
 
-	local up = VMAng:Up()
+	local up = VMAng:ToUp(dirVec)
 	up:Mul(VMPosOffset_Lerp.x + y * 0.5 * sightedmult)
-
-	local right = VMAng:Right()
-	right:Mul(y * 0.5)
-
 	VMPos:Add(up)
+
+	local right = VMAng:ToRight(dirVec)
+	right:Mul(y * 0.5)
 	VMPos:Add(right)
 
 	VMAng:Add(VMAngOffset_Lerp)
@@ -234,9 +235,9 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 	VMPosOffset_Lerp.y = Lerp(4*FT, VMPosOffset_Lerp.y, VMPosOffset.y)
 	VMPosOffset_Lerp.z = Lerp(2*FT, VMPosOffset_Lerp.z, VMPosOffset.z)]]
 
-	VMPos:Add(VMAng:Up() * VMPosOffset_Lerp.x)
-	VMPos:Add(VMAng:Right() * VMPosOffset_Lerp.y)
-	VMPos:Add(VMAng:Forward() * VMPosOffset_Lerp.z)
+	VMPos:Add(VMAng:ToUp(dirVec):CMul(VMPosOffset_Lerp.x))
+	VMPos:Add(VMAng:ToRight(dirVec):CMul(VMPosOffset_Lerp.y))
+	VMPos:Add(VMAng:ToForward(dirVec):CMul(VMPosOffset_Lerp.z))
 
 	VMAng:Add(VMAngOffset)
 
@@ -276,17 +277,16 @@ function SWEP:Breath_Process(EyePos, EyeAng)
 	VMAngOffset.x = x * 1.5
 	VMAngOffset.y = y * 2
 
-	local up = VMAng:Up()
-	up:Mul(x)
+	local up = VMAng:ToUp(dirVec)
+		up:Mul(x)
 
-	local right = VMAng:Right()
-	right:Mul(y)
+	local right = VMAng:ToRight(dirVec)
+		right:Mul(y)
 
 	VMPos:Add(up)
 	VMPos:Add(right)
 
 	VMAng:Add(VMAngOffset)
-
 end
 
 function SWEP:Look_Process(EyePos, EyeAng)
@@ -314,37 +314,37 @@ function SWEP:Look_Process(EyePos, EyeAng)
 
 	VMAng.y = VMAng.y - t.VMLookLerp
 
-	VMPos:Add(VMAng:Up() * x)
-	VMPos:Add(VMAng:Right() * y)
+	local up = VMAng:ToUp(dirVec)
+		up:Mul(x)
+		VMPos:Add(up)
+
+	local r = VMAng:ToRight(dirVec)
+		r:Mul(y)
+		VMPos:Add(r)
 
 	VMAng:Add(VMAngOffset)
 
 end
 
+local velCpy = Vector()
+local angCpy = Angle()
+
 function SWEP:GetVMPosition(EyePos, EyeAng)
 	local velocity = self:GetOwner():GetVelocity()
-	local glob_velocity = WorldToLocal(velocity, angle_zero, vector_origin, EyeAng)
+	angCpy:Set(EyeAng) angCpy:Mul(-1)
 
-	self:Move_Process(EyePos, EyeAng, glob_velocity, velocity)
-	self:Step_Process(EyePos, EyeAng, glob_velocity, velocity)
+	velCpy:Set(velocity) velCpy:Rotate(angCpy)
+
+	self:Move_Process(EyePos, EyeAng, velCpy, velocity)
+	self:Step_Process(EyePos, EyeAng, velCpy, velocity)
 	self:Breath_Process(EyePos, EyeAng)
 	self:Look_Process(EyePos, EyeAng)
 
 	self.LastEyeAng = EyeAng
 	self.LastEyePos = EyePos
-	self.LastVelocity = glob_velocity
+	self.LastVelocity = velCpy
 
 	return self.VMPos, self.VMAng
-end
-
-local function ApprVecAng(from, to, dlt)
-	local ret = (isangle(from) and isangle(to)) and Angle() or Vector()
-
-	ret[1] = m_appor(from[1], to[1], dlt)
-	ret[2] = m_appor(from[2], to[2], dlt)
-	ret[3] = m_appor(from[3], to[3], dlt)
-
-	return ret
 end
 
 local function LerpSource(dlt, from, to)
@@ -1018,14 +1018,14 @@ function SWEP:CalculateVMPos(pos, ang)
 	end
 
 
-	local OF = oldang:Forward()
+	local OF = oldang:ToForward(dirVec)
 	OF:Mul(-math.min(self.RecoilPunchBack, 1))
 	pos:Add(OF)
 
 	-- position recoil only if not aiming through irons
 	local sght = self:GetActiveSights()
 	if sght and sght.HolosightModel and self:GetRecoil() ~= 0 then
-		local OU = oldang:Up()
+		local OU = oldang:ToUp(dirVec)
 		OU:Mul(self:GetRecoil() / 4)
 
 		pos:Add(OU)
@@ -1039,38 +1039,45 @@ function SWEP:CalculateVMPos(pos, ang)
 	oldang:Add(vpa)
 	--oldang:Add(recoilMethod(self))
 
-	local OR, OU, OF = oldang:Right(), oldang:Up(), oldang:Forward()
+	local aepx, aepy, aepz = actual.evpos:Unpack()
 
-	ang:RotateAroundAxis(OR,   actual.ang[1] + actual.evang[1])
+	--[[ang:RotateAroundAxis(OR,   actual.ang[1] + actual.evang[1])
 	ang:RotateAroundAxis(OU,   actual.ang[2] + actual.evang[2])
-	ang:RotateAroundAxis(OF,   actual.ang[3] + actual.evang[3])
+	ang:RotateAroundAxis(OF,   actual.ang[3] + actual.evang[3])]]
 
 
-	--[[ang:RotateAroundAxis(OR,   actual.evang[1])
-	ang:RotateAroundAxis(OU,   actual.evang[2])
-	ang:RotateAroundAxis(OF,   actual.evang[3])]]
+	local OR = oldang:ToRight(dirVec)
+		ang:RotateAroundAxis(OR,   actual.ang[1] + actual.evang[1])
+
+		OR:Mul(aepx)
+		pos:Add(OR)
+
+	local OF = oldang:ToForward(dirVec)
+		ang:RotateAroundAxis(OF,   actual.ang[3] + actual.evang[3])
+
+		OF:Mul(aepy)
+		pos:Add(OF)
+
+
+	local OU = oldang:ToUp(dirVec)
+		ang:RotateAroundAxis(OU,   actual.ang[2] + actual.evang[2])
+
+		OU:Mul(aepz)
+		pos:Add(OU)
 
 	ang:Sub(recoilMethod(self))
 	ang:Add(vpa) -- i have no clue why adding it twice cancels it out bro
 
-
-	local aepx, aepy, aepz = actual.evpos:Unpack()
-
-	OR:Mul(aepx)
-	OF:Mul(aepy)
-	OU:Mul(aepz)
-
-	pos:Add(OR)
-	pos:Add(OF)
-	pos:Add(OU)
-
-	local R, F, U = ang:Right(), ang:Forward(), ang:Up()
 	local apx, apy, apz = actual.pos:Unpack()
-	R:Mul(apx) F:Mul(apy) U:Mul(apz)
 
-	pos:Add(R)
-	pos:Add(F)
-	pos:Add(U)
+	ang:ToRight(dirVec):Mul(apx)
+	pos:Add(dirVec)
+
+	ang:ToForward(dirVec):Mul(apy)
+	pos:Add(dirVec)
+
+	ang:ToUp(dirVec):Mul(apz)
+	pos:Add(dirVec)
 
 	pos[3] = pos[3] - actual.down
 

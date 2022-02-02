@@ -133,6 +133,14 @@ function SWEP:GetBuff_Stat(buff, slot)
 end
 
 local SHARED_DATA = {}
+local SHARED_DATA_MULT = {}
+local SHARED_DATA_ADD = {}
+
+timer.Create("arccw_clear_shareddata", 10, 0, function()
+	SHARED_DATA = {}
+	SHARED_DATA_MULT = {}
+	SHARED_DATA_ADD = {}
+end)
 
 local want_hook = {}
 local b = bench("GetBuff_Hook", 10000)
@@ -166,7 +174,7 @@ function SWEP:GetBuff_Hook(buff, data)
 		if hook_state == nil then
 			local ht = hook.GetTable()
 			hook_state = (ht[buff] and #ht[buff] > 0) or ArcCW[buff]
-			want_hook[buff] = hook_state
+			want_hook[buff] = not not hook_state
 		end
 
 		if hook_state then
@@ -270,8 +278,6 @@ function SWEP:GetBuff_Hook(buff, data)
 	return data
 end
 
-local SHARED_DATA = {}
-
 function SWEP:GetBuff_Override(buff, default)
 	local level = 0
 	local current = nil
@@ -291,10 +297,10 @@ function SWEP:GetBuff_Override(buff, default)
 
 			ArcCW.BuffStack = true
 
-			local out = (self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA) or {})
+			local out = self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA)
 
-			current = out.current or current
-			winningslot = out.winningslot or winningslot
+			current = out and out.current or current
+			winningslot = out and out.winningslot or winningslot
 
 			ArcCW.BuffStack = false
 
@@ -399,7 +405,11 @@ function SWEP:GetBuff_Override(buff, default)
 
 		ArcCW.BuffStack = true
 
-		current = (self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA) or {}).current or current
+		--current = (self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA) or {}).current or current
+		current = self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA)
+		if current then current = current.current end
+
+		--current = current and current.current or current
 
 		ArcCW.BuffStack = false
 
@@ -412,7 +422,6 @@ function SWEP:GetBuff_Override(buff, default)
 	return current, winningslot
 end
 
-local SHARED_DATA = {}
 
 function SWEP:GetBuff_Mult(buff)
 	local mult = 1
@@ -422,12 +431,13 @@ function SWEP:GetBuff_Mult(buff)
 		mult = tbl.TickCache_Mults[buff]
 
 		if !ArcCW.BuffStack then
-			SHARED_DATA.buff = buff
-			SHARED_DATA.mult = mult
+			SHARED_DATA_MULT.buff = buff
+			SHARED_DATA_MULT.mult = mult
 
 			ArcCW.BuffStack = true
 
-			mult = (self:GetBuff_Hook("M_Hook_" .. buff, SHARED_DATA) or {}).mult or mult
+			mult = self:GetBuff_Hook("M_Hook_" .. buff, SHARED_DATA_MULT)
+			mult = mult and mult.mult or mult
 
 			ArcCW.BuffStack = false
 
@@ -482,14 +492,15 @@ function SWEP:GetBuff_Mult(buff)
 		mult = mult * GetConVar(ArcCW.ConVar_BuffMults[buff]):GetFloat()
 	end
 
-	SHARED_DATA.buff = buff
-	SHARED_DATA.mult = mult
+	SHARED_DATA_MULT.buff = buff
+	SHARED_DATA_MULT.mult = mult
 
 	if !ArcCW.BuffStack then
 
 		ArcCW.BuffStack = true
 
-		mult = (self:GetBuff_Hook("M_Hook_" .. buff, SHARED_DATA) or {}).mult or mult
+		mult = self:GetBuff_Hook("M_Hook_" .. buff, SHARED_DATA_MULT)
+		mult = mult and mult.mult or mult
 
 		ArcCW.BuffStack = false
 
@@ -505,14 +516,15 @@ function SWEP:GetBuff_Add(buff)
 	if tbl.TickCache_Adds[buff] then
 		add = tbl.TickCache_Adds[buff]
 
-		SHARED_DATA.buff = buff
-		SHARED_DATA.add = add
+		SHARED_DATA_ADD.buff = buff
+		SHARED_DATA_ADD.add = add
 
 		if !ArcCW.BuffStack then
 
 			ArcCW.BuffStack = true
 
-			add = (self:GetBuff_Hook("A_Hook_" .. buff, SHARED_DATA) or {}).add or add
+			add = self:GetBuff_Hook("A_Hook_" .. buff, SHARED_DATA_ADD)
+			add = add.add or add
 
 			ArcCW.BuffStack = false
 
@@ -563,14 +575,15 @@ function SWEP:GetBuff_Add(buff)
 		add = add + GetConVar(ArcCW.ConVar_BuffAdds[buff]):GetFloat()
 	end
 
-	SHARED_DATA.buff = buff
-	SHARED_DATA.add = add
+	SHARED_DATA_ADD.buff = buff
+	SHARED_DATA_ADD.add = add
 
 	if !ArcCW.BuffStack then
 
 		ArcCW.BuffStack = true
 
-		add = (self:GetBuff_Hook("A_Hook_" .. buff, SHARED_DATA) or {}).add or add
+		add = self:GetBuff_Hook("A_Hook_" .. buff, SHARED_DATA_ADD)
+		add = add.add or add
 
 		ArcCW.BuffStack = false
 
@@ -621,7 +634,9 @@ function SWEP:GetActiveElements(recache)
 			slots = {slots}
 		end
 
-		table.Add(eles, slots or {})
+		if slots then
+			table.Add(eles, slots)
+		end
 
 		table.insert(eles, i.Installed)
 	end
@@ -629,7 +644,10 @@ function SWEP:GetActiveElements(recache)
 	table.Add(eles, t.DefaultElements)
 
 	local mode = self:GetCurrentFiremode()
-	table.Add(eles, (mode or {}).ActivateElements or {})
+
+	if mode and mode.ActivateElements then
+		table.Add(eles, mode.ActivateElements)
+	end
 
 	local eles2 = {}
 
@@ -687,9 +705,11 @@ function SWEP:GetMuzzleDevice(wm)
 		local _, slot = self:GetBuff_Override("UBGL")
 
 		if wm then
-			muzz = (self.Attachments[slot].WMuzzleDeviceElement or {}).Model or muzz
+			local dev = self.Attachments[slot].WMuzzleDeviceElement
+			muzz = dev and dev.Model or muzz
 		else
-			muzz = (self.Attachments[slot].VMuzzleDeviceElement or {}).Model or muzz
+			local dev = self.Attachments[slot].VMuzzleDeviceElement
+			muzz = dev and dev.Model or muzz
 		end
 	end
 
@@ -718,18 +738,19 @@ function SWEP:CheckFlags(reject, need)
 		flags = self:GetActiveElements()
 	end
 
-	reject = reject or {}
-	need = need or {}
-
-	for _, i in pairs(reject) do
-		if table.HasValue(flags, i) then
-			return false
+	if reject then
+		for _, i in pairs(reject) do
+			if table.HasValue(flags, i) then
+				return false
+			end
 		end
 	end
 
-	for _, i in pairs(need) do
-		if !table.HasValue(flags, i) then
-			return false
+	if need then
+		for _, i in pairs(need) do
+			if !table.HasValue(flags, i) then
+				return false
+			end
 		end
 	end
 
@@ -1161,7 +1182,7 @@ function SWEP:Attach(slot, attname, silent, noadjust)
 		self:DetachAllMergeSlots(slot)
 
 		for i, k in pairs(self.Attachments) do
-			if table.HasValue(k.MergeSlots or {}, slot) then
+			if k.MergeSlots and table.HasValue(k.MergeSlots, slot) then
 				self:DetachAllMergeSlots(i)
 			end
 		end

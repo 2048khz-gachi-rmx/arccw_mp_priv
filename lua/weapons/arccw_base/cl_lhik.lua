@@ -352,7 +352,7 @@ function SWEP:DoLHIK()
 		local newTransl
 
 		if delta == 1 then
-			-- less GAWWBAGE
+			-- less GARRRRBAGE
 			newtransform:SetTranslation(lhik_pos)
 			newTransl = lhik_pos
 			newtransform:SetAngles(lhik_ang)

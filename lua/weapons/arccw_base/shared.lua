@@ -846,11 +846,7 @@ function SWEP:SetCustomizing(b)
 end
 
 function SWEP:GetState(v)
-	if !game.SinglePlayer() and CLIENT then self.State = v end
-end
-
-function SWEP:GetState(v)
-	if !game.SinglePlayer() and CLIENT and self.State then return self.State end
+	--if !game.SinglePlayer() and CLIENT and self.State then return self.State end
 
 	return self:GetNWState(v)
 end
@@ -866,11 +862,12 @@ end
 local cvar = GetConVar("arccw_override_nearwall")
 
 local filter = {}
+local vec = Vector()
 
 function SWEP:BarrelHitWall(visual)
 	cvar = cvar or GetConVar("arccw_override_nearwall")
 	local t = self:GetTable()
-   
+
 	if cvar:GetBool() then
 		local offset = t.BarrelOffsetHip
 
@@ -886,10 +883,14 @@ function SWEP:BarrelHitWall(visual)
 		local dir = ow:EyeAngles()
 		local src = ow:EyePos()
 
-		-- nghhh
-		src:Add(dir:Right() 	* offset[1])
-		src:Add(dir:Forward() 	* offset[2])
-		src:Add(dir:Up() 		* offset[3])
+		dir:ToRight(vec):Mul(offset[1])
+		src:Add(vec)
+
+		dir:ToForward(vec):Mul(offset[2])
+		src:Add(vec)
+
+		dir:ToUp(vec):Mul(-offset[3])
+		src:Add(vec)
 
 		local mask = MASK_SOLID
 

@@ -1,3 +1,5 @@
+local dirVec = Vector()
+
 function SWEP:KillModels()
 	self:KillModel(self.WM)
 	self.WM = nil
@@ -908,13 +910,13 @@ function SWEP:DrawCustomModel(wm, origin, angle)
 				local ang = k.CharmAngle
 				local scale = k.CharmScale or Vector(1, 1, 1)
 
-				apos:Add(aang:Forward() * (pos.x * scale.x))
-				apos:Add(aang:Right() * (pos.y * scale.y))
-				apos:Add(aang:Up() * (pos.z * scale.z))
+				apos:Add(aang:ToForward(dirVec):CMul(pos.x * scale.x))
+				apos:Add(aang:ToRight(dirVec):CMul(pos.y * scale.y))
+				apos:Add(aang:ToUp(dirVec):CMul(pos.z * scale.z))
 
-				aang:RotateAroundAxis(aang:Right(), ang.p)
-				aang:RotateAroundAxis(aang:Up(), ang.y)
-				aang:RotateAroundAxis(aang:Forward(), ang.r)
+				aang:RotateAroundAxis(aang:ToRight(dirVec), ang.p)
+				aang:RotateAroundAxis(aang:ToUp(dirVec), ang.y)
+				aang:RotateAroundAxis(aang:ToForward(dirVec), ang.r)
 			end
 		elseif bang and bpos then
 			local pos = offset or vector_origin
@@ -927,36 +929,32 @@ function SWEP:DrawCustomModel(wm, origin, angle)
 
 			local moffset = (k.ModelOffset or vector_origin)
 
-			local bf, br, bu = bang:Forward(), bang:Right(), bang:Up()
-
 			local aposCpy = lazy.GetSet("arccw_apos", Vector)
-			aposCpy:Set(bf) -- = bpos + bang:Forward() * pos.x
+			aposCpy:Set(bang:ToForward(dirVec))
 			aposCpy:Mul(pos.x)
 			aposCpy:Add(bpos)
 
 			apos = aposCpy
-			apos:Add(br * pos.y)
-			apos:Add(bu * pos.z)
+			apos:Add(bang:ToRight(dirVec):CMul(pos.y))
+			apos:Add(bang:ToUp(dirVec):CMul(pos.z))
 
 			aang = SHARED_ANG
 			aang:Set(bang)
 
-			aang:RotateAroundAxis(br, ang.p) -- we can only reuse br; after rotation directions will be different
-			aang:RotateAroundAxis(aang:Up(), ang.y)
-			aang:RotateAroundAxis(aang:Forward(), ang.r)
+			aang:RotateAroundAxis(bang:ToRight(dirVec), ang.p) -- we can only reuse br; after rotation directions will be different
+			aang:RotateAroundAxis(aang:ToUp(dirVec), ang.y)
+			aang:RotateAroundAxis(aang:ToForward(dirVec), ang.r)
 
 			--[[aang:RotateAroundAxis(br, ang[1])
 			aang:RotateAroundAxis(bu, ang[2])
 			aang:RotateAroundAxis(bf, ang[3])]]
 
 			if not moffset:IsZero() then
-				local F, R, U = aang:Forward(), aang:Right(), aang:Up()
 				local x, y, z = moffset:Unpack()
-				F:Mul(x) R:Mul(y) U:Mul(z)
 
-				apos:Add(F)
-				apos:Add(R)
-				apos:Add(U)
+				apos:Add(aang:ToForward(dirVec):CMul(x))
+				apos:Add(aang:ToRight(dirVec):CMul(y))
+				apos:Add(aang:ToUp(dirVec):CMul(z))
 			end
 		else
 			continue
