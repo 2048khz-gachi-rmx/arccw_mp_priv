@@ -130,7 +130,7 @@ function SWEP:SetupModel(wm)
 
 	if !wm and !self:GetOwner():IsPlayer() then return end
 
-	local og = weapons.Get(self:GetClass())
+	local og = weapons.GetStored(self:GetClass())
 
 	self.PrintName = self.OldPrintName or og.PrintName
 	local prefix, suffix = "", ""
@@ -141,47 +141,56 @@ function SWEP:SetupModel(wm)
 		local vm = self:GetOwner():GetViewModel()
 
 		vm.RenderOverride = function(v)
-			if !self or !self.ArcCW then v.RenderOverride = nil return end
-			local wep = LocalPlayer():GetActiveWeapon()
+			local wep = CachedLocalPlayer():GetActiveWeapon()
 			if wep and !wep.ArcCW then v.RenderOverride = nil return end
 			self:RefreshBGs()
 
-			for i, k in pairs(self:GetBuff_Override("Override_CaseBGs", self.CaseBGs) or {}) do
-				if !isnumber(i) then continue end
-				local bone = vm:LookupBone(k)
+			local cases = self:GetBuff_Override("Override_CaseBGs", self.CaseBGs)
 
-				if !bone then continue end
+			if cases then
+				for i, k in pairs(cases) do
+					if !isnumber(i) then continue end
+					local bone = vm:LookupBone(k)
 
-				if self:GetVisualClip() >= i then
-					vm:SetBodygroup(k.ind, k.bg)
-				else
-					vm:SetBodygroup(k.ind, 0)
+					if !bone then continue end
+
+					if self:GetVisualClip() >= i then
+						vm:SetBodygroup(k.ind, k.bg)
+					else
+						vm:SetBodygroup(k.ind, 0)
+					end
 				end
 			end
 
-			for i, k in pairs(self:GetBuff_Override("Override_BulletBGs", self.BulletBGs) or {}) do
-				if !isnumber(i) then continue end
-				local bone = vm:LookupBone(k)
+			local bullets = self:GetBuff_Override("Override_BulletBGs", self.BulletBGs)
+			if bullets then
+				for i, k in pairs(bullets) do
+					if !isnumber(i) then continue end
+					local bone = vm:LookupBone(k)
 
-				if !bone then continue end
+					if !bone then continue end
 
-				if self:GetVisualBullets() >= i then
-					vm:SetBodygroup(k.ind, k.bg)
-				else
-					vm:SetBodygroup(k.ind, 0)
+					if self:GetVisualBullets() >= i then
+						vm:SetBodygroup(k.ind, k.bg)
+					else
+						vm:SetBodygroup(k.ind, 0)
+					end
 				end
 			end
 
-			for i, k in pairs(self:GetBuff_Override("Override_StripperClipBGs", self.StripperClipBGs) or {}) do
-				if !isnumber(i) then continue end
-				local bone = vm:LookupBone(k)
+			local strips = self:GetBuff_Override("Override_StripperClipBGs", self.StripperClipBGs)
+			if strips then
+				for i, k in pairs(strips) do
+					if !isnumber(i) then continue end
+					local bone = vm:LookupBone(k)
 
-				if !bone then continue end
+					if !bone then continue end
 
-				if self:GetVisualLoadAmount() >= i then
-					vm:SetBodygroup(k.ind, k.bg)
-				else
-					vm:SetBodygroup(k.ind, 0)
+					if self:GetVisualLoadAmount() >= i then
+						vm:SetBodygroup(k.ind, k.bg)
+					else
+						vm:SetBodygroup(k.ind, 0)
+					end
 				end
 			end
 
@@ -192,30 +201,28 @@ function SWEP:SetupModel(wm)
 	end
 
 	if CLIENT then
+		if wm then
+			self:KillModel(self.WM)
+			self.WM = elements
+		else
+			self:KillModel(self.VM)
+			self.VM = elements
 
-	if wm then
-		self:KillModel(self.WM)
-		self.WM = elements
-	else
-		self:KillModel(self.VM)
-		self.VM = elements
+			if !IsValid(self:GetOwner()) or self:GetOwner():IsNPC() then
+				return
+			end
 
-		if !IsValid(self:GetOwner()) or self:GetOwner():IsNPC() then
-			return
+			if !IsValid(self:GetOwner():GetViewModel()) then
+				self:SetTimer(0.5, function()
+					self:SetupModel(wm)
+				end)
+				return
+			end
+
+			self:GetOwner():GetViewModel():SetupBones()
 		end
 
-		if !IsValid(self:GetOwner():GetViewModel()) then
-			self:SetTimer(0.5, function()
-				self:SetupModel(wm)
-			end)
-			return
-		end
-
-		self:GetOwner():GetViewModel():SetupBones()
-	end
-
-	render.OverrideDepthEnable( true, true )
-
+		render.OverrideDepthEnable( true, true )
 	end
 
 	local vscale = Vector(1, 1, 1)
@@ -910,8 +917,8 @@ function SWEP:DrawCustomModel(wm, origin, angle)
 				aang:RotateAroundAxis(aang:Forward(), ang.r)
 			end
 		elseif bang and bpos then
-			local pos = offset or Vector(0, 0, 0)
-			local ang = k.OffsetAng or Angle(0, 0, 0)
+			local pos = offset or vector_origin
+			local ang = k.OffsetAng or angle_zero
 
 			local posCpy = lazy.GetSet("arccw_what", Vector)
 			posCpy:Set(pos)

@@ -64,7 +64,7 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 
 	local vvel = loc_vel.z
 	local hvel = velocity.y
-	local hEase = 0.3
+	local hEase = 0.7
 
 	if IsFirstTimePredicted() then
 		local land_mul = lvv < vvel and 2 or 1 -- going to 0 velocity is faster than going to 1
@@ -73,14 +73,14 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 
 		local apprTo = math.min(mx_horvel, math.abs(hvel)) * math.Sign(hvel)
 
-		vvel = math.Approach(lvv, vvel, FrameTime() * 1500 * land_mul)
-		hvel = math.Approach(lhv, apprTo, FrameTime() * 500 * opposite_mul)
+		vvel = FPSLerp(25, lvv, vvel) --math.Approach(lvv, vvel, FrameTime() * 1500 * land_mul)
+		hvel = FPSLerp(15, lhv, apprTo) --math.Approach(lhv, apprTo, FrameTime() * 500 * opposite_mul)
 
 		-- there is a math problem here; we don't know we'll be heading to opposite until
 		-- velocity flips over to the other sign, and assume we're going to 0 instead
 		-- the jump between eases causes a jump in the VM too
 
-		hEase = --[[(are_opposite and 1) or ]]--[[(math.abs(lhv) > (math.abs(hvel) + 4) and 1.4) or ]] 0.35
+		hEase = 0.7
 
 		--[[if t._LastVMYEase ~= hEase then
 			local linear_horFrac = t._lastHorFrac or 0
@@ -109,7 +109,7 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 	t._lastHorFrac = linear_horFrac
 
 	local horFrac = Ease(linear_horFrac, hEase) * -hsign
-	local vertFrac = Ease(linear_vertFrac, 0.2) * vsign
+	local vertFrac = Ease(linear_vertFrac, 0.3) * vsign
 
 	local y = math.Clamp(horFrac * sightedmult, -1, 1)  -- horizontal
 	local x = math.Clamp(vertFrac * sightedmult, -1, 1) -- vertical
@@ -118,18 +118,23 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 	--VMPosOffset_Lerp.y = Lerp(8*FT, VMPosOffset_Lerp.y, y)
 
 	local ang_x = x * 5 -- vertical
-	local ang_y = y * ((game.SinglePlayer() and 5) or -2) -- horizontal
-	local ang_z = y * 4 / sightedmult + (x * -7) -- roll
+	local ang_y = -y * 0.5 * (y < 0 and 2 or 1)-- horizontal
+	local ang_z = y * 3 / sightedmult + (x * -7) -- roll
 
-	VMAngOffset_Lerp.x = ang_x--LerpC(10*FT, VMAngOffset_Lerp.x, ang_x, 0.75)
-	VMAngOffset_Lerp.y = ang_y--LerpC(5*FT, VMAngOffset_Lerp.y, ang_y, 0.6)
-	VMAngOffset_Lerp.z = ang_z--Lerp(25*FT, VMAngOffset_Lerp.z, ang_z)
+	VMAngOffset_Lerp.x = ang_x * sightedmult --LerpC(10*FT, VMAngOffset_Lerp.x, ang_x, 0.75)
+	VMAngOffset_Lerp.y = ang_y * sightedmult --LerpC(5*FT, VMAngOffset_Lerp.y, ang_y, 0.6)
+	VMAngOffset_Lerp.z = ang_z --Lerp(25*FT, VMAngOffset_Lerp.z, ang_z)
 
-	VMPos:Add(VMAng:Up() * (VMPosOffset_Lerp.x + y * 0.25))
-	VMPos:Add(VMAng:Right() * y * 0.35)
+	local up = VMAng:Up()
+	up:Mul(VMPosOffset_Lerp.x + y * 0.5 * sightedmult)
+
+	local right = VMAng:Right()
+	right:Mul(y * 0.5)
+
+	VMPos:Add(up)
+	VMPos:Add(right)
 
 	VMAng:Add(VMAngOffset_Lerp)
-
 end
 
 local stepend = math.pi * 266 -- closest multiple of (2 / 0.75; 2 / 0.5; 2)
@@ -462,17 +467,9 @@ local oldpos, oldang = Vector(), Angle()
 
 local target = {}
 
-local cache = {}
-
-timer.Create("fuck", 1, 0, function() table.Empty(cache) end)
-
 function SWEP:CalculateVMPos(pos, ang)
 	GCMark("acw vm calc")
 	local CT = CurTime()
-
-	if cache[CT] then return unpack(cache[CT]) end
-
-	local tick = engine.TickCount()
 	local UCT = UnPredictedCurTime()
 
 	local owner = self:GetOwner()
@@ -1110,31 +1107,23 @@ end
 local cv, ca = Vector(), Angle()
 local ccv, cca = Vector(), Angle()
 
-local fn = FrameNumber()
-local offs = {}
-
-local mct = CurTime()
+local offAng = Angle()
 
 function SWEP:GetViewModelPosition(pos, ang)
-
-	--[[
-	local ct = CurTime()
-	if offs[ct] then --FrameNumber() == fn then
-		pos:Sub(offs[ct][1]) ang:Sub(offs[ct][2])
+	--[[if IsFirstTimePredicted() then
+		cv:Set(pos) ca:Set(ang)
+		self:CalculateVMPos(pos, ang)
+		cv:Sub(pos) ca:Sub(ang)
 		return pos, ang
-	end
-
-	cv:Set(pos) ca:Set(ang)
-	ccv:Set(pos) cca:Set(ang)
-	]]
-
-	self:CalculateVMPos(pos, ang)
-	--[[cv:Sub(pos) ca:Sub(ang)
-
-	if IsFirstTimePredicted() and CurTime() > mct then
-		fn = FrameNumber()
-		offs[CurTime()] = {Vector(cv), Angle(ca)}
+	else
+		pos:Sub(cv) ang:Sub(ca)
+		return pos, ang
 	end]]
+
+	--cv:Set(pos) ca:Set(ang)
+	--ccv:Set(pos) cca:Set(ang)
+	
+	self:CalculateVMPos(pos, ang)
 
 	return pos, ang
 end
@@ -1201,21 +1190,28 @@ function SWEP:ShouldCheapScope()
 end
 
 local b = bench("predraw", 600)
+local v1, a1 = Vector(), Angle()
+local v2, a2 = Vector(), Angle()
 
 function SWEP:StartVM3D()
 	cam.Start3D(nil, nil, self.CurrentViewModelFOV or self.ViewModelFOV, nil, nil, nil, nil, 1.5, 15000) --EyePos(), EyeAngles(), self.CurrentViewModelFOV or self.ViewModelFOV, nil, nil, nil, nil, 1.5, 15000)
 end
 
-local v1, a1 = Vector(), Angle()
-local st = false
 
-function SWEP:PreDrawViewModel(vm, fl)
+local st = false
+local mx = Matrix()
+
+function SWEP:PreDrawViewModel(vm)
 	--b:Open()
 	GCMark("acw vm pre")
 	if ArcCW.VM_OverDraw then return end
 	if !vm then return end
 
-	--print("predraw vm", CurTime())
+	--[[v1:Set(vm:GetPos()) a1:Set(vm:GetAngles())
+	v2:Set(v1) a2:Set(a1)
+
+	self:CalculateVMPos(v1, a1)]]
+
 	if self:GetState() == ArcCW.STATE_CUSTOMIZE then self:BlurNotWeapon() end
 
 	if GetConVar("arccw_cheapscopesautoconfig"):GetBool() then
@@ -1257,15 +1253,18 @@ function SWEP:PreDrawViewModel(vm, fl)
 
 	st = true
 	GCPrint("acw vm pre")
+
+	--return true
 end
 
 local b = bench("postdraw", 600)
 
-function SWEP:PostDrawViewModel()
+function SWEP:PostDrawViewModel(vm)
 	--b:Open()
 	GCMark("acw vm post")
 	if ArcCW.VM_OverDraw then return end
 	if not st then return end
+
 	render.SetBlend(1)
 
 	cam.End3D()
