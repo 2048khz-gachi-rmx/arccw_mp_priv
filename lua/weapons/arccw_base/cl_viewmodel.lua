@@ -138,7 +138,8 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 	VMAng:Add(VMAngOffset_Lerp)
 end
 
-local stepend = math.pi * 266 -- closest multiple of (2 / 0.75; 2 / 0.5; 2)
+-- num % math.huge == nan, lol
+local stepend = 999999999 -- math.pi * 266 -- closest multiple of (2 / 0.75; 2 / 0.5; 2)
 local time = 0
 
 function SWEP:Step_Process(EyePos, EyeAng, velocity)
@@ -163,7 +164,7 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 	local FTMult = 0.15 * FT]]
 
 	local ow = self:GetOwner()
-	
+
 	local sightedmult = (state == ArcCW.STATE_SIGHTS and 0.25) or 1
 	local in_sprint = (state == ArcCW.STATE_SPRINT and t.VM_SprintCurrent) or 0
 
@@ -185,6 +186,9 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 
 		local sb = t.StepBob
 		time = sb
+
+		t.StepRandomX = 1
+		t.StepRandomY = 1
 
 		if sb >= stepend then
 			t.StepBob = sb % stepend
@@ -220,7 +224,7 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 		if bouncy then
 			zWave = Ease(math.abs(zWave), 0.2) * math.Sign(zWave)
 		end
-	
+
 		--VMPosOffset.z = zWave * velocity * 0.001 * sightedmult * swayzmult
 		--	* (0.4 + in_sprint * 0.6)
 
