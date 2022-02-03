@@ -54,9 +54,15 @@ function SWEP:CanOpenCustomize()
         (self:GetOwner():IsPlayer() and not self:GetOwner():KeyDown(IN_SPEED))
 end
 
+SWEP.LastEnterCustomize = 0
+SWEP.LastExitCustomize = 0
+
 function SWEP:ToggleCustomizeHUD(ic)
     if ic then
         if not self:CanOpenCustomize() then return end
+
+        self.LastEnterCustomize = UnPredictedCurTime()
+        self.VM_CustChange = self.VM_CustCurrent
 
         self:SetCustomizing(true)
         self:SetState(ArcCW.STATE_CUSTOMIZE)
@@ -70,6 +76,9 @@ function SWEP:ToggleCustomizeHUD(ic)
             self:OpenCustomizeHUD()
         end
     else
+        self.LastExitCustomize = UnPredictedCurTime()
+        self.VM_CustChange = self.VM_CustCurrent
+
         self:SetCustomizing(false)
         self:SetState(ArcCW.STATE_IDLE)
 

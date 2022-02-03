@@ -205,7 +205,7 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 			xWave = Ease(math.abs(xWave), 0.2) * math.Sign(xWave)
 		end
 
-		VMPosOffset.x = xWave * (velocity * -0.0008 * sightedmult * swayxmult * sprint_posmult)
+		VMPosOffset.x = xWave * (velocity * -0.0004 * sightedmult * swayxmult * sprint_posmult)
 			* t.StepRandomX * (0.7 + in_sprint * -0.2)
 
 		local yWave = math.cos(sb * 0.5)
@@ -214,20 +214,20 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 		end
 
 		VMPosOffset.y = (yWave * velocity * -0.0006 * sightedmult  * swayymult)
-			* t.StepRandomY * (0.6 + in_sprint * 0.5)
+			* t.StepRandomY * (0.6 + in_sprint * 0.5) -- horizontal
 
 		local zWave = math.cos(sb * 0.75)
 		if bouncy then
 			zWave = Ease(math.abs(zWave), 0.2) * math.Sign(zWave)
 		end
 	
-		VMPosOffset.z = zWave * velocity * 0.001 * sightedmult * swayzmult
-			* (0.4 + in_sprint * 0.6)
+		--VMPosOffset.z = zWave * velocity * 0.001 * sightedmult * swayzmult
+		--	* (0.4 + in_sprint * 0.6)
 
 		VMPosOffset_Lerp:Add(VMPosOffset)
 
-		VMAngOffset.x = VMPosOffset.x * -(1 + in_sprint * 0.4) -- vertical
-		VMAngOffset.y = VMPosOffset.y * -2.5 * sprint_angmult -- horizontal
+		VMAngOffset.x = VMPosOffset.x * -(0.2 + in_sprint * 1.4) * 5 -- vertical
+		VMAngOffset.y = -VMPosOffset.y * 2.5 * sprint_angmult -- horizontal
 		VMAngOffset.z = VMPosOffset.y * 5 * (0.8 + in_sprint * 0.4) -- tilt
 	end
 
@@ -410,6 +410,9 @@ SWEP.VM_UncrouchTime = -1
 SWEP.VM_SprintChange = 0    -- when the sprint state changes, this will be set to VM_SprintCurrent
 SWEP.VM_SprintCurrent = 0	-- this is set every frame to the current sprint frac
 
+SWEP.VM_CustChange = 0
+SWEP.VM_CustCurrent = 0
+
 -- analogous
 SWEP.VM_SightsChange = 0
 SWEP.VM_SightsCurrent = 0
@@ -447,7 +450,7 @@ end
 local function calculateSwitchableFrac(from, to, delta, maxdelta)
 	local frac = math.min(delta / maxdelta, 1)
 	local needAdd = math.max(from, to) - math.min(from, to)
-	local add = easeOutCubic(frac) * needAdd
+	local add = math.ease.OutQuint(frac) * needAdd
 
 	local sign = (from < to and 1) or -1
 
@@ -464,6 +467,9 @@ end
 
 local b = bench("vm_calc", 600)
 local oldpos, oldang = Vector(), Angle()
+
+local tempVec = Vector()
+local tempAng = Angle()
 
 local target = {}
 
@@ -695,128 +701,158 @@ function SWEP:CalculateVMPos(pos, ang)
 
 	t.VM_SprintCurrent = sprintFrac
 
+	local custRecovery = 0.3
 	local holstered = self:GetCurrentFiremode().Mode == 0
+	local cust = self:IsCustomizing() or (UCT - t.LastExitCustomize) < custRecovery
+	local custFrac = 0
 
-	if self:IsCustomizing() then
-		target.pos:Zero()
-		target.ang:Zero()
-		target.down = 1
-		target.sway = 3
-		target.bob  = 1
+	if cust then
+		local from = t.VM_CustChange
+		local exit = t.LastExitCustomize >= t.LastEnterCustomize
+
+		if exit then
+			-- lerping [0 <- x <- 1]
+			custFrac = calculateSwitchableFrac(from, 0, UCT - t.LastExitCustomize, custRecovery)
+		else
+			-- lerping [0 -> x -> 1]
+			custFrac = calculateSwitchableFrac(from, 1, UCT - t.LastEnterCustomize, custRecovery)
+		end
+	end
+
+	t.VM_CustCurrent = custFrac
+
+	if cust then
+		-- target.pos:Zero()
+		-- target.ang:Zero()
+
+		target.down = Lerp(custFrac, target.down, 1)
+		target.sway = Lerp(custFrac, target.sway, 3)
+		target.bob  = Lerp(custFrac, target.bob, 1)
 
 		local mx, my = input.GetCursorPos()
 
 		mx = 2 * mx / ScrW()
 		my = 2 * my / ScrH()
 
-		target.pos:Set(self:GetBuff("CustomizePos"))
-		target.ang:Set(self:GetBuff("CustomizeAng"))
+		tempVec:Set(self:GetBuff("CustomizePos"))
+		tempAng:Set(self:GetBuff("CustomizeAng"))
 
-		target.pos = target.pos + Vector(mx, 0, my)
-		target.ang = target.ang + Angle(0, my * 2, mx * 2)
+		tempVec[1] = tempVec[1] + mx
+		tempVec[3] = tempVec[3] + my
 
-		if self.InAttMenu then target.ang = target.ang + Angle(0, -5, 0) end
-	else
-		if (sprinted and !(self:GetBuff_Override("Override_ShootWhileSprint") or t.ShootWhileSprint)) or holstered then
-			local prePos = target.pos
-			local preAng = target.ang
+		tempAng[2] = tempAng[2] + my * 2
+		tempAng[3] = tempAng[3] + mx * 2
 
-			target.pos  = sharedVector2
-			target.ang  = sharedAngle2
-			target.down = 1
-			target.sway = GetConVar("arccw_vm_sway_sprint"):GetInt()
-			target.bob  = GetConVar("arccw_vm_bob_sprint"):GetInt()
+		tempVec:Mul(custFrac)
+		tempAng:Mul(custFrac)
 
-			local hpos, spos = self:GetBuff("HolsterPos", true), self:GetBuff("SprintPos", true)
-			local hang, sang = self:GetBuff("HolsterAng", true), self:GetBuff("SprintAng", true)
+		if self.InAttMenu then tempAng[2] = tempAng[2] - 5 end
 
-			target.pos:Set(holstered and (hpos or spos) or (spos or hpos))
-
-			target.pos[1] = target.pos[1] + vm_right
-			target.pos[2] = target.pos[2] + vm_forward
-			target.pos[3] = target.pos[3] + vm_up
-
-			LerpSource(1 - sprintFrac, target.pos, prePos)
-
-			target.ang:Set(holstered and (hang or sang) or (sang or hang))
-
-			if ang.p < -15 then target.ang.p = target.ang.p + ang.p + 15 end
-
-			target.ang.p = m_clamp(target.ang.p, -80, 80)
-			LerpSource(1 - sprintFrac, target.ang, preAng)
-		end
-
-		if sightedFrac > 0 then
-			local irons = self:GetActiveSights()
-			local from = t.SwitchedSightsFrom
-
-			target.evpos = sharedEVVector
-			target.evang = sharedEVAng
-
-			local fromEV, fromAng = vector_origin, angle_zero
-
-			local delta = math.min( sightedFrac,
-				easeOutCubic( (UCT - t.LastSwitchSightTimeUnpred) / sightTime ),
-				1 )
-
-			local sp, sa, sep, sea
-
-			if from then
-				sep, sea, sp, sa = unpack(from._SwitchDat)
-				target.pos:Set(sp)
-				target.ang:Set(sa)
-				target.evpos:Set(sep)
-				target.evang:Set(sea)
-
-				if from.EVPos then
-					fromEV = from.EVPos
-				end
-				if from.EVAng then
-					fromAng = from.EVAng
-				end
-
-				target.down = 0
-				target.sway = 0.1
-				target.bob = 0.1
-
-				LerpSource(delta, target.pos, irons.Pos)
-				LerpSource(delta, target.ang, irons.Ang)
-			else
-				LerpSource(sightedFrac, target.pos, irons.Pos)
-				LerpSource(sightedFrac, target.ang, irons.Ang)
-			end
-
-			if irons.EVPos then
-				LerpInto(delta, fromEV, irons.EVPos, target.evpos)
-			else
-				target.evpos:Set(vector_origin)
-			end
-
-			if irons.EVAng then
-				LerpInto(delta, fromAng, irons.EVAng, target.evang)
-			else
-				target.evang:Set(angle_zero)
-			end
-
-			irons._CurPos = target.pos
-			irons._CurAng = target.ang
-			irons._CurEVPos = target.evpos
-			irons._CurEVAng = target.evang
-
-			target.down  = Lerp(sightedFrac, target.down, 0)
-			target.sway  = Lerp(sightedFrac, target.sway, 0.1)
-			target.bob   = Lerp(sightedFrac, target.bob, 0.1)
-
-			local sightroll = self:GetBuff_Override("Override_AddSightRoll")
-
-			if sightroll then
-				LerpSource(sightedFrac, target.ang, irons.Ang)
-				target.ang.r = sightroll
-			end
-		end
+		target.pos:Add(tempVec)
+		target.ang:Add(tempAng)
 	end
 
-	
+	if (sprinted and !(self:GetBuff_Override("Override_ShootWhileSprint") or t.ShootWhileSprint)) or holstered then
+		local prePos = target.pos
+		local preAng = target.ang
+
+		target.pos  = sharedVector2
+		target.ang  = sharedAngle2
+		target.down = 1
+		target.sway = GetConVar("arccw_vm_sway_sprint"):GetInt()
+		target.bob  = GetConVar("arccw_vm_bob_sprint"):GetInt()
+
+		local hpos, spos = self:GetBuff("HolsterPos", true), self:GetBuff("SprintPos", true)
+		local hang, sang = self:GetBuff("HolsterAng", true), self:GetBuff("SprintAng", true)
+
+		target.pos:Set(holstered and (hpos or spos) or (spos or hpos))
+
+		target.pos[1] = target.pos[1] + vm_right
+		target.pos[2] = target.pos[2] + vm_forward
+		target.pos[3] = target.pos[3] + vm_up
+
+		LerpSource(1 - sprintFrac, target.pos, prePos)
+
+		target.ang:Set(holstered and (hang or sang) or (sang or hang))
+
+		if ang.p < -15 then target.ang.p = target.ang.p + ang.p + 15 end
+
+		target.ang.p = m_clamp(target.ang.p, -80, 80)
+		LerpSource(1 - sprintFrac, target.ang, preAng)
+	end
+
+	if sightedFrac > 0 then
+		local irons = self:GetActiveSights()
+		local from = t.SwitchedSightsFrom
+
+		target.evpos = sharedEVVector
+		target.evang = sharedEVAng
+
+		local fromEV, fromAng = vector_origin, angle_zero
+
+		local delta = math.min( sightedFrac,
+			easeOutCubic( (UCT - t.LastSwitchSightTimeUnpred) / sightTime ),
+			1 )
+
+		local sp, sa, sep, sea
+
+		if from then
+			sep, sea, sp, sa = unpack(from._SwitchDat)
+			target.pos:Set(sp)
+			target.ang:Set(sa)
+			target.evpos:Set(sep)
+			target.evang:Set(sea)
+
+			if from.EVPos then
+				fromEV = from.EVPos
+			end
+			if from.EVAng then
+				fromAng = from.EVAng
+			end
+
+			target.down = 0
+			target.sway = 0.1
+			target.bob = 0.1
+
+			LerpSource(delta, target.pos, irons.Pos)
+			LerpSource(delta, target.ang, irons.Ang)
+		else
+			LerpSource(sightedFrac, target.pos, irons.Pos)
+			LerpSource(sightedFrac, target.ang, irons.Ang)
+		end
+
+		-- we do a little circling
+		target.pos[1] = target.pos[1] + math.sin(sightedFrac * math.pi * 2) * 0.7
+		target.pos[3] = target.pos[3] + math.sin(sightedFrac * math.pi) * -0.6
+
+		if irons.EVPos then
+			LerpInto(delta, fromEV, irons.EVPos, target.evpos)
+		else
+			target.evpos:Set(vector_origin)
+		end
+
+		if irons.EVAng then
+			LerpInto(delta, fromAng, irons.EVAng, target.evang)
+		else
+			target.evang:Set(angle_zero)
+		end
+
+		irons._CurPos = target.pos
+		irons._CurAng = target.ang
+		irons._CurEVPos = target.evpos
+		irons._CurEVAng = target.evang
+
+		target.down  = Lerp(sightedFrac, target.down, 0)
+		target.sway  = Lerp(sightedFrac, target.sway, 0.1)
+		target.bob   = Lerp(sightedFrac, target.bob, 0.1)
+
+		local sightroll = self:GetBuff_Override("Override_AddSightRoll")
+
+		if sightroll then
+			LerpSource(sightedFrac, target.ang, irons.Ang)
+			target.ang.r = sightroll
+		end
+	end
 
 	--[[if sprd > 0 and !self:GetBuff("ShootWhileSprint") then
 		local hpos, spos = self:GetBuff("HolsterPos", true), self:GetBuff("SprintPos", true)
@@ -1219,7 +1255,7 @@ function SWEP:PreDrawViewModel(vm)
 
 	self:CalculateVMPos(v1, a1)]]
 
-	if self:GetState() == ArcCW.STATE_CUSTOMIZE then self:BlurNotWeapon() end
+	if self:IsCustomizing() then self:BlurNotWeapon() end
 
 	if GetConVar("arccw_cheapscopesautoconfig"):GetBool() then
 		local fps    = 1 / FrameTime()
