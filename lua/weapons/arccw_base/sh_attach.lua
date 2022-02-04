@@ -1105,7 +1105,8 @@ function SWEP:Attach(slot, attname, silent, noadjust)
 	if attslot.Installed == attname then return end
 
 	-- Make an additional check to see if we can detach the current attachment
-	if attslot.Installed and !ArcCW:PlayerCanAttach(self:GetOwner(), self, attslot.Installed, slot, true) then
+	if attslot.Installed and
+		!ArcCW:PlayerCanAttach(self:GetOwner(), self, attslot.Installed, slot, true) then
 		if CLIENT and !silent then
 			surface.PlaySound("items/medshotno1.wav")
 		end
@@ -1128,7 +1129,9 @@ function SWEP:Attach(slot, attname, silent, noadjust)
 		return
 	end
 
-	if !self:CheckFlags(attslot.ExcludeFlags, attslot.RequireFlags) then return end
+	--[[if !self:CheckFlags(attslot.ExcludeFlags, attslot.RequireFlags) then
+		return
+	end]]
 
 	local atttbl = ArcCW.AttachmentTable[attname]
 
@@ -1188,6 +1191,7 @@ function SWEP:Attach(slot, attname, silent, noadjust)
 		end
 	end
 
+	print("attaching", Realm(), attslot.Name, attname, slot)
 	attslot.Installed = attname
 
 	if atttbl.Health then

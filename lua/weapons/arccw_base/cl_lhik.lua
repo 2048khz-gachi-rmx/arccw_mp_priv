@@ -88,6 +88,7 @@ SWEP.Customize_Hide = 0
 
 local SHARED_MATRIX = Matrix()
 local SHARED_VEC = Vector()
+local dirVec = Vector()
 local SHARED_ANG = Angle()
 
 local MX_VEC = Vector()
@@ -118,6 +119,8 @@ function SWEP:GetLHIKAnim()
 
 	return self.LHIKAnimation
 end
+
+local cf_deltapos = Vector(0, 0, 0)
 
 function SWEP:DoLHIK()
 	local justhide = false
@@ -269,19 +272,26 @@ function SWEP:DoLHIK()
 
 
 	if justhide then
+		local ea = EyeAngles()
+		delta = Ease(delta, 3)
+
 		for _, bone in pairs(ArcCW.LHIKBones) do
 			local vmbone = vm:LookupBone(bone)
-
 			if !vmbone then continue end -- Happens when spectating someone prolly
 
 			local vmtransform = vm:GetBoneMatrix(vmbone)
-
 			if !vmtransform then continue end -- something very bad has happened
 
-			local vm_pos = vmtransform:GetTranslation()
+			local vm_pos = MX_VEC -- vmtransform:GetTranslation()
+			MX_VEC:SetUnpacked(
+				vmtransform:GetField(1, 4),
+				vmtransform:GetField(2, 4),
+				vmtransform:GetField(3, 4)
+			)
+
 			local vm_ang = vmtransform:GetAngles()
 
-			local newtransform = Matrix()
+			local newtransform = SHARED_MATRIX -- Matrix()
 
 			--[[
 			local eang = EyeAngles()
@@ -289,7 +299,14 @@ function SWEP:DoLHIK()
 			LerpSource(delta, vm_pos, vm_pos + wtf)
 			newtransform:SetTranslation(vm_pos)
 			]]
-			newtransform:SetTranslation(LerpVector(delta, vm_pos, vm_pos - (EyeAngles():Up() * 12) - (EyeAngles():Forward() * 12) - (EyeAngles():Right() * 4)))
+			SHARED_VEC:Set(vm_pos)
+			SHARED_VEC:Sub( ea:ToUp(dirVec):CMul(12) )
+			SHARED_VEC:Sub( ea:ToForward(dirVec):CMul(12) )
+			SHARED_VEC:Sub( ea:ToRight(dirVec):CMul(4) )
+
+			LerpInto(delta, vm_pos, SHARED_VEC, vm_pos)
+
+			newtransform:SetTranslation(vm_pos)
 			newtransform:SetAngles(vm_ang)
 
 			vm:SetBoneMatrix(vmbone, newtransform)
@@ -319,7 +336,7 @@ function SWEP:DoLHIK()
 		t.LHIKAnimation_IsIdle = true
 	end
 
-	local cf_deltapos = Vector(0, 0, 0)
+	cf_deltapos:Zero()
 	local cf = 0
 
 	-- v this is the part that creates ~~10~~ 5 garbage v
@@ -344,7 +361,7 @@ function SWEP:DoLHIK()
 		)
 
 		local lhik_pos = MX_VEC --lhiktransform:GetTranslation()
-		local lhik_ang = lhiktransform:GetAngles()
+		
 
 		local newtransform = SHARED_MATRIX
 		newtransform:Identity()
@@ -352,11 +369,12 @@ function SWEP:DoLHIK()
 		local newTransl
 
 		if delta == 1 then
-			-- less GARRRRBAGE
-			newtransform:SetTranslation(lhik_pos)
+			-- if delta is 1, just copy the matrix, ezpz
+			newtransform:Set(lhiktransform)
 			newTransl = lhik_pos
-			newtransform:SetAngles(lhik_ang)
 		else
+			local lhik_ang = lhiktransform:GetAngles()
+
 			CPY_VEC:SetUnpacked(
 				vmtransform:GetField(1, 4),
 				vmtransform:GetField(2, 4),
@@ -387,7 +405,7 @@ function SWEP:DoLHIK()
 			local deltapos = sv
 
 			if !deltapos:IsZero() then
-				cf_deltapos = cf_deltapos + deltapos
+				cf_deltapos:Add( deltapos )
 				cf = cf + 1
 			end
 		end
@@ -395,19 +413,17 @@ function SWEP:DoLHIK()
 		self.LHIKDelta[lhikbone] = wTL
 
 		if hide_component then
-			-- EEK WTF IS THIS
 			local new_pos = newTransl
 			local ea = EyeAngles()
-			local eau, eaf, ear = ea:Up(), ea:Forward(), ea:Right()
-			eau:Mul(12) eaf:Mul(12) ear:Mul(12)
 
-			local new = SHARED_VEC
-			new:Set(vector_origin)
-			new:Add(new_pos) new:Sub(eau) new:Sub(eaf) new:Sub(ear)
+			SHARED_VEC:Set(new_pos)
+			SHARED_VEC:Sub( ea:ToUp(dirVec):CMul(12) )
+			SHARED_VEC:Sub( ea:ToForward(dirVec):CMul(12) )
+			SHARED_VEC:Sub( ea:ToRight(dirVec):CMul(12) )
 
-			LerpSource(self.Customize_Hide,
+			LerpSource( Ease(self.Customize_Hide, 3) ,
 				new_pos,
-				new)
+				SHARED_VEC)
 
 			newtransform:SetTranslation(new_pos)
 		end

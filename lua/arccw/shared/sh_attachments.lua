@@ -1,21 +1,28 @@
 ArcCW.AttachmentBlacklistTable = ArcCW.AttachmentBlacklistTable or {}
 
 function ArcCW:PlayerCanAttach(ply, wep, attname, slot, detach)
+	local slotTbl
+
+	if isnumber(slot) then
+		slotTbl = wep.Attachments[slot]
+	elseif istable(slot) then
+		slotTbl = slot
+		print("!! PlayerCanAttach with slot as table! not supposed to happen",
+			Realm(), debug.traceback())
+	end
 
     -- The global variable takes priority over everything
     if !ArcCW.EnableCustomization then return false end
 
     -- Allow hooks to block or force allow attachment usage
-    local ret = hook.Run("ArcCW_PlayerCanAttach", ply, wep, attname, slot, detach)
+    local ret = hook.Run("ArcCW_PlayerCanAttach", ply, wep, attname, slot, detach, slotTbl)
+    if ret ~= nil then return ret end
 
     -- Followed by convar
-    if ret == nil and GetConVar("arccw_enable_customization"):GetInt() < 0 then return false end
+    if GetConVar("arccw_enable_customization"):GetInt() < 0 then return false end
 
-    if ret == nil and engine.ActiveGamemode() == "terrortown" then
-        local mode = GetConVar("arccw_ttt_customizemode"):GetInt()
-        if mode == 1 and !ply.ArcCW_AllowCustomize then return false
-        elseif mode == 2 and !ply.ArcCW_AllowCustomize and GetRoundState() == ROUND_ACTIVE then return false
-        elseif mode == 3 and !ply.ArcCW_AllowCustomize and !ply:IsActiveTraitor() and !ply:IsActiveDetective() then return false end
+    if slotTbl and !wep:CheckFlags(slotTbl.ExcludeFlags, slotTbl.RequireFlags) then
+    	return false, true
     end
 
     return (ret == nil and true) or ret
