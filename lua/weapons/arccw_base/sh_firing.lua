@@ -64,6 +64,7 @@ function SWEP:CanPrimaryAttack()
 end
 
 
+local randVec = Vector()
 
 function SWEP:PrimaryAttack()
     local owner = self:GetOwner()
@@ -94,7 +95,16 @@ function SWEP:PrimaryAttack()
 
     local desync = GetConVar("arccw_desync"):GetBool()
     local desyncnum = (desync and math.random()) or 0
-    math.randomseed(math.Round(util.SharedRandom(self:GetBurstCount(), -1337, 1337, !game.SinglePlayer() and self:GetOwner():GetCurrentCommand():CommandNumber() or CurTime()) * (self:EntIndex() % 30241)) + desyncnum)
+
+    local cn = self:GetOwner():GetCurrentCommand():CommandNumber()
+    local tick = !game.SinglePlayer() and cn or CurTime()
+
+    math.randomseed( math.floor((self:GetBurstCount() + 69) * tick / 67) )
+
+    local cmd = math.random() * (self:EntIndex() % 30241)
+    local seed = math.Round(cmd) + desyncnum
+
+    math.randomseed(seed)
 
     self.Primary.Automatic = true
 
@@ -116,7 +126,18 @@ function SWEP:PrimaryAttack()
 
     dir:Rotate(Angle(0, ArcCW.StrafeTilt(self), 0))
 
-    dir = dir + VectorRand() * self:GetDispersion() / 360 / 60
+    local ang = math.random() * math.pi * 2
+    local x, y = math.cos(ang), math.sin(ang)
+
+    local rad = self:GetDispersion() / 360 / 60 * math.sqrt(math.random())
+
+    randVec:SetUnpacked(
+    	0, x * rad, y * rad
+    )
+
+    randVec:Rotate(dir:Angle()) -- when shooting up/down, spread is fucked without this
+    dir:Add(randVec)
+    dir:Normalize()
 
     local delay = self:GetFiringDelay()
 
@@ -158,9 +179,9 @@ function SWEP:PrimaryAttack()
         local pen  = self:GetBuff("Penetration")
 
         if SERVER then
-            debugoverlay.Cross(hitpos, 5, 5, Color(255, 0, 0), true)
-        else
             debugoverlay.Cross(hitpos, 5, 5, Color(0, 0, 255), true)
+        else
+            debugoverlay.Cross(hitpos, 5, 5, Color(255, 0, 0), true)
         end
 
         --[[if !game.SinglePlayer() and CLIENT and !(tracernum == 0 or clip % tracernum != 0) then
@@ -550,7 +571,7 @@ function SWEP:GetShootSrc()
 
     if owner:IsNPC() then return owner:GetShootPos() end
 
-    local dir    = owner:EyeAngles()
+    local dir    = owner:GetAimVector():Angle()
     local offset = self:GetBuff_Override("Override_BarrelOffsetHip") or self.BarrelOffsetHip
 
     if self:GetOwner():Crouching() then
@@ -564,9 +585,9 @@ function SWEP:GetShootSrc()
     local src = owner:EyePos()
 
 
-    src = src + dir:Right()   * offset[1]
-    src = src + dir:Forward() * offset[2]
-    src = src + dir:Up()      * offset[3]
+    src:Add(dir:Right()   * offset[1])
+    src:Add(dir:Forward() * offset[2])
+    src:Add(dir:Up()      * offset[3])
 
     return src
 end
