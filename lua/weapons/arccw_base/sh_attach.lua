@@ -1191,7 +1191,6 @@ function SWEP:Attach(slot, attname, silent, noadjust)
 		end
 	end
 
-	print("attaching", Realm(), attslot.Name, attname, slot)
 	attslot.Installed = attname
 
 	if atttbl.Health then
@@ -1250,6 +1249,8 @@ function SWEP:Attach(slot, attname, silent, noadjust)
 	end
 
 	self:RefreshBGs()
+
+	return true
 end
 
 function SWEP:DetachAllMergeSlots(slot, silent)

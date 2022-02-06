@@ -178,6 +178,12 @@ function SWEP:Initialize()
     self:SetLastLoad(self:Clip1())
 
     self.Attachments["BaseClass"] = nil
+    self.AttachmentsRev = {}
+
+    for k,v in pairs(self.Attachments) do
+    	self.AttachmentsRev[v.Slot] = v
+    	v.key = k
+    end
 
     self:SetHoldType(self.HoldtypeActive)
 

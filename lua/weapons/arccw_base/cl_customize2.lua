@@ -805,9 +805,11 @@ function SWEP:CreateCustomize2HUD()
                 if self2.att == "" then
                     self2:DoRightClick()
                 else
-                    self:Attach(self2.attslot, self2.att)
-                    ArcCW.Inv_ShownAtt = nil -- Force a regen on the panel so we can see toggle/slider options
-                    ArcCW.InvHUD_FormAttachmentStats(self2.att, self2.attslot, true)
+                    local ok = self:Attach(self2.attslot, self2.att)
+                    if ok then
+                        ArcCW.Inv_ShownAtt = nil -- Force a regen on the panel so we can see toggle/slider options
+                        ArcCW.InvHUD_FormAttachmentStats(self2.att, self2.attslot, true)
+                    end
                 end
             end
             button.DoRightClick = function(self2)
@@ -1452,6 +1454,34 @@ function SWEP:CreateCustomize2HUD()
             pan_infos:SetPos(0, h)
             pan_infos:SizeToChildren(true, true)
         end
+
+        local pan_add = vgui.Create("DPanel", scroll_pros)
+        pan_add:SetSize(ArcCW.InvHUD_Menu3:GetWide(), rss * 16)
+        pan_add:SetPos(0, math.max(pan_pros:GetTall(), pan_cons:GetTall(),
+            #infos > 0 and pan_infos.Y + pan_infos:GetTall() or 0) + 16)
+        pan_add.Paint = nil
+
+        local sep = vgui.Create("Panel", pan_add)
+        sep:Dock(TOP)
+        sep:SetTall(4)
+
+        function sep:Paint(w, h)
+            surface.SetDrawColor(Colors.DarkGray)
+            surface.DrawRect(w * 0.15 - 1, 0, w * 0.7 + 2, 4)
+
+            surface.SetDrawColor(Colors.White)
+            surface.DrawRect(w * 0.15, 1, w * 0.7, 2)
+        end
+
+        hook.Run("ArcCW_CL_GenAttInfo", pan_add, atttbl, att, self, slot)
+
+        pan_add:InvalidateLayout(true)
+        --[[local y = 0
+        for k,v in ipairs(pan_add:GetChildren()) do
+            y = math.max(y, v.Y + v:GetTall())
+        end]]
+
+        pan_add:SizeToChildren(false, true)
     end
 
     function ArcCW.InvHUD_FormStatsTriviaBar()

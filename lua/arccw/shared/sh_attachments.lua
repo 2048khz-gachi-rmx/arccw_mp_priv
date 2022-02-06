@@ -5,10 +5,6 @@ function ArcCW:PlayerCanAttach(ply, wep, attname, slot, detach)
 
 	if isnumber(slot) then
 		slotTbl = wep.Attachments[slot]
-	elseif istable(slot) then
-		slotTbl = slot
-		print("!! PlayerCanAttach with slot as table! not supposed to happen",
-			Realm(), debug.traceback())
 	end
 
     -- The global variable takes priority over everything
