@@ -122,6 +122,16 @@ end
 
 local cf_deltapos = Vector(0, 0, 0)
 
+local function mxTranslation(mx, vec)
+	vec:SetUnpacked(
+		mx:GetField(1, 4),
+		mx:GetField(2, 4),
+		mx:GetField(3, 4)
+	)
+
+	return vec
+end
+
 function SWEP:DoLHIK()
 	local justhide = false
 	local lhik_model = nil
@@ -270,7 +280,6 @@ function SWEP:DoLHIK()
 		end
 	end
 
-
 	if justhide then
 		local ea = EyeAngles()
 		delta = Ease(delta, 3)
@@ -282,13 +291,7 @@ function SWEP:DoLHIK()
 			local vmtransform = vm:GetBoneMatrix(vmbone)
 			if !vmtransform then continue end -- something very bad has happened
 
-			local vm_pos = MX_VEC -- vmtransform:GetTranslation()
-			MX_VEC:SetUnpacked(
-				vmtransform:GetField(1, 4),
-				vmtransform:GetField(2, 4),
-				vmtransform:GetField(3, 4)
-			)
-
+			local vm_pos = mxTranslation(vmtransform, MX_VEC) -- vmtransform:GetTranslation()
 			local vm_ang = vmtransform:GetAngles()
 
 			local newtransform = SHARED_MATRIX -- Matrix()
@@ -354,14 +357,7 @@ function SWEP:DoLHIK()
 		local lhiktransform = lhik_model:GetBoneMatrix(lhikbone)
 		if !lhiktransform then continue end
 
-		MX_VEC:SetUnpacked(
-			lhiktransform:GetField(1, 4),
-			lhiktransform:GetField(2, 4),
-			lhiktransform:GetField(3, 4)
-		)
-
-		local lhik_pos = MX_VEC --lhiktransform:GetTranslation()
-		
+		local lhik_pos = mxTranslation(lhiktransform, MX_VEC) --lhiktransform:GetTranslation()
 
 		local newtransform = SHARED_MATRIX
 		newtransform:Identity()
@@ -372,14 +368,15 @@ function SWEP:DoLHIK()
 			-- if delta is 1, just copy the matrix, ezpz
 			newtransform:Set(lhiktransform)
 			newTransl = lhik_pos
+		elseif delta == 0 then
+			mxTranslation(vmtransform, CPY_VEC)
+
+			newtransform:Set(vmtransform)
+			newTransl = CPY_VEC
 		else
 			local lhik_ang = lhiktransform:GetAngles()
 
-			CPY_VEC:SetUnpacked(
-				vmtransform:GetField(1, 4),
-				vmtransform:GetField(2, 4),
-				vmtransform:GetField(3, 4)
-			)
+			mxTranslation(vmtransform, CPY_VEC)
 
 			local vm_pos = CPY_VEC
 			local vm_ang = vmtransform:GetAngles()
