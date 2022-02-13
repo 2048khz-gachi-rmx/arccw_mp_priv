@@ -684,9 +684,9 @@ function SWEP:CalculateVMPos(pos, ang)
 
 	t.VM_SightsCurrent = sightedFrac
 
-	
 
-	local recovery = self:GetSprintTime() -- (t.VM_UseSightTime and t.VM_SprintRecovery * sightTime) or t.VM_SprintRecovery
+	-- *2 makes no sense but works... eh?
+	local recovery = self:GetSprintTime() * 2 -- (t.VM_UseSightTime and t.VM_SprintRecovery * sightTime) or t.VM_SprintRecovery
 	local sprinted  = state == ArcCW.STATE_SPRINT or (UCT - t.LastExitSprintTimeUnpred) < recovery
 	local sprintFrac = 0
 

@@ -104,8 +104,8 @@ function ArcCW.CreateMove(cmd)
 	local recoil, siderecoil = wpn:PunchRecoil()
 	if recoil == 0 and siderecoil == 0 then return end
 
-	ang[1] = recoil * 3.5
-	ang[2] = siderecoil * 2
+	ang[1] = recoil * 1.5
+	ang[2] = siderecoil * 1
 	ang2:Sub(ang)
 
 	ang2[1] = math.Clamp(ang2[1], -90, 90)

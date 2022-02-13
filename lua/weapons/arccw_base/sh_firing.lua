@@ -111,7 +111,7 @@ function SWEP:PrimaryAttack()
     local aimvec = owner:GetAimVector()
     local aimang = aimvec:Angle()
 
-    aimang[1] = aimang[1] + self:GetAimRecoil() * -2 * (1 - self:GetSightDelta())
+    aimang[1] = aimang[1] + self:GetAimRecoil() * -3 * (1 - self:GetSightDelta())
     aimang:Normalize()
     local dir = aimang:Forward()
 
@@ -837,7 +837,7 @@ function SWEP:DoRecoil()
 
     if CLIENT and IsFirstTimePredicted() then self:OurViewPunch(punch) end
 
-    local curRec = 0 -- self:GetRecoil()
+    local curRec = math.min(self:GetRecoil(), self:GetMaxRecoil()) / 2
     local addRec = self.Recoil * rmul * recu * rvert
 
     local curSideRec = self:GetSideRecoil()
