@@ -465,6 +465,7 @@ local recoilAng = Angle()
 
 local function recoilMethod(self)
 	recoilAng[1] = self:GetRecoil() * 1
+	recoilAng[3] = self:GetRecoil() * 1 * self.PunchDir
 
 	return recoilAng -- self:GetOurViewPunchAngles()
 end
@@ -1059,7 +1060,7 @@ function SWEP:CalculateVMPos(pos, ang)
 
 
 	local OF = oldang:ToForward(dirVec)
-	OF:Mul(-math.min(self.RecoilPunchBack, 1))
+	OF:Mul(-math.min(self.RecoilPunchBack, 3))
 	pos:Add(OF)
 
 	-- position recoil only if not aiming through irons

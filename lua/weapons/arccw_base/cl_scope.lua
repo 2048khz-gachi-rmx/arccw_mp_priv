@@ -239,11 +239,11 @@ end
 
 local tempAng = Angle()
 
-local angRand = function(ang)
+local angRand = function(ang, xm, ym)
 	ang:SetUnpacked(
-		math.Rand( -90, 90 ),
-		math.Rand( -180, 180 ),
-		math.Rand( -180, 180 )
+		math.Rand( -90, 90 ) * (ym or 1),
+		math.Rand( -180, 180 ) * (xm or 1),
+		0
 	)
 end
 
@@ -255,8 +255,11 @@ function SWEP:CalcView(ply, pos, ang, fov)
 	end
 
 	if GetConVar("arccw_shake"):GetBool() then
-		angRand(tempAng)
-		tempAng:Mul(self.RecoilAmount * 0.008)
+		local fr, rec = self:LetMeHandleTheRecoil()
+		fr = Ease(1 - fr, 3.3) * 0.004
+		angRand(tempAng, fr * rec, fr * rec * 0.6)
+
+		--tempAng:Mul(self:GetRecoil() * 0.004)
 
 		ang:Add(tempAng)
 	end

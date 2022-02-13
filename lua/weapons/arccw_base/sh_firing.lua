@@ -765,6 +765,8 @@ function SWEP:DryFire()
     self:SetNextPrimaryFire(CurTime() + 0.25)
 end
 
+SWEP.PunchDir = 1
+
 function SWEP:DoRecoil()
     local single = game.SinglePlayer()
     --if !single and !IsFirstTimePredicted() then return end
@@ -869,6 +871,11 @@ function SWEP:DoRecoil()
     self:SetRecoil( curRec + addRec )
     self:SetSideRecoil( curSideRec + addSideRec )
 
+    if IsFirstTimePredicted() then
+    	local rand = math.ceil(math.random() * 2 - 1)
+    	self.PunchDir = 2 * rand - 1 -- -1 / 1
+    end
+
     if CLIENT then
         self.RecoilPunchBack  = math.Clamp(self:GetRecoil() * recv * 5, 1, 5)
 
@@ -919,8 +926,6 @@ function SWEP:RecalculatePunch(recv)
     t.RecoilPunchSide    = ss * recFrac
     -- t.RecoilPunchUp      = su * recFrac
 end
-
-
 
 
 -- last total vert/hor recoil we punched
