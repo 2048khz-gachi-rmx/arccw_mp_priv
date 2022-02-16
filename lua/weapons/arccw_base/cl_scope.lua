@@ -230,6 +230,7 @@ function SWEP:CoolView(ply, pos, ang, fov)
 	self.ProceduralViewOffset.r = math.Approach(self.ProceduralViewOffset.r, 0, (1 - progress) * ftv * -self.ProceduralViewOffset.r)
 	mzang_fixed_last = mzang_fixed
 	local ints = 3 * GetConVar("arccw_vm_coolview_mult"):GetFloat() * -viewbobintensity
+
 	ang:RotateAroundAxis(ang:Right(), Lerp(progress, 0, -self.ProceduralViewOffset.p) * ints)
 	ang:RotateAroundAxis(ang:Up(), Lerp(progress, 0, self.ProceduralViewOffset.y / 2) * ints)
 	ang:RotateAroundAxis(ang:Forward(), Lerp(progress, 0, self.ProceduralViewOffset.r / 3) * ints)
@@ -237,7 +238,10 @@ function SWEP:CoolView(ply, pos, ang, fov)
 	ang = LerpAngle(0, ang, oldangtmp)
 end
 
-local tempAng = Angle()
+local shakeAng = Angle()
+SWEP.ShakeAngle = shakeAng
+
+local viewAng = Angle()
 
 local angRand = function(ang, xm, ym)
 	ang:SetUnpacked(
@@ -245,6 +249,25 @@ local angRand = function(ang, xm, ym)
 		math.Rand( -180, 180 ) * (xm or 1),
 		0
 	)
+end
+
+local fn = FrameNumber()
+
+function SWEP:GetShakeAng(pred)
+	local cfn = FrameNumber()
+	if fn ~= cfn or pred then
+		fn = cfn
+
+		if GetConVar("arccw_shake"):GetBool() then
+			local fr, rec = self:LetMeHandleTheRecoil()
+			local sightMult = math.Remap(self:GetSightDelta(), 0, 1, 1, 0.5)
+
+			fr = Ease(1 - fr, 3.3) * 0.002 * sightMult
+			angRand(shakeAng, fr * rec, fr * rec * 0.6)
+		end
+	end
+
+	return shakeAng
 end
 
 function SWEP:CalcView(ply, pos, ang, fov)
@@ -255,21 +278,15 @@ function SWEP:CalcView(ply, pos, ang, fov)
 	end
 
 	if GetConVar("arccw_shake"):GetBool() then
-		local fr, rec = self:LetMeHandleTheRecoil()
-		fr = Ease(1 - fr, 3.3) * 0.004
-		angRand(tempAng, fr * rec, fr * rec * 0.6)
-
-		--tempAng:Mul(self:GetRecoil() * 0.004)
-
-		ang:Add(tempAng)
+		ang:Add(self:GetShakeAng())
 	end
 
-	tempAng:Set(self.ViewPunchAngle)
-	local hor = tempAng[2]
-	tempAng:Mul(10)
-	tempAng[2] = tempAng[2] - hor * 5 -- horizontal viewpunch looks wack imo
+	viewAng:Set(self.ViewPunchAngle)
+	local hor = viewAng[2]
+	viewAng:Mul(10)
+	viewAng[2] = viewAng[2] - hor * 5 -- horizontal viewpunch looks wack imo
 
-	ang:Add(tempAng)
+	ang:Add(viewAng)
 
 	return pos, ang, fov
 end

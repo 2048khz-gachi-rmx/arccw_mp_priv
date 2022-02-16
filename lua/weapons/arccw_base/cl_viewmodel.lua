@@ -463,9 +463,13 @@ end
 
 local recoilAng = Angle()
 
+function SWEP:GetRecoilTilt()
+	return self:GetRecoil() * 1 * self.PunchDir
+end
+
 local function recoilMethod(self)
-	recoilAng[1] = self:GetRecoil() * 1
-	recoilAng[3] = self:GetRecoil() * 1 * self.PunchDir
+	recoilAng[1] = self:GetRecoil() * 0.66
+	recoilAng[3] = self:GetRecoilTilt()
 
 	return recoilAng -- self:GetOurViewPunchAngles()
 end
@@ -912,7 +916,7 @@ function SWEP:CalculateVMPos(pos, ang)
 	if !isangle(target.ang) then
 		target.ang = Angle(target.ang)
 	end
-	
+
 	if t.InProcDraw then
 		t.InProcHolster = false
 
@@ -1060,7 +1064,7 @@ function SWEP:CalculateVMPos(pos, ang)
 
 
 	local OF = oldang:ToForward(dirVec)
-	OF:Mul(-math.min(self.RecoilPunchBack, 3))
+	OF:Mul(-math.min(self.RecoilPunchBack, 1))
 	pos:Add(OF)
 
 	-- position recoil only if not aiming through irons
@@ -1078,6 +1082,8 @@ function SWEP:CalculateVMPos(pos, ang)
 
 	oldang:Add(recoilMethod(self))
 	oldang:Add(vpa)
+	
+
 	--oldang:Add(recoilMethod(self))
 
 	local aepx, aepy, aepz = actual.evpos:Unpack()
@@ -1108,6 +1114,9 @@ function SWEP:CalculateVMPos(pos, ang)
 
 	ang:Sub(recoilMethod(self))
 	ang:Add(vpa) -- i have no clue why adding it twice cancels it out bro
+
+	-- t.ShakeAngle:Mul(1)
+	ang:Add(t.ShakeAngle)
 
 	local apx, apy, apz = actual.pos:Unpack()
 

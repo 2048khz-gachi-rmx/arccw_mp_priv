@@ -111,7 +111,7 @@ function SWEP:PrimaryAttack()
     local aimvec = owner:GetAimVector()
     local aimang = aimvec:Angle()
 
-    aimang[1] = aimang[1] + self:GetAimRecoil() * -3 * (1 - self:GetSightDelta())
+    aimang[1] = aimang[1] + self:GetAimRecoil() * -self.RecoilAimOffsetMult * (1 - self:GetSightDelta())
     aimang:Normalize()
     local dir = aimang:Forward()
 
@@ -915,15 +915,17 @@ function SWEP:RecalculatePunch(recv)
     -- build an easing graph where 0 is our initial recoil, 1 is no recoil
     -- and X is our (curent recoil - this frame's recovery)
     local timePassed = UnPredictedCurTime() - t.UnpredRecoiledWhen
-    local timeFrac = timePassed / t.RecoilPunchRecovery
+    local bkFrac = timePassed / t.RecoilPunchBackRecovery
+    local sideFrac = timePassed / t.RecoilPunchSideRecovery
 
     -- ease the time
-    local recFrac = math.max(1 - easeOut( timeFrac, 0.7 ), 0)
+    bkFrac = math.max(1 - easeOut( bkFrac, 0.7 ), 0)
+    sideFrac = math.max(1 - easeOut( sideFrac, 0.7 ), 0)
 
     local sb, ss, su = unpack(t._SourceRecoilPunch)
 
-    t.RecoilPunchBack    = sb * recFrac
-    t.RecoilPunchSide    = ss * recFrac
+    t.RecoilPunchBack    = sb * bkFrac
+    t.RecoilPunchSide    = ss * sideFrac
     -- t.RecoilPunchUp      = su * recFrac
 end
 

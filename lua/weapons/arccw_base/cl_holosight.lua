@@ -436,7 +436,7 @@ function SWEP:FormRTScope()
 	ArcCW.Overdraw = true
 	ArcCW.LaserBehavior = true
 
-	recAng[1] = self:GetAimRecoil() * -0.9
+	recAng[1] = self:GetAimRecoil() * -self.RecoilAimOffsetMult / mag
 
 	local rt = {
 		w = rtsize,
@@ -498,6 +498,7 @@ local mtrx = Matrix()
 local scvec = Vector()
 local trvec = Vector()
 
+local shkAng = Angle()
 
 function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	-- holosight structure
@@ -650,7 +651,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 	local v, h = self:GetAimRecoil()
 
-	eyeangs[1] = eyeangs[1] - v * 3 - vpA[1]
+	eyeangs[1] = eyeangs[1] - v * self.RecoilAimOffsetMult - vpA[1]
 	eyeangs[2] = eyeangs[2] + vpA[2] * 0.5 -- counteract horizontal viewpunch
 
 	eyeangs:Normalize()
@@ -784,6 +785,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	mtrx:Identity()
 	mtrx:Translate(trvec)
 		mtrx:SetScale(scvec)
+		--mtrx:RotateNumber(0, -self:GetRecoilTilt(), 0)
 	mtrx:Translate(-trvec)
 
 	surface.SetDrawColor(255, 255, 255)

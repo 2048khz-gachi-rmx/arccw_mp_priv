@@ -632,10 +632,11 @@ function SWEP:TranslateFOV(fov)
 
 	t.CurrentViewModelFOV = t.CurrentViewModelFOV or t.ViewModelFOV
 
+	local sightMult = math.Remap(self:GetSightDelta(), 0, 1, 1, 0.3)
 	local fr = t.VM_SightsCurrent and (1 - t.VM_SightsCurrent) or self:GetSightDelta()
 	t.CurrentViewModelFOV = Lerp(fr, sght_vm, app_vm) --math.Approach(t.CurrentViewModelFOV, app_vm, FrameTime() * (t.CurrentViewModelFOV - app_vm))
 
-	return t.CurrentFOV + self:GetRecoilFOV()
+	return t.CurrentFOV + self:GetRecoilFOV() * sightMult
 end
 
 function SWEP:SetShouldHoldType()
