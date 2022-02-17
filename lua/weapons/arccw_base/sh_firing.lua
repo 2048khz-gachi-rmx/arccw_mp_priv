@@ -161,10 +161,10 @@ function SWEP:PrimaryAttack()
     bullet.Attacker   = owner
     bullet.Dir        = dir
     bullet.Src        = src
-    bullet.Spread     = Vector(0, 0, 0) --Vector(spread, spread, spread)
+    bullet.Spread     = vector_origin
     bullet.Damage     = 0
     bullet.Num        = num
-    bullet.Force      = (self:GetDamage(0) + self:GetDamage(math.huge)) / 50
+    bullet.Force      = math.max(0.01, (self:GetDamage(0) + self:GetDamage(math.huge)) / 50)
     bullet.Distance   = 33000
     bullet.AmmoType   = self.Primary.Ammo
     bullet.HullSize   = (self:GetBuff_Override("Override_HullSize") or self.HullSize or 0) + self:GetBuff_Add("Add_HullSize")
@@ -371,7 +371,7 @@ function SWEP:PrimaryAttack()
     self:AddHeat(1)
 
     self:GetBuff_Hook("Hook_PostFireBullets")
-    hook.Run("ArcCW_FiredBullets", self)
+    hook.Run("ArcCW_FiredBullets", self, bullet)
 
     if shouldsupp then SuppressHostEvents(nil) end
 end
