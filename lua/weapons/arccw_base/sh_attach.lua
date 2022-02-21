@@ -34,6 +34,33 @@ SWEP.TickCache_Tick_Mults = {}
 
 SWEP.AttCache_Hooks = {}
 
+local string_pool = {
+	mul = {"Mult_"}, --  .. stat
+	add = {"Add_"}, --  .. stat
+	override = {"Override_"}, --  .. stat
+
+	oHk = {"O_Hook_"}, --  .. stat
+	mHk = {"M_Hook_"}, --  .. stat
+	aHk = {"A_Hook_"}, --  .. stat
+}
+
+local Mult_ = string_pool.mul
+local Add_ = string_pool.add
+local Override_ = string_pool.override
+local O_Hook_ = string_pool.oHk
+local M_Hook_ = string_pool.mHk
+local A_Hook_ = string_pool.aHk
+
+local function getString(w, s)
+	local ret = w[s]
+	if not ret then
+		ret = w[1] .. s
+		w[s] = ret
+	end
+
+	return ret
+end
+
 function SWEP:RecalcAllBuffs()
 	local t = self:GetTable()
 	t.TickCache_Overrides = {}
@@ -105,14 +132,14 @@ function SWEP:GetBuff(buff, defaultnil, defaultvar)
 		result = 1
 	end
 
-	local override = self:GetBuff_Override("Override_" .. buff)
+	local override = self:GetBuff_Override(getString(Override_, buff))
 	if override != nil then
 		result = override
 	end
 
 	if isnumber(result) then
-		result = self:GetBuff_Add("Add_" .. buff) + result
-		result = self:GetBuff_Mult("Mult_" .. buff) * result
+		result = self:GetBuff_Add(getString(Add_, buff)) + result
+		result = self:GetBuff_Mult(getString(Mult_ , buff)) * result
 	end
 
 	return result
@@ -169,6 +196,20 @@ function SWEP:GetBuff_Hook(buff, data)
 			end
 		end
 
+		local hook_state = want_hook[buff]
+
+		if hook_state == nil then
+			local ht = hook.GetTable()
+			hook_state = (ht[buff] and #ht[buff] > 0) or ArcCW[buff]
+			want_hook[buff] = not not hook_state
+		end
+
+		if hook_state then
+			data = hook.Call(buff, ArcCW, self, data) or data
+		end
+
+		return data
+	elseif hks ~= nil then
 		local hook_state = want_hook[buff]
 
 		if hook_state == nil then
@@ -274,6 +315,7 @@ function SWEP:GetBuff_Hook(buff, data)
 
 	data = hook.Call(buff, nil, self, data) or data
 	Inventory.DoBuffHook(self, buff, data)
+	t.AttCache_Hooks[buff] = #t.AttCache_Hooks[buff] > 0 and t.AttCache_Hooks[buff] or false
 
 	return data
 end
@@ -297,7 +339,7 @@ function SWEP:GetBuff_Override(buff, default)
 
 			ArcCW.BuffStack = true
 
-			local out = self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA)
+			local out = self:GetBuff_Hook(getString(O_Hook_, buff), SHARED_DATA)
 
 			current = out and out.current or current
 			winningslot = out and out.winningslot or winningslot
@@ -406,7 +448,7 @@ function SWEP:GetBuff_Override(buff, default)
 		ArcCW.BuffStack = true
 
 		--current = (self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA) or {}).current or current
-		current = self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA)
+		current = self:GetBuff_Hook(getString(O_Hook_, buff), SHARED_DATA)
 		if current then current = current.current end
 
 		--current = current and current.current or current
@@ -436,7 +478,7 @@ function SWEP:GetBuff_Mult(buff)
 
 			ArcCW.BuffStack = true
 
-			mult = self:GetBuff_Hook("M_Hook_" .. buff, SHARED_DATA_MULT)
+			mult = self:GetBuff_Hook(getString(M_Hook_, buff), SHARED_DATA_MULT)
 			mult = mult and mult.mult or mult
 
 			ArcCW.BuffStack = false
@@ -499,7 +541,7 @@ function SWEP:GetBuff_Mult(buff)
 
 		ArcCW.BuffStack = true
 
-		mult = self:GetBuff_Hook("M_Hook_" .. buff, SHARED_DATA_MULT)
+		mult = self:GetBuff_Hook(getString(M_Hook_, buff), SHARED_DATA_MULT)
 		mult = mult and mult.mult or mult
 
 		ArcCW.BuffStack = false
@@ -523,7 +565,7 @@ function SWEP:GetBuff_Add(buff)
 
 			ArcCW.BuffStack = true
 
-			add = self:GetBuff_Hook("A_Hook_" .. buff, SHARED_DATA_ADD)
+			add = self:GetBuff_Hook(getString(A_Hook_, buff), SHARED_DATA_ADD)
 			add = add.add or add
 
 			ArcCW.BuffStack = false
@@ -582,7 +624,7 @@ function SWEP:GetBuff_Add(buff)
 
 		ArcCW.BuffStack = true
 
-		add = self:GetBuff_Hook("A_Hook_" .. buff, SHARED_DATA_ADD)
+		add = self:GetBuff_Hook(getString(A_Hook_, buff), SHARED_DATA_ADD)
 		add = add.add or add
 
 		ArcCW.BuffStack = false
@@ -871,14 +913,17 @@ function SWEP:SetBodygroupTr(ind, bg)
 	self.Bodygroups[ind] = bg
 end
 
+local i_wanna_fuck_a_dog_in_the_ass = {}
+local feed_me_a_stray_cat = {}
+
 function SWEP:RefreshBGs()
 	local vm
 
 	local vmm = self:GetBuff_Override("Override_VMMaterial") or self.VMMaterial or ""
 	local wmm = self:GetBuff_Override("Override_WMMaterial") or self.WMMaterial or  ""
 
-	local vmc = self:GetBuff_Override("Override_VMColor") or self.VMColor or Color(255, 255, 255)
-	local wmc = self:GetBuff_Override("Override_WMColor") or self.WMColor or Color(255, 255, 255)
+	local vmc = self:GetBuff_Override("Override_VMColor") or self.VMColor or color_white
+	local wmc = self:GetBuff_Override("Override_WMColor") or self.WMColor or color_white
 
 	local vms = self:GetBuff_Override("Override_VMSkin") or self.DefaultSkin
 	local wms = self:GetBuff_Override("Override_WMSkin") or self.DefaultWMSkin
@@ -1089,9 +1134,18 @@ function SWEP:RefreshBGs()
 			end
 		end
 
-		self:GetBuff_Hook("Hook_ModifyBodygroups", {vm = vm, eles = ae, wm = false})
+		i_wanna_fuck_a_dog_in_the_ass.vm = vm
+		i_wanna_fuck_a_dog_in_the_ass.eles = ae
+		i_wanna_fuck_a_dog_in_the_ass.wm = false
+
+		self:GetBuff_Hook("Hook_ModifyBodygroups", i_wanna_fuck_a_dog_in_the_ass)
 	end
-	self:GetBuff_Hook("Hook_ModifyBodygroups", {vm = self.WMModel or self, eles = ae, wm = true})
+
+	feed_me_a_stray_cat.vm = self.WMModel or self
+	feed_me_a_stray_cat.eles = ae
+	feed_me_a_stray_cat.wm = true
+
+	self:GetBuff_Hook("Hook_ModifyBodygroups", feed_me_a_stray_cat)
 end
 
 function SWEP:GetPickX()

@@ -35,22 +35,23 @@ function SWEP:KillTimers()
     self.ActiveTimers = {}
 end
 
+local kill = {}
+
 function SWEP:ProcessTimers()
-    local keeptimers, UCT = {}, CurTime()
+    local UCT = CurTime()
 
     if CLIENT and UCT == tick then return end
 
     if !self.ActiveTimers then self:InitTimers() end
 
     for _, v in pairs(self.ActiveTimers) do
-        if v[1] <= UCT then v[3]() end
+        if v[1] <= UCT then v[3]() kill[_] = true end
     end
 
-    for _, v in pairs(self.ActiveTimers) do
-        if v[1] > UCT then tbl_ins(keeptimers, v) end
+    for k,v in pairs(kill) do
+    	self.ActiveTimers[k] = nil
+    	kill[k] = nil
     end
-
-    self.ActiveTimers = keeptimers
 end
 
 local function DoShell(wep, data)
