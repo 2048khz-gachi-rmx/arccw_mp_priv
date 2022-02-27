@@ -464,7 +464,13 @@ end
 local recoilAng = Angle()
 
 function SWEP:GetRecoilTilt()
-	return self:GetRecoil() * 1 * self.PunchDir
+	local max = self:GetMaxRecoil()
+	local bound = math.min(1.5, max)
+	local fr = math.Remap(self:GetRecoil(), max, 0, bound, 0)
+
+	if fr ~= fr then fr = 0 end -- nan
+
+	return fr * self.PunchDir
 end
 
 local function recoilMethod(self)
