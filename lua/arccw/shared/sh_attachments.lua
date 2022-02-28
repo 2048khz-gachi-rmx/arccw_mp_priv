@@ -7,7 +7,7 @@ function ArcCW:PlayerCanAttach(ply, wep, attname, slot, detach)
 		slotTbl = wep.Attachments[slot]
 	end
 
-    -- The global variable takes priority over everything
+	-- The global variable takes priority over everything
     if !ArcCW.EnableCustomization then return false end
 
     -- Allow hooks to block or force allow attachment usage
@@ -17,7 +17,8 @@ function ArcCW:PlayerCanAttach(ply, wep, attname, slot, detach)
     -- Followed by convar
     if GetConVar("arccw_enable_customization"):GetInt() < 0 then return false end
 
-    if slotTbl and !wep:CheckFlags(slotTbl.ExcludeFlags, slotTbl.RequireFlags) then
+    local cflags = wep:CheckFlags(slotTbl.ExcludeFlags, slotTbl.RequireFlags)
+    if !detach and slotTbl and !cflags then
     	return false, true
     end
 
