@@ -304,6 +304,11 @@ function SWEP:Think()
 
 
 	if self:GetNextIdle() != 0 and self:GetNextIdle() <= CurTime() then
+		if self.FullyHolstered then
+			-- Bruh
+			return
+		end
+
 		self:SetNextIdle(0)
 		self:PlayIdleAnimation(true)
 	end

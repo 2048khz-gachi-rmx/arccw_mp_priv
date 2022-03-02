@@ -107,6 +107,8 @@ function SWEP:InitialDefaultClip()
     end
 end
 
+ArcCW_Icons = ArcCW_Icons or {}
+
 function SWEP:Initialize()
     if (!IsValid(self:GetOwner()) or self:GetOwner():IsNPC()) and self:IsValid() and self.NPC_Initialize and SERVER then
         self:NPC_Initialize()
@@ -125,10 +127,10 @@ function SWEP:Initialize()
         end
 
         local path = "arccw/weaponicons/" .. class
-        local mat = Material(path)
+        local mat = --[[ArcCW_Icons[path] or ]]Material(path)
+        ArcCW_Icons[path] = mat
 
         if !mat:IsError() then
-
             local tex = mat:GetTexture("$basetexture")
             if tex then
                 local texpath = tex:GetName()
@@ -136,33 +138,8 @@ function SWEP:Initialize()
                 self.WepSelectIcon = surface.GetTextureID(texpath)
 
                 if self.ShootEntity then
-                killicon.Add(self.ShootEntity, texpath, Color(255, 255, 255))
+                	killicon.Add(self.ShootEntity, texpath, Color(255, 255, 255))
                 end
-            end
-        end
-
-        -- Check for incompatibile addons once 
-        if LocalPlayer().ArcCW_IncompatibilityCheck != true then
-            LocalPlayer().ArcCW_IncompatibilityCheck = true
-            local incompatList = {}
-            local addons = engine.GetAddons()
-            for _, addon in pairs(addons) do
-                if ArcCW.IncompatibleAddons[tostring(addon.wsid)] and addon.mounted then
-                    incompatList[tostring(addon.wsid)] = addon
-                end
-            end
-            local shouldDo = true
-            -- If never show again is on, verify we have no new addons
-            if file.Exists("arccw_incompatible.txt", "DATA") then
-                shouldDo = false
-                local oldTbl = util.JSONToTable(file.Read("arccw_incompatible.txt"))
-                for id, addon in pairs(incompatList) do
-                    if !oldTbl[id] then shouldDo = true break end
-                end
-                if shouldDo then file.Delete("arccw_incompatible.txt") end
-            end
-            if shouldDo and table.Count(incompatList) > 0 then
-                ArcCW.MakeIncompatibleWindow(incompatList)
             end
         end
     end
@@ -187,7 +164,7 @@ function SWEP:Initialize()
 
     self:SetHoldType(self.HoldtypeActive)
 
-    local og = weapons.Get(self:GetClass())
+    local og = weapons.GetStored(self:GetClass())
 
     self.RegularClipSize = og.Primary.ClipSize
 
