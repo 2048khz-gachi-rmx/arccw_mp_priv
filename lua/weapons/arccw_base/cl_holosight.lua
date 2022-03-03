@@ -114,8 +114,8 @@ function SWEP:FormThermalImaging(tex)
 
 	local asight = self:GetActiveSights()
 
-	local nvsc = asight.ThermalScopeColor or Color(255, 255, 255)
-	local tvsc = asight.ThermalHighlightColor or Color(255, 255, 255)
+	local nvsc = asight.ThermalScopeColor or color_white
+	local tvsc = asight.ThermalHighlightColor or color_white
 
 	local tab = ents.GetAll()
 
@@ -260,6 +260,8 @@ function SWEP:FormThermalImaging(tex)
 	render.PopRenderTarget()
 end
 
+local green = Color(0, 255, 0)
+
 function SWEP:FormNightVision(tex)
 	local asight = self:GetActiveSights()
 
@@ -269,7 +271,7 @@ function SWEP:FormNightVision(tex)
 
 	render.PushRenderTarget(tex)
 
-	local nvsc = asight.NVScopeColor or Color(0, 255, 0)
+	local nvsc = asight.NVScopeColor or green
 
 	if !asight.NVFullColor then
 		DrawColorModify({
@@ -455,7 +457,7 @@ function SWEP:FormRTScope()
 
 	render.PushRenderTarget(rtmat, 0, 0, rtsize, rtsize)
 
-	render.ClearRenderTarget(rt, Color(0, 0, 0))
+	render.ClearRenderTarget(rt, color_black)
 
 	if self:GetState() == ArcCW.STATE_SIGHTS then
 		render.RenderView(rt)
