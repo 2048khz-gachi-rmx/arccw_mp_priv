@@ -117,6 +117,8 @@ local function ArcCW_LoadAtts()
     local files = file.Find("arccw_all_atts/*", "LUA", "nameasc")
 
     for k, v in pairs(files) do
+    	print(CLIENT and "Client" or "Server", "loading " .. v)
+
         include("arccw_all_atts/" .. v)
         AddCSLuaFile("arccw_all_atts/" .. v)
     end
