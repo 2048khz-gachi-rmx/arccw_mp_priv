@@ -69,10 +69,6 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 	local hEase = 0.7
 
 	if IsFirstTimePredicted() then
-		local land_mul = lvv < vvel and 2 or 1 -- going to 0 velocity is faster than going to 1
-		local are_opposite = math.Sign(hvel) ~= math.Sign(lhv)
-		local opposite_mul = are_opposite and 3 or 1
-
 		local apprTo = math.min(mx_horvel, math.abs(hvel)) * math.Sign(hvel)
 
 		vvel = FPSLerp(25, lvv, vvel) --math.Approach(lvv, vvel, FrameTime() * 1500 * land_mul)
@@ -293,30 +289,41 @@ function SWEP:Breath_Process(EyePos, EyeAng)
 	VMAng:Add(VMAngOffset)
 end
 
+local angLook = Angle()
+local lookDiff = Angle()
+
+SWEP._cachedLook = Angle()
 function SWEP:Look_Process(EyePos, EyeAng)
 	local t = self:GetTable()
-
 	local VMPos, VMAng = t.VMPos, t.VMAng
-	local VMAngOffset = t.VMAngOffset
-	local FT = FrameTime()
-	local sightedmult = (self:GetState() == ArcCW.STATE_SIGHTS and 0.25) or 1
-
 	local firstPred = IsFirstTimePredicted()
+
+	--[[if not firstPred then
+		VMAng:Add(angLook)
+		return
+	end]]
+
+	local FT = FrameTime()
+	local sightedmult = (self:GetState() == ArcCW.STATE_SIGHTS and 0.1) or 1
+
 	if firstPred then
-		t.SmoothEyeAng = LerpAngle(0.2, t.SmoothEyeAng, EyeAng - t.LastEyeAng)
+		lookDiff:Set(EyeAng)
+		lookDiff:Sub(t.LastEyeAng)
+		local ft = math.min(1 - math.exp(-50 * FT), 1)
+		t.SmoothEyeAng = LerpAngle(ft, t.SmoothEyeAng, lookDiff)
 	end
 
 	local x = -t.SmoothEyeAng.x * -1 * sightedmult * lookxmult
 	local y = t.SmoothEyeAng.y * 0.5 * sightedmult * lookymult
 
 	local vmang_y = y * 1.25
-	VMAngOffset:SetUnpacked(x * 2.5, vmang_y, y * 2)
+	angLook:SetUnpacked(x * 2.5, vmang_y, y * 2)
 
 	if firstPred then
-		t.VMLookLerp = Lerp(FT*10, t.VMLookLerp, vmang_y * 1.5 + t.SmoothEyeAng.y)
+		t.VMLookLerp = FPSLerp(20, t.VMLookLerp, vmang_y * 1.5 + t.SmoothEyeAng.y)
 	end
 
-	VMAng.y = VMAng.y - t.VMLookLerp
+	--VMAng.y = VMAng.y - t.VMLookLerp
 
 	local up = VMAng:ToUp(dirVec)
 		up:Mul(x)
@@ -326,8 +333,9 @@ function SWEP:Look_Process(EyePos, EyeAng)
 		r:Mul(y)
 		VMPos:Add(r)
 
-	VMAng:Add(VMAngOffset)
+	angLook.y = angLook.y - t.VMLookLerp
 
+	VMAng:Add(angLook)
 end
 
 local velCpy = Vector()
@@ -339,16 +347,18 @@ function SWEP:GetVMPosition(EyePos, EyeAng)
 
 	velCpy:Set(velocity) velCpy:Rotate(angCpy)
 
+	local t = self:GetTable()
+
 	self:Move_Process(EyePos, EyeAng, velCpy, velocity)
 	self:Step_Process(EyePos, EyeAng, velCpy, velocity)
 	self:Breath_Process(EyePos, EyeAng)
 	self:Look_Process(EyePos, EyeAng)
+	EyeAng:Add(t.VMAngOffset)
 
-	self.LastEyeAng = EyeAng
-	self.LastEyePos = EyePos
-	self.LastVelocity = velCpy
+	t.LastEyeAng:Set(EyeAng)
+	t.LastVelocity:Set(velCpy)
 
-	return self.VMPos, self.VMAng
+	return t.VMPos, t.VMAng
 end
 
 local function LerpSource(dlt, from, to)
