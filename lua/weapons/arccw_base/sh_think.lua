@@ -324,25 +324,29 @@ local function easeOutCubic(x)
 end
 
 
-function SWEP:GetRecoilTimeFrac()
-	local when = self:GetRecoiledWhen()
+function SWEP:GetRecoilTimeFrac(recTime, unpred)
+	local when = unpred and self.UnpredRecoiledWhen or self:GetRecoiledWhen()
 	local now = CurTime()
 	local passed = now - when
 
-	return math.Clamp(passed / self.RecoilTRecovery, 0, 1)
+	return math.Clamp(passed / (recTime or self.RecoilTRecovery), 0, 1)
 end
 
-function SWEP:GetAimRecoil(t)
-	local recFrac = 1 - Ease(self:GetRecoilFrac(), 0.4)
+function SWEP:GetAimRecoil(unpred)
+	local fr, v, h = self:LetMeHandleTheRecoil(unpred)
+	fr = self:GetRecoilTimeFrac(nil, unpred)
 
-	local rec = math.Round(math.max(self:GetMaxRecoil() * recFrac, 0), 5)
-	local sideRec = math.Round(math.max(self:GetMaxSideRecoil() * recFrac, 0), 5)
+	local recFrac = 1 - Ease(fr, 0.4)
+
+	local rec = math.Round(math.max(v * recFrac, 0), 5)
+	local sideRec = math.Round(math.max(h * recFrac, 0), 5)
 
 	return rec, sideRec
 end
 
-function SWEP:LetMeHandleTheRecoil()
-	return self:GetRecoilFrac(), self:GetMaxRecoil(), self:GetMaxSideRecoil()
+function SWEP:LetMeHandleTheRecoil(unpred)
+	return unpred and self.UnpredRecoilFrac or self:GetRecoilFrac(),
+		self:GetMaxRecoil(), self:GetMaxSideRecoil()
 end
 
 function SWEP:ProcessRecoil()
@@ -357,6 +361,8 @@ function SWEP:ProcessRecoil()
 	local t = self:GetRecoilTimeFrac()
 	self:SetRecoilFrac(t)
 
+	self.UnpredRecoilFrac = IsFirstTimePredicted() and t or self.UnpredRecoilFrac
+
 	local recFrac = 1 - t
 
 	local newRec = math.Round(math.max(self:GetMaxRecoil() * recFrac, 0), 5)
@@ -367,12 +373,12 @@ function SWEP:ProcessRecoil()
 	self:SetSideRecoil( newSideRec )
 
 	if recFrac == 0 then
-		self:SetMaxRecoil(0)
+		-- self:SetMaxRecoil(0)
 		self:SetRecoil( 0 )
 	end
 
 	if recFrac == 0 then
-		self:SetMaxSideRecoil(0)
+		-- self:SetMaxSideRecoil(0)
 		self:SetSideRecoil( 0 )
 	end
 

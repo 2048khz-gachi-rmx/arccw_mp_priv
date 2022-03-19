@@ -501,6 +501,10 @@ local scvec = Vector()
 local trvec = Vector()
 
 local shkAng = Angle()
+local camRecAng = Angle() -- last frame's recoil ; i hate source
+
+SWEP.SightRecoilRatio = 1
+SWEP.CamRecoilRatio = 2
 
 function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	-- holosight structure
@@ -650,10 +654,13 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 	local vpA = self:GetOurViewPunchAngles()
 	local eyeangs = EyeAngles() -- + vpA
+	local fuck = EyeAngles()
 
-	local v, h = self:GetAimRecoil()
+	local v, h = self:GetAimRecoil(true)
 
-	eyeangs[1] = eyeangs[1] - v * self.RecoilAimOffsetMult - vpA[1]
+	local rang = self:GetRecoilViewAng()
+
+	eyeangs[1] = eyeangs[1] - rang[1] - v * self.RecoilAimOffsetMult - vpA[1]
 	eyeangs[2] = eyeangs[2] + vpA[2] * 0.5 -- counteract horizontal viewpunch
 
 	eyeangs:Normalize()
@@ -663,6 +670,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	dir:Mul(d)
 	pos:Add(dir)
 
+	--fuck:Sub(rang)
 	-- render.DrawSphere(pos, 4, 4, 4, color_white)
 	-- debugoverlay.Cross(pos, 4, 0.02, Colors.Red)
 
@@ -716,7 +724,8 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	render.SetStencilReferenceValue(ref)
 
 	cam.End3D()
-	cam.Start3D()
+
+	cam.Start3D(nil, fuck)
 
 	local a = pos:ToScreen()
 	local x = math.Round(a.x)

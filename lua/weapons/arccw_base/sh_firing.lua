@@ -882,17 +882,18 @@ function SWEP:DoRecoil()
 		-- don't predict any of this: working with predicted CurTime() in sh_move will be a pain
 		self.UnpredRecoiledWhen = UnPredictedCurTime()
 
-		local unpunchedVLeft = self:GetMaxRecoil() - self._LastVerticalRec - self._CarryVerticalRec
-		self._CarryVerticalRec = curRec - unpunchedVLeft
+		local unpunchedVLeft = self:GetMaxRecoil() - self._LastVerticalRec
+		self._CarryVerticalRec = self._CarryVerticalRec + (self:GetMaxRecoil() - unpunchedVLeft)
 
-		local unpunchedHLeft = self.MaxSideRecoilAmount - self._LastHorizontalRec - self._CarryHorizontalRec
-		self._CarryHorizontalRec = curSideRec - unpunchedHLeft
+		local unpunchedHLeft = self.MaxSideRecoilAmount - self._LastHorizontalRec
+		self._CarryHorizontalRec = self._CarryHorizontalRec + (curSideRec - unpunchedHLeft)
 	end
 
-	addRec = addRec * 0.7
-
 	self.MaxSideRecoilAmount = curSideRec + addSideRec
+
 	self:SetMaxRecoil(curRec + addRec)
+	self:SetMaxSideRecoil(curSideRec + addSideRec)
+
 
 	recv = recv * self.VisualRecoilMult
 
@@ -1017,7 +1018,7 @@ function SWEP:PunchRecoil()
 		local horTotalCur = mxSR * Ease(curFrac, 0.5)
 		local horToApply = horTotalCur - (mxSR * Ease(sinceFrac, 0.5))
 
-		self._LastVerticalRec = mxR * curFrac
+		self._LastVerticalRec = math.min(0, mxR * curFrac)
 		self._LastHorizontalRec = horTotalCur
 
 		-- print("applying", vRec, self._LastVerticalRec)

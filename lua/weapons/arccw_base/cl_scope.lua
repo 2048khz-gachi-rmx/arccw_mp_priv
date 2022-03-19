@@ -259,7 +259,7 @@ function SWEP:GetShakeAng(pred)
 		fn = cfn
 
 		if GetConVar("arccw_shake"):GetBool() then
-			local fr, rec = self:LetMeHandleTheRecoil()
+			local fr, rec = self:LetMeHandleTheRecoil(true)
 			local sightMult = math.Remap(self:GetSightDelta(), 0, 1, 1, 0.5)
 
 			fr = Ease(1 - fr, 3.3) * 0.002 * sightMult
@@ -268,6 +268,22 @@ function SWEP:GetShakeAng(pred)
 	end
 
 	return shakeAng
+end
+
+local ra = Angle()
+local mult = 1
+
+function SWEP:GetRecoilViewAng()
+	local fr, ver, hor = self:LetMeHandleTheRecoil()
+	local f2 = self:GetRecoilTimeFrac(0.2, true)
+
+	fr = 1 - f2
+	ver = ver ^ 0.8
+
+	ra[1] = -ver * Ease(fr, 2.3) * mult
+	ra[2] = -hor * Ease(fr, 1.6) / 2 * mult
+
+	return ra
 end
 
 function SWEP:CalcView(ply, pos, ang, fov)
@@ -281,11 +297,16 @@ function SWEP:CalcView(ply, pos, ang, fov)
 		ang:Add(self:GetShakeAng())
 	end
 
+	local recang = self:GetRecoilViewAng()
+
 	viewAng:Set(self.ViewPunchAngle)
 	local hor = viewAng[2]
 	viewAng:Mul(10)
 	viewAng[2] = viewAng[2] - hor * 5 -- horizontal viewpunch looks wack imo
 
+	ang:Add(viewAng)
+
+	viewAng:Set(recang)
 	ang:Add(viewAng)
 
 	return pos, ang, fov
