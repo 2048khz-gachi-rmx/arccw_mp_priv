@@ -513,7 +513,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	local ref = 32
 
 	asight = asight or self:GetActiveSights()
-	local delta = self:GetSightDelta()
+	local delta = Ease(self:GetSightDelta(), 2.7)
 
 	if asight.HolosightData then
 		hs = asight.HolosightData
@@ -654,14 +654,13 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 	local vpA = self:GetOurViewPunchAngles()
 	local eyeangs = EyeAngles() -- + vpA
-	local fuck = EyeAngles()
 
 	local v, h = self:GetAimRecoil(true)
 
 	local rang = self:GetRecoilViewAng()
 
-	eyeangs[1] = eyeangs[1] - rang[1] - v * self.RecoilAimOffsetMult - vpA[1]
-	eyeangs[2] = eyeangs[2] + vpA[2] * 0.5 -- counteract horizontal viewpunch
+	eyeangs[1] = eyeangs[1] - v * self.RecoilAimOffsetMult - vpA[1]  - rang[1] * 2 -- imma be real, i have no clue why it requires *2
+	eyeangs[2] = eyeangs[2] - vpA[2] * 0.5 -- follow horizontal viewpunch
 
 	eyeangs:Normalize()
 
@@ -725,11 +724,14 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 	cam.End3D()
 
-	cam.Start3D(nil, fuck)
+	cam.Start3D()
 
 	local a = pos:ToScreen()
 	local x = math.Round(a.x)
 	local y = math.Round(a.y)
+
+	--render.SetColorMaterialIgnoreZ()
+	--render.DrawSphere(pos, 2, 8, 8, color_white)
 
 	cam.Start2D()
 

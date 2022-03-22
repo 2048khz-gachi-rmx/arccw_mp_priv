@@ -838,6 +838,9 @@ function SWEP:DoRecoil()
 	-- local recu = math.Rand(0.5, 1)
 
 	local minIntensity = 0.3
+
+	local globalMult = 0.75
+
 	local irec = math.random() * (1 - minIntensity) + minIntensity
 	irec = irec * (math.random() < 0.5 and -1 or 1)
 
@@ -867,16 +870,16 @@ function SWEP:DoRecoil()
 
 	punch = punch + (self:GetBuff_Override("Override_RecoilDirection", self.RecoilDirection) * math.max(self.Recoil, 0.25) * recu * recv * rmul)
 	punch = punch + (self:GetBuff_Override("Override_RecoilDirectionSide", self.RecoilDirectionSide) * math.max(self.RecoilSide, 0.25) * irec * recv * rmul)
-	punch = punch + Angle(0, 0, 90) * math.Rand(-1, 1) * math.Clamp(self.Recoil, 0.25, 1) * recv * rmul * 0.01
+	punch = punch + Angle(0, 0, 90) * math.Rand(-1, 1) * math.Clamp(self.Recoil, 0.25, 1) * recv * rmul * 0.03
 	punch = punch * (self.RecoilPunch or 1) * self:GetBuff_Mult("Mult_RecoilPunch") * 0.5
 
 	if CLIENT and IsFirstTimePredicted() then self:OurViewPunch(punch) end
 
 	local curRec = math.min(self:GetRecoil(), self:GetMaxRecoil()) / 2
-	local addRec = self.Recoil * rmul * recu * rvert
+	local addRec = self.Recoil * rmul * recu * rvert * globalMult
 
 	local curSideRec = self:GetSideRecoil()
-	local addSideRec = self.RecoilSide * irec * recs * rmul
+	local addSideRec = self.RecoilSide * irec * recs * rmul * globalMult
 
 	if CLIENT and IsFirstTimePredicted() then
 		-- don't predict any of this: working with predicted CurTime() in sh_move will be a pain
@@ -913,7 +916,7 @@ function SWEP:DoRecoil()
 	end
 
 	if CLIENT then
-		self.RecoilPunchBack  = math.Clamp(self:GetRecoil() * recv * 5, 1, 5)
+		self.RecoilPunchBack  = math.Clamp(self:GetRecoil() * recv * 5, 1, 10)
 
 		if self.MaxRecoilBlowback > 0 then
 			self.RecoilPunchBack = math.Clamp(self.RecoilPunchBack, 0, self.MaxRecoilBlowback)

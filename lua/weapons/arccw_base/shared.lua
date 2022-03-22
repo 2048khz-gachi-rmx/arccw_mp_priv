@@ -122,14 +122,14 @@ SWEP.RecoilRise = 1
 SWEP.MaxRecoilBlowback = -1
 SWEP.VisualRecoilMult = 1.25
 SWEP.RecoilPunch = 1.5
-SWEP.RecoilAimOffsetMult = 2
+SWEP.RecoilAimOffsetMult = 3
 
 -- time to recover the VM punch
 SWEP.RecoilPunchSideRecovery = 0.5
-SWEP.RecoilPunchBackRecovery = 0.2
+SWEP.RecoilPunchBackRecovery = 0.3
 
 -- timed recoil: recoil will kick to 100% within SWEP.RecoilTRecovery seconds
-SWEP.RecoilTRecovery = 0.5
+SWEP.RecoilTRecovery = 0.4
 SWEP.RecoilTEaseOutIntensity = 1.3 -- <1 not recommended
 
 SWEP.RecoilPunchBackMax = 1

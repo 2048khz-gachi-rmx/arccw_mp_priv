@@ -84,8 +84,8 @@ local function lensqr(ang)
 end
 
 -- scraped from source SDK 2013, just like this viewpunch damping code
-local PUNCH_DAMPING = 13
-local PUNCH_SPRING_CONSTANT = 120
+local PUNCH_DAMPING = 20
+local PUNCH_SPRING_CONSTANT = 180
 
 local tempAng = Angle()
 
@@ -94,7 +94,6 @@ function SWEP:DoOurViewPunch()
 
 	local vpa = self.ViewPunchAngle
 	local vpv = self.ViewPunchVelocity
-	local ft = FrameTime() * 3
 
 	if lensqr(vpa) + lensqr(vpv) > 0.000001 then
 		-- {
@@ -102,7 +101,7 @@ function SWEP:DoOurViewPunch()
 		--     float damping = 1 - (PUNCH_DAMPING * gpGlobals->frametime);
 
 		tempAng:Set(vpv)
-		local ft = FrameTime()
+		local ft = FrameTime() * 2
 
 		tempAng:Mul(ft)
 		vpa:Add(tempAng)

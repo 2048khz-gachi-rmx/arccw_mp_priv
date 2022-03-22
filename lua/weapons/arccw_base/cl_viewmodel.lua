@@ -1080,7 +1080,7 @@ function SWEP:CalculateVMPos(pos, ang)
 
 
 	local OF = oldang:ToForward(dirVec)
-	OF:Mul(-math.min(self.RecoilPunchBack, 1))
+	OF:Mul(-math.min(self.RecoilPunchBack, 1) * 1.5)
 	pos:Add(OF)
 
 	-- position recoil only if not aiming through irons
