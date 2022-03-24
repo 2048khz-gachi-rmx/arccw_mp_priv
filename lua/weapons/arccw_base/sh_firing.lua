@@ -158,8 +158,18 @@ function SWEP:PrimaryAttack()
 
 	local delay = self:GetFiringDelay()
 
-	self:SetNextPrimaryFire(CurTime() + delay)
-	self:SetNextPrimaryFireSlowdown(CurTime() + delay) -- shadow for ONLY fire time
+	local curBullet = 0
+	local tInter = engine.TickInterval()
+
+	-- sub-tick
+	if self:GetNextPrimaryFire() > CurTime() - tInter and self:GetNextPrimaryFire() < CurTime() then
+		curBullet = self:GetNextPrimaryFire()
+	else
+		curBullet = CurTime()
+	end
+
+	self:SetNextPrimaryFire(curBullet + delay)
+	self:SetNextPrimaryFireSlowdown(curBullet + delay) -- shadow for ONLY fire time
 
 	local num = self:GetBuff_Override("Override_Num") or self.Num
 
@@ -397,8 +407,8 @@ function SWEP:PrimaryAttack()
 		local fireanim = self:GetBuff_Hook("Hook_SelectFireAnimation") or self:SelectAnimation("fire")
 		local firedelay = self.Animations[fireanim].MinProgress or 0
 		self:SetNeedCycle(true)
-		self:SetWeaponOpDelay(CurTime() + firedelay)
-		self:SetNextPrimaryFire(CurTime() + 0.1)
+		self:SetWeaponOpDelay(curBullet + firedelay)
+		self:SetNextPrimaryFire(curBullet + 0.1)
 	end
 
 	self:ApplyAttachmentShootDamage()
