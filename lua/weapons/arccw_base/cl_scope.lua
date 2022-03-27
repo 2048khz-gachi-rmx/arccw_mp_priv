@@ -296,14 +296,14 @@ function SWEP:CalcView(ply, pos, ang, fov)
 		ang:Add(self:GetShakeAng())
 	end
 
-	local recang = self:GetRecoilViewAng()
-
 	viewAng:Set(self.ViewPunchAngle)
 	local hor = viewAng[2]
 	viewAng:Mul(10)
 	viewAng[2] = viewAng[2] - hor * 5 -- horizontal viewpunch looks wack imo
 
 	ang:Add(viewAng)
+
+	local recang = self:GetRecoilViewAng()
 
 	viewAng:Set(recang)
 	ang:Add(viewAng)

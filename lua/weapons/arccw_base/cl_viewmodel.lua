@@ -1078,7 +1078,6 @@ function SWEP:CalculateVMPos(pos, ang)
 		ang:Set(nang)
 	end
 
-
 	local OF = oldang:ToForward(dirVec)
 	OF:Mul(-math.min(self.RecoilPunchBack, 1) * 1.5)
 	pos:Add(OF)

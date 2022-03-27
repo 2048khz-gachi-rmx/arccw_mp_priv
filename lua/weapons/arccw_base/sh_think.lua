@@ -334,11 +334,24 @@ end
 
 function SWEP:GetAimRecoil(unpred)
 	local fr, v, h = self:LetMeHandleTheRecoil(unpred)
-	fr = self:GetRecoilTimeFrac(nil, unpred)
+	local recRiseFr = 0.2
 
-	local recFrac = 1 - Ease(fr, 0.4)
+	fr = self:GetRecoilTimeFrac(self:GetFiringDelay() / (recRiseFr * 1.1), unpred)
 
-	local rec = math.Round(math.max(v * recFrac, 0), 5)
+	local recFrac
+	local from, to = 0, v
+
+	if fr < recRiseFr then
+		recFrac = Ease(math.Remap(fr, 0, recRiseFr, 0, 1), 0.2)
+		from = v
+		to = self.LastAimRecoil or 0
+	else
+		recFrac = 1 - Ease(1 - math.Remap(fr, recRiseFr, 1, 1, 0), 0.4)
+		from = v
+		to = 0
+	end
+
+	local rec = math.Round(math.max(Lerp(recFrac, to, from), 0), 5)
 	local sideRec = math.Round(math.max(h * recFrac, 0), 5)
 
 	return rec, sideRec

@@ -122,7 +122,7 @@ SWEP.RecoilRise = 1
 SWEP.MaxRecoilBlowback = -1
 SWEP.VisualRecoilMult = 1.25
 SWEP.RecoilPunch = 1.5
-SWEP.RecoilAimOffsetMult = 3
+SWEP.RecoilAimOffsetMult = 2
 
 -- time to recover the VM punch
 SWEP.RecoilPunchSideRecovery = 0.5

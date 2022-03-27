@@ -132,8 +132,9 @@ function SWEP:PrimaryAttack()
 	local aimvec = owner:GetAimVector()
 	local aimang = aimvec:Angle()
 
-	aimang[1] = aimang[1] + self:GetAimRecoil() * -self.RecoilAimOffsetMult * (1 - self:GetSightDelta())
+	aimang[1] = aimang[1] - (self:GetAimRecoil() * self.RecoilAimOffsetMult) * (1 - self:GetSightDelta())
 	aimang:Normalize()
+
 	local dir = aimang:Forward()
 
 	local src = self:GetShootSrc()
@@ -157,6 +158,7 @@ function SWEP:PrimaryAttack()
 	origDir:Set(dir) -- origin of the spread (ie its' center)
 
 	local delay = self:GetFiringDelay()
+	self.LastAimRecoil = self:GetAimRecoil()
 
 	local curBullet = 0
 	local tInter = engine.TickInterval()
@@ -168,6 +170,7 @@ function SWEP:PrimaryAttack()
 		curBullet = CurTime()
 	end
 
+	self.FiringDelay = delay
 	self:SetNextPrimaryFire(curBullet + delay)
 	self:SetNextPrimaryFireSlowdown(curBullet + delay) -- shadow for ONLY fire time
 
