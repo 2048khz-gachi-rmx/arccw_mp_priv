@@ -313,7 +313,8 @@ function SWEP:Look_Process(EyePos, EyeAng)
 		t.SmoothEyeAng = LerpAngle(ft, t.SmoothEyeAng, lookDiff)
 	end
 
-	local x = -t.SmoothEyeAng.x * -1 * sightedmult * lookxmult
+	-- x is actually vertical and y is horizontal
+	local x = t.SmoothEyeAng.x * sightedmult * lookxmult * 0.5
 	local y = t.SmoothEyeAng.y * 0.5 * sightedmult * lookymult
 
 	local vmang_y = y * 1.25
