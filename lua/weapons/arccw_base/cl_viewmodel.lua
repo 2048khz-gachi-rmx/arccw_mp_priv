@@ -485,8 +485,9 @@ function SWEP:GetRecoilTilt()
 end
 
 local function recoilMethod(self)
-	local fr, max, hor = self:LetMeHandleTheRecoil()
-	recoilAng[1] = (1 - Ease(fr, 0.6)) * max
+	local ver, hor = self:GetAimRecoil(true)
+
+	recoilAng[1] = ver --(1 - Ease(fr, 0.6)) * max
 	recoilAng[3] = self:GetRecoilTilt()
 
 	return recoilAng -- self:GetOurViewPunchAngles()
