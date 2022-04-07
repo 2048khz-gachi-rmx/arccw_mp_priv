@@ -485,7 +485,8 @@ function SWEP:GetRecoilTilt()
 end
 
 local function recoilMethod(self)
-	recoilAng[1] = self:GetRecoil() * 0.66
+	local fr, max, hor = self:LetMeHandleTheRecoil()
+	recoilAng[1] = (1 - Ease(fr, 0.6)) * max
 	recoilAng[3] = self:GetRecoilTilt()
 
 	return recoilAng -- self:GetOurViewPunchAngles()
@@ -1098,16 +1099,12 @@ function SWEP:CalculateVMPos(pos, ang)
 
 	oldang:Add(recoilMethod(self))
 	oldang:Add(vpa)
-	
-
-	--oldang:Add(recoilMethod(self))
 
 	local aepx, aepy, aepz = actual.evpos:Unpack()
 
 	--[[ang:RotateAroundAxis(OR,   actual.ang[1] + actual.evang[1])
 	ang:RotateAroundAxis(OU,   actual.ang[2] + actual.evang[2])
 	ang:RotateAroundAxis(OF,   actual.ang[3] + actual.evang[3])]]
-
 
 	local OR = oldang:ToRight(dirVec)
 		ang:RotateAroundAxis(OR,   actual.ang[1] + actual.evang[1])
