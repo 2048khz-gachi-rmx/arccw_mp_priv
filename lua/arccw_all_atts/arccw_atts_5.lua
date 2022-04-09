@@ -588,7 +588,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 12, -1.95),
+	        Pos = Vector(0, 10, -1.95),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 4,
 	        ScrollFunc = ArcCW.SCROLL_ZOOM,
@@ -2588,9 +2588,10 @@ do
 
 	att.ActivateElements = {"buftube"}
 
-	att.Mult_SightTime = 1.25
-	att.Mult_Recoil = 0.9
-	att.Mult_MoveDispersion = 1.15
+	att.Mult_SightTime = 1.3
+	att.Mult_Recoil = 0.8
+	att.Mult_MoveSpeed = 0.9
+	att.Mult_MoveDispersion = 1.2
 	ArcCW.LoadAttachmentType(att)
 end
 
