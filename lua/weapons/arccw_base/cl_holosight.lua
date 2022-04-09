@@ -438,7 +438,7 @@ function SWEP:FormRTScope()
 	ArcCW.Overdraw = true
 	ArcCW.LaserBehavior = true
 
-	recAng[1] = self:GetAimRecoil() * -self.RecoilAimOffsetMult / mag
+	recAng[1] = self:GetAimRecoil(true) * -self.RecoilAimOffsetMult / mag
 
 	local rt = {
 		w = rtsize,
