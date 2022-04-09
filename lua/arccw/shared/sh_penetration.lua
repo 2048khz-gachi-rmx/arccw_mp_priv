@@ -21,12 +21,10 @@ function ArcCW:GetRicochetChance(penleft, tr)
 end
 
 function ArcCW:IsPenetrating(ptr, ptrent)
-    if ptrent:IsWorld() then
-        --[[svprint(util.IsInWorld(ptr.StartPos))
-        debugoverlay.Cross(ptr.StartPos, 8, 4,
-            util.IsInWorld(ptr.StartPos) and Colors.Green or Colors.Red, true)]]
+    if ptrent:IsWorld() or ptrent == NULL then
+        local is_pen = ptr.StartSolid or ptr.AllSolid or not util.IsInWorld(ptr.StartPos)
 
-        return !ptr.StartSolid or ptr.AllSolid or not util.IsInWorld(ptr.StartPos)
+        return is_pen
     elseif IsValid(ptrent) then
         local mins, maxs = ptrent:WorldSpaceAABB()
         local withinbounding = ptr.HitPos:WithinAABox(mins, maxs)
@@ -54,7 +52,6 @@ end
 
 function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenned)
     local hitpos, startpos = tr.HitPos, tr.StartPos
-    local dir    = (hitpos - startpos):GetNormalized()
 
     if CLIENT then
         return
@@ -71,9 +68,15 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
     local trent = tr.Entity
 
     local penmult     = ArcCW.PenTable[tr.MatType] or 1
-    local pentracelen = 2
+    local pentracelen = math.Clamp(penleft / 10, 0.5, 2)
 
-    local curr_ent    = trent
+    local cWorld = trent:IsWorld() or not IsValid(trent)
+    if not cWorld then
+    	-- props tend to be complex and/or thin; more precision is required
+    	pentracelen = 0.25
+    end
+
+    local curr_ent = trent
     local startpen = penleft
 
     if !tr.HitWorld then penmult = penmult * 1.5 end
@@ -82,8 +85,9 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
 
     penmult = penmult * m_rand(0.9, 1.1) * m_rand(0.9, 1.1)
 
-    local dir    = (hitpos - startpos):GetNormalized()
-    local endpos = hitpos
+    local dir    = tr.Normal
+
+    local endpos = hitpos + (dir * pentracelen * 0.3) -- go into the wall a little bit off the start
 
     local td  = {}
     td.start  = endpos
@@ -110,15 +114,18 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
         local d = math.Rand(0.25, 0.95)
 
         penleft = penleft * d
-
+        debugoverlay.Text(td.endpos - Vector(0, 0, 8), "RICOCHET", 5)
+        endpos = hitpos -- back out of the wall for the ricochet
         skip = true
     end
 
     if !GetConVar("arccw_enable_penetration"):GetBool() then return end
 
+   	--debugoverlay.Sphere(endpos, 3, 3, Colors.Money, true)
+
     while !skip and penleft > 0 and ArcCW:IsPenetrating(ptr, ptrent)
         --[[and ptr.Fraction < 1]] -- https://i.imgur.com/mtDYkEp.png
-        and ptrent == curr_ent do
+        and (ptrent == curr_ent or (cWorld and (ptrent:IsWorld() or ptrent == NULL))) do
         penleft = penleft - (pentracelen * penmult)
 
         --debugoverlay.Sphere(ptr.StartPos, math.max(0, penleft), 4, color_white, true)
@@ -130,37 +137,11 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
 
         ptr = util.TraceLine(td)
 
-        debugoverlay.Text(ptr.EndPos, ("%.1f"):format(penleft), 3)
+       -- debugoverlay.Text(ptr.HitPos, ("%.1f"):format(penleft), 3)
+
         -- This is never called because curr_ent is never updated, genius
         -- Damage is handled in abullet.Callback anyways
-        --[[]
-        if ptrent != curr_ent then
-            ptrent = ptr.Entity
-
-            curr_ent = ptrent
-
-            local ptrhp  = ptr.HitPos
-            -- local dist   = (ptrhp - tr.StartPos):Length() * ArcCW.HUToM
-            local pdelta = penleft / bullet.Penetration
-
-            local dmg = DamageInfo()
-            dmg:SetDamageType(bullet.DamageType)
-            dmg:SetDamage(damage * pdelta)
-            dmg:SetDamagePosition(ptrhp)
-
-            if IsValid(ptrent) and !alreadypenned[ptrent:EntIndex()] then ptrent:TakeDamageInfo(dmg) end
-
-            penmult = ArcCW.PenTable[ptr.MatType] or 1
-
-            if !ptr.HitWorld then penmult = penmult * 1.5 end
-
-            if ptrent.mmRHAe then penmult = ptrent.mmRHAe end
-
-            penmult = penmult * m_rand(0.9, 1.1) * m_rand(0.9, 1.1)
-
-            debugoverlay.Line(endpos, endpos + (dir * pentracelen), 10, Color(0, 0, 255), true)
-        end
-        ]]
+        ptrent = ptr.Entity
 
         if GetConVar("developer"):GetBool() then
             local pdeltap = penleft / bullet.Penetration
@@ -172,10 +153,25 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
 
         endpos = endpos + (dir * pentracelen)
 
-        dir = dir + (VectorRand() * 0.025 * penmult)
+        dir = dir + (VectorRand() * 0.025 * penmult * pentracelen)
+        dir:Normalize()
     end
 
-    debugoverlay.Cross(endpos, 8, 4, Colors.Sky, true)
+    --debugoverlay.Sphere(endpos, 3, 3, Colors.Red, true)
+
+    -- decrease penetration strength for each surface successfully penetrated
+
+    if cWorld then
+    	penleft = penleft / 3
+    end
+
+    local in_wall = not util.IsInWorld(endpos)
+
+   -- debugoverlay.Cross(endpos, 8, 4, Colors.Sky, true)
+
+    if penleft <= 0 then
+    	debugoverlay.Text(endpos + Vector(0, 0, 4), "Dead", 5)
+    end
 
     if penleft > 0 then
         if (dir:Length() == 0) then return end
@@ -232,7 +228,7 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
             abullet.Force    = 0
             abullet.Distance = 33000
             abullet.Tracer   = 0
-            --abullet.IgnoreEntity = ptr.Entity
+            abullet.IgnoreEntity = ptr.Entity
             abullet.Callback = function(att, btr, dmg)
                 local dist = bullet.Travelled * ArcCW.HUToM
                 bullet.Travelled = bullet.Travelled + (btr.HitPos - endpos):Length()
@@ -252,7 +248,7 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
                 if GetConVar("developer"):GetBool() then
                     --debugoverlay.Cross(endpos, 8, 4, Colors.Sky, true)
                     --debugoverlay.Cross(btr.HitPos, 8, 4, Colors.Red, true)
-                    debugoverlay.Line(endpos, btr.HitPos, 10, Color(150, 150, 150), true)
+                    --debugoverlay.Line(endpos, btr.HitPos, 10, Color(150, 150, 150), true)
                 end
 
                 -- if !game.SinglePlayer() and CLIENT then
