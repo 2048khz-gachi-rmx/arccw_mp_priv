@@ -1045,6 +1045,9 @@ function SWEP:GetFromReference(boneid)
 	if bpos == ArcCW.ReferenceModel:GetPos() then
 		bpos = ArcCW.ReferenceModel:GetBoneMatrix(0):GetTranslation()
 		bang = ArcCW.ReferenceModel:GetBoneMatrix(0):GetAngles()
+	elseif not bpos then
+		bpos = ArcCW.ReferenceModel:GetPos() -- better than erroring i guess
+		bang = ArcCW.ReferenceModel:GetAngles()
 	end
 
 	-- SafeRemoveEntity(ArcCW.ReferenceModel)
