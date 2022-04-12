@@ -1,4 +1,6 @@
 
+local vec = Vector()
+
 function ArcCW.Move(ply, mv, cmd)
 	local wpn = ply:GetActiveWeapon()
 
@@ -11,7 +13,9 @@ function ArcCW.Move(ply, mv, cmd)
 	-- look, basically I made a bit of an oopsy and uh this is the best way to fix that
 	s = s * sm
 
-	local basespd = (Vector(cmd:GetForwardMove(), cmd:GetUpMove(), cmd:GetSideMove())):Length()
+	vec:SetUnpacked(cmd:GetForwardMove(), cmd:GetUpMove(), cmd:GetSideMove())
+
+	local basespd = vec:Length()
 	basespd = math.min(basespd, mv:GetMaxClientSpeed())
 
 	local shootmove = wpn:GetBuff("ShootSpeedMult")
