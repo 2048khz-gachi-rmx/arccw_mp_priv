@@ -496,6 +496,7 @@ function SWEP:GetBuff_Mult(buff)
 		if !k.Installed then continue end
 
 		local atttbl = ArcCW.AttachmentTable[k.Installed]
+		if not atttbl then continue end
 
 		if atttbl[buff] then
 			mult = mult * atttbl[buff]
@@ -583,6 +584,7 @@ function SWEP:GetBuff_Add(buff)
 		if !k.Installed then continue end
 
 		local atttbl = ArcCW.AttachmentTable[k.Installed]
+		if not atttbl then continue end
 
 		if atttbl[buff] then
 			add = add + atttbl[buff]
@@ -665,6 +667,7 @@ function SWEP:GetActiveElements(recache)
 		end
 
 		local atttbl = ArcCW.AttachmentTable[i.Installed]
+		if not atttbl then continue end
 
 		if atttbl.ActivateElements then
 			table.Add(eles, atttbl.ActivateElements)
@@ -1570,7 +1573,7 @@ function SWEP:ApplyAttachmentShootDamage()
 		if !i.Installed then continue end
 		local atttbl = ArcCW.AttachmentTable[i.Installed]
 
-		if !atttbl.Health then continue end
+		if !atttbl or !atttbl.Health then continue end
 
 		if atttbl.DamageOnShoot then
 			self:DamageAttachment(j, atttbl.DamageOnShoot)

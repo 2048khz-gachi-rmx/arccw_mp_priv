@@ -313,6 +313,7 @@ function SWEP:SetupModel(wm)
 		if !k.Installed then continue end
 
 		local atttbl = ArcCW.AttachmentTable[k.Installed]
+		if not atttbl then continue end
 
 		local slots = atttbl.Slot
 
@@ -738,6 +739,7 @@ function SWEP:DrawCustomModel(wm, origin, angle)
 			return
 		end
 	else
+		--if not IsPlayer(self:GetOwner()) then print(debug.traceback()) return end
 		if !self.VM then
 			self:SetupModel(wm)
 		end

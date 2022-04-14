@@ -152,6 +152,7 @@ function SWEP:Reload()
     for i, k in pairs(self.Attachments) do
         if !k.Installed then continue end
         local atttbl = ArcCW.AttachmentTable[k.Installed]
+        if !atttbl then continue end
 
         if atttbl.DamageOnReload then
             self:DamageAttachment(i, atttbl.DamageOnReload)

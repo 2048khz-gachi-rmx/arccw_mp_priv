@@ -584,6 +584,8 @@ function SWEP:GetRecoilFOV()
 end
 
 function SWEP:TranslateFOV(fov)
+	if not IsPlayer(self:GetOwner()) then return end
+
 	local t = self:GetTable()
 
 	local irons = self:GetActiveSights()
@@ -595,6 +597,7 @@ function SWEP:TranslateFOV(fov)
 	t.CurrentFOV = t.CurrentFOV or fov
 
 	local div = 1
+
 	local app_vm = t.ViewModelFOV + self:GetOwner():GetInfoNum("arccw_vm_fov", 0) + 10
 	local sght_vm = irons and irons.ViewModelFOV or 45
 

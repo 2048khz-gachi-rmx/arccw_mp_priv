@@ -31,14 +31,14 @@ end
 
 local clr = Color(0, 0, 0)
 local outlineClr = Color(0, 0, 0)
-local posCpy = Vector()
+local angT = Angle()
 
 function SWEP:DoDrawCrosshair(x, y)
 	--GCMark("acw crosshair")
 
 	local ply = LocalPlayer()
 	local pos = ply:EyePos()
-	posCpy:Set(pos)
+
 	local ang = ply:EyeAngles()
 	ang:Sub( self:GetOurViewPunchAngles() )
 	local dot = true
@@ -78,38 +78,16 @@ function SWEP:DoDrawCrosshair(x, y)
 
 	cw = cw or self
 
-	-- this feels like a troll
-
-	--[[
-	local sp
-	if self:GetOwner():ShouldDrawLocalPlayer() then
-		local tr = util.GetPlayerTrace( self:GetOwner() )
-		local trace = util.TraceLine( tr )
-
-		cam.Start3D()
-		local coords = trace.HitPos:ToScreen()
-		cam.End3D()
-		sp = { visible = true, x = coords.x, y = coords.y }
-	else
-
-		local fwd = ang:Forward()
-		fwd:Mul(3200)
-
-		posCpy:Add(fwd)
-
-		cam.Start3D()
-			sp = fwd:ToScreen()
-		cam.End3D()
-	end
-	]]
-
 	if GetConVar("arccw_crosshair_trueaim"):GetBool() then
 		aimtr.start = self:GetShootSrc()
 	else
 		aimtr.start = pos
 	end
 
-	local avec = ply:GetAimVector()
+	--angT:Set(ang)
+	--angT[1] = angT[1] - self:GetAimRecoil(true)
+
+	local avec = ply:GetAimVector() --angT:Forward()
 	avec:Mul(100000)
 
 	aimtr.endpos = aimtr.start + avec

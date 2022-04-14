@@ -1082,14 +1082,20 @@ function SWEP:CalculateVMPos(pos, ang)
 	end
 
 	local OF = oldang:ToForward(dirVec)
-	OF:Mul(-math.min(self.RecoilPunchBack, 1) * 1.5)
+
+	local bk = 1 - Ease(self:GetRecoilFrac(), 0.3)
+	OF:Mul(-math.min(bk, 1) * math.max(0.5, self:GetMaxRecoil()))
+
+	--OF:Mul(-math.min(self.RecoilPunchBack, 1) * 1.5)
 	pos:Add(OF)
 
 	-- position recoil only if not aiming through irons
 	local sght = self:GetActiveSights()
-	if sght and sght.HolosightModel and self:GetRecoil() ~= 0 then
+	local rec = self:GetAimRecoil(true)
+
+	if sght and sght.HolosightModel and rec ~= 0 then
 		local OU = oldang:ToUp(dirVec)
-		OU:Mul(self:GetRecoil() / 4)
+		OU:Mul(rec / 4)
 
 		pos:Add(OU)
 	end
