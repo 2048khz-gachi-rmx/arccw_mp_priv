@@ -644,23 +644,23 @@ end
 
 function SWEP:SetShouldHoldType()
 	if self:GetCurrentFiremode().Mode == 0 then
-		self:SetHoldType(self.HoldtypeHolstered)
+		self:ChangeHoldType(self.HoldtypeHolstered)
 		return
 	end
 
 	if self:GetState() == ArcCW.STATE_SIGHTS then
-		self:SetHoldType(self:GetBuff_Override("Override_HoldtypeSights") or self.HoldtypeSights)
+		self:ChangeHoldType(self:GetBuff_Override("Override_HoldtypeSights") or self.HoldtypeSights)
 	elseif self:GetState() == ArcCW.STATE_SPRINT then
 		if (self:GetBuff_Override("Override_ShootWhileSprint") or self.ShootWhileSprint) then
-			self:SetHoldType(self:GetBuff_Override("Override_HoldtypeActive") or self.HoldtypeActive)
+			self:ChangeHoldType(self:GetBuff_Override("Override_HoldtypeActive") or self.HoldtypeActive)
 		else
-			self:SetHoldType(self:GetBuff_Override("Override_HoldtypeHolstered") or self.HoldtypeHolstered)
+			self:ChangeHoldType(self:GetBuff_Override("Override_HoldtypeHolstered") or self.HoldtypeHolstered)
 		end
 	elseif self:GetState() == ArcCW.STATE_CUSTOMIZE then
-		self:SetHoldType(self:GetBuff_Override("Override_HoldtypeCustomize") or self.HoldtypeCustomize)
+		self:ChangeHoldType(self:GetBuff_Override("Override_HoldtypeCustomize") or self.HoldtypeCustomize)
 	elseif self:GetCurrentFiremode().Mode == 0 then
-		self:SetHoldType(self:GetBuff_Override("Override_HoldtypeHolstered") or self.HoldtypeHolstered)
+		self:ChangeHoldType(self:GetBuff_Override("Override_HoldtypeHolstered") or self.HoldtypeHolstered)
 	else
-		self:SetHoldType(self:GetBuff_Override("Override_HoldtypeActive") or self.HoldtypeActive)
+		self:ChangeHoldType(self:GetBuff_Override("Override_HoldtypeActive") or self.HoldtypeActive)
 	end
 end

@@ -109,6 +109,11 @@ end
 
 ArcCW_Icons = ArcCW_Icons or {}
 
+function SWEP:ChangeHoldType(to)
+	self:SetHoldType(to)
+	self:SetWeaponHoldType(to)
+end
+
 function SWEP:Initialize()
     if (!IsValid(self:GetOwner()) or self:GetOwner():IsNPC()) and self:IsValid() and self.NPC_Initialize and SERVER then
         self:NPC_Initialize()
@@ -162,7 +167,7 @@ function SWEP:Initialize()
     	v.key = k
     end
 
-    self:SetHoldType(self.HoldtypeActive)
+    self:ChangeHoldType(self.HoldtypeActive)
 
     local og = weapons.GetStored(self:GetClass())
 

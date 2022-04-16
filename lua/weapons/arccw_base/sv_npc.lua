@@ -8,7 +8,7 @@ function SWEP:NPC_Initialize()
 
     self:NPC_SetupAttachments()
 
-    self:SetHoldType(self.HoldtypeNPC or self:GetBuff_Override("Override_HoldtypeActive") or self.HoldtypeActive)
+    self:ChangeHoldType(self.HoldtypeNPC or self:GetBuff_Override("Override_HoldtypeActive") or self.HoldtypeActive)
 
     self:SetNextPrimaryFire(CurTime())
 
@@ -274,6 +274,7 @@ function SWEP:NPC_Shoot()
 
     self:SetClip1(self:Clip1() - 1)
 
+    self:GetOwner():QueueGesture(self:TranslateActivity(ACT_MP_ATTACK_STAND_PRIMARYFIRE))
     self:SetNextPrimaryFire(CurTime() + delay)
     if delay < 0.1 then
         self:GetOwner():NextThink(CurTime() + delay)
