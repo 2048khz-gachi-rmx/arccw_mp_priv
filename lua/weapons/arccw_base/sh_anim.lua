@@ -312,10 +312,13 @@ function SWEP:GetAnimKeyTime(key, min)
     if !self:GetOwner() then return 1 end
 
     local anim = self.Animations[key]
-
     if !anim then return 1 end
 
-    if self:GetOwner():IsNPC() then return anim.Time or 1 end
+    if self:GetOwner():IsNPC() or self:GetOwner():IsNextBot() then
+    	local ow = self:GetOwner()
+    	local seq = anim.TPAnim and ow:SelectWeightedSequence(anim.TPAnim)
+    	return anim.Time or (seq and ow:SequenceDuration(seq)) or 1
+    end
 
     local vm = self:GetOwner():GetViewModel()
 

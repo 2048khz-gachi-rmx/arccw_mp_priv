@@ -120,15 +120,12 @@ end
 
 function SWEP:NPC_Shoot()
     -- if self:GetNextPrimaryFire() > CurTime() then return end
-
     if !IsValid(self:GetOwner()) then return end
-    if self:Clip1() <= 0 then self:GetOwner():SetSchedule(SCHED_HIDE_AND_RELOAD) return end
+    if self:Clip1() <= 0 and self:IsNPC() then self:GetOwner():SetSchedule(SCHED_HIDE_AND_RELOAD) return end
 
     if self:GetOwner().ArcCW_Smoked then return end
 
-
-    self.Primary.Automatic = true
-
+    --self.Primary.Automatic = true
 
     local delay = self:GetFiringDelay()
 
@@ -145,7 +142,10 @@ function SWEP:NPC_Shoot()
     num = num + self:GetBuff_Add("Add_Num")
 
     if num > 0 then
+    	local hipdisp = self:GetBuff_Mult("Mult_HipDispersion") * self.HipDispersion
+    		/ 360 / 60 * 3
         local spread = ArcCW.MOAToAcc * self:GetBuff("AccuracyMOA")
+        spread = Lerp(self:GetSightDelta(), spread, hipdisp)
 
         local btabl = {
             Attacker = self:GetOwner(),
@@ -203,6 +203,8 @@ function SWEP:NPC_Shoot()
                 end
             end
         }
+
+        --debugoverlay.Line(btabl.Src, btabl.Src + btabl.Dir * 512, 0.4, Colors.Red)
 
         local sp = self:GetBuff_Override("Override_ShotgunSpreadPattern") or self.ShotgunSpreadPattern
         local spo = self:GetBuff_Override("Override_ShotgunSpreadPatternOverrun") or self.ShotgunSpreadPatternOverrun

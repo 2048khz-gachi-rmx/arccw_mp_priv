@@ -55,7 +55,8 @@ function ArcCW:SlotAcceptsAtt(slot, wep, att)
     if atttbl.Hidden or atttbl.Blacklisted or ArcCW.AttachmentBlacklistTable[att] then return false end
     if isstring(att) and hook.Run("ArcCW_ShouldShowAtt", att) == false then return false end
 
-    if (atttbl.NotForNPC or atttbl.NotForNPCs) and wep.Owner and wep.Owner:IsNPC() then
+    if (atttbl.NotForNPC or atttbl.NotForNPCs) and wep.Owner
+    	and wep.Owner:IsNPC() or wep.Owner:IsNextBot() then
         return false
     end
 

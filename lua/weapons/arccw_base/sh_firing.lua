@@ -11,7 +11,7 @@ function SWEP:CanPrimaryAttack()
 	if self:GetWeaponOpDelay() > CurTime() then return end
 
 	-- If we are an NPC, do our own little methods
-	if owner:IsNPC() then self:NPC_Shoot() return end
+	if owner:IsNPC() or owner:IsNextBot() then self:NPC_Shoot() return end
 
 	-- If we are in a UBGL, shoot the UBGL, not the gun
 	if self:GetInUBGL() then self:ShootUBGL() return end
@@ -611,13 +611,19 @@ function SWEP:GetFiringDelay()
 	local delay = (self.Delay * (1 / self:GetBuff_Mult("Mult_RPM")))
 	delay = self:GetBuff_Hook("Hook_ModifyRPM", delay) or delay
 
+	local auto = self:GetCurrentFiremode().Mode == 2
+
+	if self:GetOwner():IsNextBot() and !auto then
+		delay = delay * (1.6 + math.random() * 0.4)
+	end
+
 	return delay
 end
 
 function SWEP:GetShootSrc()
 	local owner = self:GetOwner()
 
-	if owner:IsNPC() then return owner:GetShootPos() end
+	if owner:IsNPC() or owner:IsNextBot() then return owner:GetShootPos() end
 
 	local dir    = owner:GetAimVector():Angle()
 	local offset = self:GetBuff_Override("Override_BarrelOffsetHip") or self.BarrelOffsetHip
@@ -754,7 +760,7 @@ function SWEP:DoShellEject(atti)
 
 	local vm = self
 
-	if !owner:IsNPC() then owner:GetViewModel() end
+	if !owner:IsNPC() and not owner:IsNextBot() then vm = owner:GetViewModel() end
 
 	local att = vm:GetAttachment(atti or self:GetBuff_Override("Override_CaseEffectAttachment") or self.CaseEffectAttachment or 2)
 

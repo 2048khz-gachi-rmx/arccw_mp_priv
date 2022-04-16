@@ -26,6 +26,15 @@ function SWEP:Think()
 
 	if !IsValid(owner) or owner:IsNPC() then return end
 
+	if owner:IsNextBot() then
+		if self:GetMagUpIn() != 0 and CurTime() > self:GetMagUpIn() then
+			self:WhenTheMagUpIn()
+			self:SetMagUpIn( 0 )
+		end
+
+		return
+	end
+
 	local vm = owner:GetViewModel()
 
 	self.BurstCount = self:GetBurstCount()
