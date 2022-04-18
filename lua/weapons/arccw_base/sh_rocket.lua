@@ -1,6 +1,12 @@
 function SWEP:FireRocket(ent, vel, ang, dontinheritvel)
     if CLIENT then return end
 
+    -- 	i cant speak for all usage so i'll play it safe
+
+    if isnumber(vel) then
+    	vel = math.Clamp(vel or 1000, -10000 * ArcCW.HUToM, 10000 * ArcCW.HUToM)
+    end
+
     local rocket = ents.Create(ent)
 
     ang = ang or self:GetOwner():EyeAngles()
