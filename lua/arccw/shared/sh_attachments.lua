@@ -1,21 +1,25 @@
 ArcCW.AttachmentBlacklistTable = ArcCW.AttachmentBlacklistTable or {}
 
 function ArcCW:PlayerCanAttach(ply, wep, attname, slot, detach)
+	local slotTbl
 
-    -- The global variable takes priority over everything
+	if isnumber(slot) then
+		slotTbl = wep.Attachments[slot]
+	end
+
+	-- The global variable takes priority over everything
     if !ArcCW.EnableCustomization then return false end
 
     -- Allow hooks to block or force allow attachment usage
-    local ret = hook.Run("ArcCW_PlayerCanAttach", ply, wep, attname, slot, detach)
+    local ret = hook.Run("ArcCW_PlayerCanAttach", ply, wep, attname, slot, detach, slotTbl)
+    if ret ~= nil then return ret end
 
     -- Followed by convar
-    if ret == nil and GetConVar("arccw_enable_customization"):GetInt() < 0 then return false end
+    if GetConVar("arccw_enable_customization"):GetInt() < 0 then return false end
 
-    if ret == nil and engine.ActiveGamemode() == "terrortown" then
-        local mode = GetConVar("arccw_ttt_customizemode"):GetInt()
-        if mode == 1 and !ply.ArcCW_AllowCustomize then return false
-        elseif mode == 2 and !ply.ArcCW_AllowCustomize and GetRoundState() == ROUND_ACTIVE then return false
-        elseif mode == 3 and !ply.ArcCW_AllowCustomize and !ply:IsActiveTraitor() and !ply:IsActiveDetective() then return false end
+    local cflags = wep:CheckFlags(slotTbl.ExcludeFlags, slotTbl.RequireFlags)
+    if !detach and slotTbl and !cflags then
+    	return false, true
     end
 
     return (ret == nil and true) or ret
@@ -51,7 +55,8 @@ function ArcCW:SlotAcceptsAtt(slot, wep, att)
     if atttbl.Hidden or atttbl.Blacklisted or ArcCW.AttachmentBlacklistTable[att] then return false end
     if isstring(att) and hook.Run("ArcCW_ShouldShowAtt", att) == false then return false end
 
-    if (atttbl.NotForNPC or atttbl.NotForNPCs) and wep.Owner and wep.Owner:IsNPC() then
+    if (atttbl.NotForNPC or atttbl.NotForNPCs) and wep.Owner
+    	and wep.Owner:IsNPC() or wep.Owner:IsNextBot() then
         return false
     end
 

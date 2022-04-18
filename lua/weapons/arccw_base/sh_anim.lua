@@ -224,9 +224,11 @@ function SWEP:PlayAnimation(key, mult, pred, startfrom, tt, skipholster, ignorer
         -- Hack to fix an issue with playing one anim multiple times in a row
         -- Provided by Jackarunda
         local resetSeq = anim.HardResetAnim and vm:LookupSequence(anim.HardResetAnim)
+
         if resetSeq then
             vm:SendViewModelMatchingSequence(resetSeq)
             vm:SetPlaybackRate(0.1)
+
             timer.Simple(0, function()
                 vm:SendViewModelMatchingSequence(seq)
                 local dur = vm:SequenceDuration()
@@ -266,6 +268,8 @@ function SWEP:PlayAnimation(key, mult, pred, startfrom, tt, skipholster, ignorer
     self:PlaySoundTable(anim.SoundTable or {}, 1 / mult, startfrom)
 
     self:SetNextIdle(CurTime() + ttime)
+
+    return true
 end
 
 function SWEP:PlayIdleAnimation(pred)
@@ -299,7 +303,7 @@ function SWEP:PlayIdleAnimation(pred)
         ianim = ianim or "idle"
     end
 
-    self:PlayAnimation(ianim, 1, pred, nil, nil, nil, true)
+    local ok = self:PlayAnimation(ianim, 1, pred, nil, nil, nil, true)
 end
 
 SWEP._PlayIdleAnimationAt = 0
@@ -308,10 +312,13 @@ function SWEP:GetAnimKeyTime(key, min)
     if !self:GetOwner() then return 1 end
 
     local anim = self.Animations[key]
-
     if !anim then return 1 end
 
-    if self:GetOwner():IsNPC() then return anim.Time or 1 end
+    if self:GetOwner():IsNPC() or self:GetOwner():IsNextBot() then
+    	local ow = self:GetOwner()
+    	local seq = anim.TPAnim and ow:SelectWeightedSequence(anim.TPAnim)
+    	return anim.Time or (seq and ow:SequenceDuration(seq)) or 1
+    end
 
     local vm = self:GetOwner():GetViewModel()
 

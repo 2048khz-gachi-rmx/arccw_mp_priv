@@ -1808,12 +1808,13 @@ do
 	att.Override_Firemodes = {
 	    {
 	        Mode = -2,
-	        Mult_RPM = 3,
+	        Mult_RPM = 2,
 	        Mult_AccuracyMOA = 1.5,
 	        RunawayBurst = true,
-	        PostBurstDelay = 0.25,
+	        PostBurstDelay = 0.1,
 	        Override_ShotRecoilTable = {
-	            [1] = 0.25
+	            [0] = 0.25,
+	            [1] = 1.25,
 	        }
 	    },
 	    {
@@ -2119,9 +2120,9 @@ do
 	att.InvAtt = "muzz_widechoke"
 	att.SortOrder = 30
 
-	att.Mult_Recoil = 0.8
-	att.Mult_HipDispersion = 0.1
-	att.Mult_AccuracyMOA = 2.5
+	att.Mult_Recoil = 0.7
+	att.Mult_HipDispersion = 0.2
+	att.Mult_AccuracyMOA = 1.5
 
 	att.Hook_Compatible = function(wep)
 	    if !wep:GetIsShotgun() then return false end

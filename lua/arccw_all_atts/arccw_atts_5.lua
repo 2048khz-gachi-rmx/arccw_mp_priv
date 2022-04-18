@@ -253,7 +253,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 10, -0.965102),
+	        Pos = Vector(0, 8, -0.98),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 1.1,
 	        ScrollFunc = ArcCW.SCROLL_NONE,
@@ -588,7 +588,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 12, -1.95),
+	        Pos = Vector(0, 10, -1.95),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 4,
 	        ScrollFunc = ArcCW.SCROLL_ZOOM,
@@ -653,7 +653,7 @@ do
 
 	att.Holosight = true
 	att.HolosightReticle = Material("hud/holosight/go_aimpoint.png", "mips smooth")
-	att.HolosightSize = 0.25
+	att.HolosightSize = 0.18
 	att.HolosightBone = "holosight"
 
 	att.Mult_SightTime = 1.01
@@ -2588,9 +2588,10 @@ do
 
 	att.ActivateElements = {"buftube"}
 
-	att.Mult_SightTime = 1.25
-	att.Mult_Recoil = 0.9
-	att.Mult_MoveDispersion = 1.15
+	att.Mult_SightTime = 1.3
+	att.Mult_Recoil = 0.8
+	att.Mult_MoveSpeed = 0.9
+	att.Mult_MoveDispersion = 1.2
 	ArcCW.LoadAttachmentType(att)
 end
 

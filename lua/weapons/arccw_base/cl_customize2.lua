@@ -64,12 +64,12 @@ function SWEP:GetSlotInstalled(i)
     return installed
 end
 
-local function LerpColor(d, col1, col2)
-    local r = Lerp(d, col1.r, col2.r)
-    local g = Lerp(d, col1.g, col2.g)
-    local b = Lerp(d, col1.b, col2.b)
-    local a = Lerp(d, col1.a, col2.a)
-    return Color(r, g, b, a)
+local function LerpColor(d, col1, col2, into)
+    into.r = Lerp(d, col1.r, col2.r)
+    into.g = Lerp(d, col1.g, col2.g)
+    into.b = Lerp(d, col1.b, col2.b)
+    into.a = Lerp(d, col1.a, col2.a)
+    return into
 end
 
 local function DrawTextRot(span, txt, x, y, tx, ty, maxw, only)
@@ -163,22 +163,34 @@ function ArcCW.RestoreCursor()
 end
 
 function SWEP:CreateCustomize2HUD()
-    local col_fg = Color(255, 255, 255, 255)
-    local col_fg_tr = Color(255, 255, 255, 125)
-    local col_shadow = Color(0, 0, 0, 255)
-    local col_button = Color(0, 0, 0, 175)
+    local trk = {}
 
-    local col_block = Color(50, 0, 0, 175)
-    local col_block_txt = Color(175, 10, 10, 255)
+    local function addTrkCol(...)
+        local c = Color(...)
+        trk[c] = c.a or 255
 
-    if GetConVar("arccw_attinv_darkunowned"):GetBool() then
-        col_block = Color(0, 0, 0, 100)
-        col_block_txt = Color(10, 10, 10, 255)
+        return c
     end
 
-    local col_bad = Color(255, 50, 50, 255)
-    local col_good = Color(100, 255, 100, 255)
-    local col_info = Color(150, 150, 255, 255)
+    local col_fg = addTrkCol(255, 255, 255, 255)
+    local col_fg_tr = addTrkCol(255, 255, 255, 125)
+    local col_shadow = addTrkCol(0, 0, 0, 255)
+    local col_button = addTrkCol(0, 0, 0, 175)
+
+    local col_block = addTrkCol(50, 0, 0, 175)
+    local col_block_txt = addTrkCol(175, 10, 10, 255)
+
+    local col_unav = addTrkCol(20, 20, 20, 85)
+    local col_unav_txt = addTrkCol(250, 250, 250, 120)
+
+    if GetConVar("arccw_attinv_darkunowned"):GetBool() then
+        col_block = addTrkCol(0, 0, 0, 100)
+        col_block_txt = addTrkCol(10, 10, 10, 255)
+    end
+
+    local col_bad = addTrkCol(255, 50, 50, 255)
+    local col_good = addTrkCol(100, 255, 100, 255)
+    local col_info = addTrkCol(150, 150, 255, 255)
 
     ArcCW.Inv_ShownAtt = nil
 
@@ -280,18 +292,10 @@ function SWEP:CreateCustomize2HUD()
         surface.SetMaterial(grad)
         surface.DrawTexturedRect(0, 0, ScrW(), ScrH())]]
 
+        --self2:SetAlpha(ArcCW.Inv_Fade * 255)
 
-        col_fg = Color(255, 255, 255, Lerp(ArcCW.Inv_Fade, 0, 255))
-        col_fg_tr = Color(255, 255, 255, Lerp(ArcCW.Inv_Fade, 0, 125))
-        col_shadow = Color(0, 0, 0, Lerp(ArcCW.Inv_Fade, 0, 255))
-        col_button = Color(0, 0, 0, Lerp(ArcCW.Inv_Fade, 0, 175))
-
-        if GetConVar("arccw_attinv_darkunowned"):GetBool() then
-            col_block = Color(0, 0, 0, Lerp(ArcCW.Inv_Fade, 0, 100))
-            col_block_txt = Color(10, 10, 10, Lerp(ArcCW.Inv_Fade, 0, 255))
-        else
-            col_block = Color(50, 0, 0, 175 * ArcCW.Inv_Fade)
-            col_block_txt = Color(175, 10, 10, Lerp(ArcCW.Inv_Fade, 0, 255))
+        for k,v in pairs(trk) do
+            k.a = v * ArcCW.Inv_Fade
         end
 
         --col_bad = Color(255, 50, 50, 255 * ArcCW.Inv_Fade)
@@ -318,7 +322,7 @@ function SWEP:CreateCustomize2HUD()
                 self:ToggleCustomizeHUD(false)
             end
         end
-
+        -- e
         ArcCW.RememberCursor()
         gui.EnableScreenClicker(false)
 
@@ -727,9 +731,13 @@ function SWEP:CreateCustomize2HUD()
         for _, y in pairs(slots) do
             for _, bruh in pairs(ArcCW:GetAttsForSlot((self.Attachments[y] or {}).Slot, self)) do
                 if attCheck[bruh] then continue end
+                local show, _, block = self:ValidateAttachment(bruh, nil, y)
+                if not show then continue end
+
                 table.insert(atts, {
                     att = bruh,
-                    slot = y
+                    slot = y,
+                    blocked = block
                 })
                 attCheck[bruh] = true
             end
@@ -741,6 +749,19 @@ function SWEP:CreateCustomize2HUD()
         }
 
         table.sort(atts, function(a, b)
+            local ab, bb = a.blocked, b.blocked
+
+            if not ab and bb then return true end
+            if ab and not bb then return false end
+
+            if ab and bb then
+                local n1, n2 = isnumber(ab) and ab, isnumber(bb) and bb
+
+                -- number blocked get more priority
+                if n1 and not n2 then return true end
+                if n2 and not n1 then return false end
+            end
+
             a = a.att or ""
             b = b.att or ""
             local atttbl_a = ArcCW.AttachmentTable[a]
@@ -784,9 +805,11 @@ function SWEP:CreateCustomize2HUD()
                 if self2.att == "" then
                     self2:DoRightClick()
                 else
-                    self:Attach(self2.attslot, self2.att)
-                    ArcCW.Inv_ShownAtt = nil -- Force a regen on the panel so we can see toggle/slider options
-                    ArcCW.InvHUD_FormAttachmentStats(self2.att, self2.attslot, true)
+                    local ok = self:Attach(self2.attslot, self2.att)
+                    if ok then
+                        ArcCW.Inv_ShownAtt = nil -- Force a regen on the panel so we can see toggle/slider options
+                        ArcCW.InvHUD_FormAttachmentStats(self2.att, self2.attslot, true)
+                    end
                 end
             end
             button.DoRightClick = function(self2)
@@ -818,12 +841,28 @@ function SWEP:CreateCustomize2HUD()
                 local owned = ArcCW:PlayerGetAtts(self:GetOwner(), att.att) > 0
 
                 if blocked or (!owned and installed != self2.att) then
-                    col = col_block
-                    col2 = col_block_txt
+                    
+                    if blocked == 2 then
+                        col = col_unav
+                        col2 = col_unav_txt
+                    else
+                        col = col_block
+                        col2 = col_block_txt
+                    end
                 end
 
                 if !owned and installed != self2.att then
                     showqty = false
+                end
+
+                if blocked == 2 then
+                    local sc = 0.15
+                    local u = (-CurTime() * sc % (1 / sc)) * sc
+
+                    surface.SetDrawColor(0, 0, 0, ArcCW.Inv_Fade * 100)
+                    surface.DrawUVMaterial("https://i.imgur.com/y9uYf4Y.png",
+                        "whitestripes.png", 0, 0, w, h,
+                        u, 0, u + 0.4, 0.125 / 2)
                 end
 
                 draw.RoundedBox(cornerrad, 0, 0, w, h, col)
@@ -1415,6 +1454,34 @@ function SWEP:CreateCustomize2HUD()
             pan_infos:SetPos(0, h)
             pan_infos:SizeToChildren(true, true)
         end
+
+        local pan_add = vgui.Create("DPanel", scroll_pros)
+        pan_add:SetSize(ArcCW.InvHUD_Menu3:GetWide(), rss * 16)
+        pan_add:SetPos(0, math.max(pan_pros:GetTall(), pan_cons:GetTall(),
+            #infos > 0 and pan_infos.Y + pan_infos:GetTall() or 0) + 16)
+        pan_add.Paint = nil
+
+        local sep = vgui.Create("Panel", pan_add)
+        sep:Dock(TOP)
+        sep:SetTall(4)
+
+        function sep:Paint(w, h)
+            surface.SetDrawColor(Colors.DarkGray)
+            surface.DrawRect(w * 0.15 - 1, 0, w * 0.7 + 2, 4)
+
+            surface.SetDrawColor(Colors.White)
+            surface.DrawRect(w * 0.15, 1, w * 0.7, 2)
+        end
+
+        hook.Run("ArcCW_CL_GenAttInfo", pan_add, atttbl, att, self, slot)
+
+        pan_add:InvalidateLayout(true)
+        --[[local y = 0
+        for k,v in ipairs(pan_add:GetChildren()) do
+            y = math.max(y, v.Y + v:GetTall())
+        end]]
+
+        pan_add:SizeToChildren(false, true)
     end
 
     function ArcCW.InvHUD_FormStatsTriviaBar()
@@ -1932,7 +1999,10 @@ function SWEP:CreateCustomize2HUD()
                 x_3 = w / 2
             end
 
-            local col_vline = LerpColor(0.5, col_fg, Color(0, 0, 0, 0))
+            local fuck = lazy.GetSet("acw_wtf", Color, 0, 0, 0, 0)
+            local dick = lazy.GetSet("acw_wtf2", Color, 0, 0, 0, 0)
+            dick:Set(col_fg)
+            local col_vline = LerpColor(0.5, col_fg, fuck, dick)
 
             surface.SetDrawColor(col_vline)
 

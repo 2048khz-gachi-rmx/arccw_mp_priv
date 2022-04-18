@@ -4,6 +4,17 @@ local function ScreenScaleMulti(input)
     return ScreenScale(input) * GetConVar("arccw_hud_size"):GetFloat()
 end
 
+ArcCW.Colors = ArcCW.Colors or {}
+
+local function clr(k, r, g, b, a)
+    local c = ArcCW.Colors[k]
+    if c then c:Set(r, g, b, a) return c end
+
+    c = Color(r, g, b, a)
+    ArcCW.Colors[k] = c
+    return c
+end
+
 local temp = 0
 local SolidBlack = Color(temp, temp, temp)
 -- don't fucking mess with the shadow, makes the menu hurt your goddamn eyes
@@ -54,9 +65,15 @@ function SWEP:CanOpenCustomize()
         (self:GetOwner():IsPlayer() and not self:GetOwner():KeyDown(IN_SPEED))
 end
 
+SWEP.LastEnterCustomize = 0
+SWEP.LastExitCustomize = 0
+
 function SWEP:ToggleCustomizeHUD(ic)
     if ic then
-        if not self:CanOpenCustomize() then print('cant', Realm()) return end
+        if not self:CanOpenCustomize() then return end
+
+        self.LastEnterCustomize = UnPredictedCurTime()
+        self.VM_CustChange = self.VM_CustCurrent
 
         self:SetCustomizing(true)
         self:SetState(ArcCW.STATE_CUSTOMIZE)
@@ -70,6 +87,9 @@ function SWEP:ToggleCustomizeHUD(ic)
             self:OpenCustomizeHUD()
         end
     else
+        self.LastExitCustomize = UnPredictedCurTime()
+        self.VM_CustChange = self.VM_CustCurrent
+
         self:SetCustomizing(false)
         self:SetState(ArcCW.STATE_IDLE)
 
@@ -200,21 +220,36 @@ function SWEP:ValidateAttachment(attname, attslot, i)
         end
     end
 
-    for _, slot in pairs(attslot.MergeSlots or {}) do
-        if !slot then continue end
-        if !self.Attachments[slot] then continue end
-        if !blocked and ArcCW:SlotAcceptsAtt(self.Attachments[slot], self, attname) and
-                !self:CheckFlags(self.Attachments[slot].ExcludeFlags, self.Attachments[slot].RequireFlags) and
-                !orighas then
-            blocked = true
-            if self.Attachments[slot].HideIfBlocked then
-                show = false
+    local hkHide, hkBlock = hook.Run("ArcCW_CL_AttAllowed", attname, attslot)
+    if hkHide then return false end
+
+    if hkBlock then
+        blocked = true
+    end
+
+    local can, soft = ArcCW:PlayerCanAttach(CachedLocalPlayer(), self, attname, i, false)
+
+    if not blocked and not can then
+        blocked = soft and 2 or true
+    end
+
+    if attslot.MergeSlots then
+        for _, slot in pairs(attslot.MergeSlots or {}) do
+            if !slot then continue end
+            if !self.Attachments[slot] then continue end
+            if !blocked and ArcCW:SlotAcceptsAtt(self.Attachments[slot], self, attname) and
+                    !self:CheckFlags(self.Attachments[slot].ExcludeFlags, self.Attachments[slot].RequireFlags) and
+                    !orighas then
+                blocked = true
+                if self.Attachments[slot].HideIfBlocked then
+                    show = false
+                end
+                break
             end
-            break
-        end
-        if self.Attachments[slot].Installed == attname then
-            installed = true
-            break
+            if self.Attachments[slot].Installed == attname then
+                installed = true
+                break
+            end
         end
     end
 
@@ -1009,6 +1044,7 @@ function SWEP:CreateCustomizeHUD()
                 if !owned and GetConVar("arccw_attinv_hideunowned"):GetBool() then continue end
 
                 local valid, installed, blocked, showqty = self:ValidateAttachment(att, k, i)
+                local soft = blocked == 2
 
                 if !valid then continue end
 
@@ -1077,15 +1113,19 @@ function SWEP:CreateCustomizeHUD()
                     attcatb_regen(span)
                 end
 
+                local Bfg_col = Color(255, 255, 255, 255)
+                local Bbg_col = Color(0, 0, 0, 100)
+
                 attbtn.Paint = function(spaa, w, h)
                     if !self:IsValid() then return end
                     if !self.Attachments then return end
-                    local Bfg_col = Color(255, 255, 255, 255)
-                    local Bbg_col = Color(0, 0, 0, 100)
+
                     local atttbl = ArcCW.AttachmentTable[spaa.AttName]
                     local qty = ArcCW:PlayerGetAtts(self:GetOwner(), spaa.AttName)
 
                     valid, installed, blocked, showqty = self:ValidateAttachment(att, k, i)
+                    soft = blocked == 2
+
                     if !valid then
                         attbtn:Remove()
                         return
@@ -1103,35 +1143,37 @@ function SWEP:CreateCustomizeHUD()
                         }
                     end
 
-                    if spaa:IsHovered() or installed then
-                        Bbg_col = Color(255, 255, 255, 100)
-                        Bfg_col = Color(0, 0, 0, 255)
+                    local hov = spaa:IsHovered()
+
+                    if hov or installed then
+                        Bbg_col:Set(255, 255, 255, 100)
+                        Bfg_col:Set(0, 0, 0, 255)
                     end
 
-                    if spaa:IsHovered() and installed then
-                        Bbg_col = Color(255, 255, 255, 200)
-                        Bfg_col = Color(0, 0, 0, 255)
+                    if hov and installed then
+                        Bbg_col:Set(255, 255, 255, 200)
+                        Bfg_col:Set(0, 0, 0, 255)
                     end
 
-                    if spaa:IsHovered() then
+                    if hov then
                         atttrivia_do(spaa.AttName, i)
                     end
 
                     if !owned and GetConVar("arccw_attinv_darkunowned"):GetBool() then
-                        if spaa:IsHovered() then
-                            Bbg_col = Color(50, 50, 50, 150)
-                            Bfg_col = Color(150, 150, 150, 255)
+                        if hov then
+                            Bbg_col:Set(50, 50, 50, 150)
+                            Bfg_col:Set(150, 150, 150, 255)
                         else
-                            Bbg_col = Color(20, 20, 20, 150)
-                            Bfg_col = Color(150, 150, 150, 255)
+                            Bbg_col:Set(20, 20, 20, 150)
+                            Bfg_col:Set(150, 150, 150, 255)
                         end
                     elseif !owned or blocked then
-                        if spaa:IsHovered() then
-                            Bbg_col = Color(125, 25, 25, 150)
-                            Bfg_col = Color(150, 50, 50, 255)
+                        if hov then
+                            Bbg_col:Set(125, 25, 25, 150)
+                            Bfg_col:Set(150, 90, 90, 255)
                         else
-                            Bbg_col = Color(75, 0, 0, 150)
-                            Bfg_col = Color(150, 50, 50, 255)
+                            Bbg_col:Set(75, 0, 0, 150)
+                            Bfg_col:Set(150, 90, 90, 255)
                         end
                     end
 
@@ -1148,11 +1190,11 @@ function SWEP:CreateCustomizeHUD()
 
                         if amt >= max and self.Attachments[i].Installed != spaa.AttName then
                             if spaa:IsHovered() then
-                                Bbg_col = Color(125, 25, 25, 150)
-                                Bfg_col = Color(150, 50, 50, 255)
+                                Bbg_col:Set(125, 25, 25, 150)
+                                Bfg_col:Set(150, 50, 50, 255)
                             else
-                                Bbg_col = Color(75, 0, 0, 150)
-                                Bfg_col = Color(150, 50, 50, 255)
+                                Bbg_col:Set(75, 0, 0, 150)
+                                Bfg_col:Set(150, 50, 50, 255)
                             end
                         end
                     end

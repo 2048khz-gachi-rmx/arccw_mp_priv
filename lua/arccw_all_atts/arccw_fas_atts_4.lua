@@ -2353,7 +2353,7 @@ do
 	att.HolosightMagnificationMax = 4
 	att.HolosightReticle = Material("mifl_fas2_reticle/acog2.png", "mips smooth")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 13
+	att.HolosightSize = 10
 	att.HolosightBone = "holosight"
 	att.Colorable = true
 	att.HolosightBlackbox = true
@@ -2449,7 +2449,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 17, -1.25),
+	        Pos = Vector(0, 12, -1.25),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 2,
 	        ScopeMagnification = 2,
@@ -2472,7 +2472,7 @@ do
 	        IgnoreExtra = true,
 	    },
 	    {
-	        Pos = Vector(0, 17, -1.25),
+	        Pos = Vector(0, 12.5, -1.25),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 2,
 	        ScopeMagnification = 2,
@@ -2537,6 +2537,7 @@ end
 ------
 
 do
+	--[[
 	local att = {}
 	ArcCW.SetShortName("mifl_fas2_optic_g36")
 
@@ -2577,6 +2578,7 @@ do
 	att.ModelScale = Vector(2.2, 2.2, 2.2)
 	att.ModelOffset = Vector(0, 0, -0.1)
 	ArcCW.LoadAttachmentType(att)
+	]]
 end
 
 ------
@@ -2607,7 +2609,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 12, -1.6),
+	        Pos = Vector(0, 9, -1.63),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 1.5,
 	        ScrollFunc = ArcCW.SCROLL_ZOOM,
@@ -2622,7 +2624,7 @@ do
 	att.HolosightMagnificationMax = 8
 	att.HolosightReticle = Material("mifl_fas2_reticle/mildot.png", "mips smooth")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 11
+	att.HolosightSize = 14
 	att.HolosightBone = "holosight"
 	att.Colorable = false
 	att.HolosightBlackbox = true

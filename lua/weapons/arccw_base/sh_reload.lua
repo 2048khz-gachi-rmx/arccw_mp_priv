@@ -20,6 +20,7 @@ function SWEP:SetClipInfo(load)
 end
 
 function SWEP:Reload()
+	local bot = self:GetOwner():IsNextBot()
 
     if self:GetOwner():IsNPC() then
         return
@@ -32,6 +33,7 @@ function SWEP:Reload()
     end
 
     if self:GetNextPrimaryFire() >= CurTime() then return end
+
     --if self:GetNextSecondaryFire() > CurTime() then return end
         -- don't succumb to
                 -- californication
@@ -55,13 +57,16 @@ function SWEP:Reload()
     if self:HasBottomlessClip() then return end
 
     -- with the lite 3D HUD, you may want to check your ammo without reloading
-    local Lite3DHUD = self:GetOwner():GetInfo("arccw_hud_3dfun") == "1"
-    if self:GetOwner():KeyDown(IN_WALK) and Lite3DHUD then
-        return
-    end
 
-    -- Don't accidently reload when changing firemode
-    if self:GetOwner():GetInfoNum("arccw_altfcgkey", 0) == 1 and self:GetOwner():KeyDown(IN_USE) then return end
+    if not bot then
+    	local Lite3DHUD = self:GetOwner():GetInfo("arccw_hud_3dfun") == "1"
+	    if self:GetOwner():KeyDown(IN_WALK) and Lite3DHUD then
+	        return
+	    end
+
+	    -- Don't accidently reload when changing firemode
+	    if self:GetOwner():GetInfoNum("arccw_altfcgkey", 0) == 1 and self:GetOwner():KeyDown(IN_USE) then return end
+	end
 
     if self:Ammo1() <= 0 then return end
 
@@ -152,6 +157,7 @@ function SWEP:Reload()
     for i, k in pairs(self.Attachments) do
         if !k.Installed then continue end
         local atttbl = ArcCW.AttachmentTable[k.Installed]
+        if !atttbl then continue end
 
         if atttbl.DamageOnReload then
             self:DamageAttachment(i, atttbl.DamageOnReload)

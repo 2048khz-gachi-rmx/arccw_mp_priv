@@ -17,7 +17,7 @@ function SWEP:DoLaser(world)
     if world then
         cam.Start3D()
     else
-        cam.Start3D(EyePos(), EyeAngles(), self.CurrentViewModelFOV)
+        cam.Start3D(nil, nil, self.CurrentViewModelFOV)
     end
 
     for slot, k in pairs(self.Attachments) do
@@ -55,17 +55,18 @@ function SWEP:DoLaser(world)
     cam.End3D()
 end
 
+local tlOut, trOut = {}, {}
+
 function SWEP:DrawLaser(laser, model, color, world)
     local owner = self:GetOwner()
     local behav = ArcCW.LaserBehavior
 
     if !owner then return end
-
-    if !IsValid(owner) then return end
+    if !owner:IsValid() then return end
 
     if !model then return end
 
-    if !IsValid(model) then return end
+    if !model:IsValid() then return end
 
     local att = model:LookupAttachment(laser.LaserBone or "laser")
 
@@ -87,17 +88,22 @@ function SWEP:DrawLaser(laser, model, color, world)
         dir = owner:IsNPC() and (-ang:Right()) or dir
     else
         ang:RotateAroundAxis(ang:Up(), 90)
-
         dir = ang:Forward()
 
-        local eyeang   = self:GetOwner():EyeAngles() - self:GetOurViewPunchAngles()
+        local eyeang   = owner:EyeAngles()
+        local va = self:GetOurViewPunchAngles()
+        -- this makes no sense due to fov, but we cant just start a proper 3d context
+        eyeang[1] = eyeang[1] - self:GetAimRecoil() * 0.4
+        eyeang[2] = eyeang[2] + va[2] * 0.4
+
         local canlaser = self:GetCurrentFiremode().Mode != 0 and !self:GetReloading() and self:BarrelHitWall() <= 0
 
-        delta = Lerp(0, delta, canlaser and self:GetSightDelta() or 1)
+        delta = canlaser and self:GetSightDelta() or 1
 
-        if self.GuaranteeLaser then delta = 1 end
+        -- whats the point of this?
+        --if self.GuaranteeLaser then delta = 1 end
 
-        dir = Lerp(delta, eyeang:Forward(), dir)
+        dir = LerpVector(delta, eyeang:Forward(), dir)
     end
 
     local beamdir, tracepos = dir, pos
@@ -108,23 +114,34 @@ function SWEP:DrawLaser(laser, model, color, world)
         -- local cheap = GetConVar("arccw_cheapscopes"):GetBool()
         local punch = self:GetOurViewPunchAngles()
 
-        ang = self:GetOwner():EyeAngles() - punch
+        ang   = owner:EyeAngles()
+        ang[1] = ang[1] - self:GetRecoil() * -2
+        ang[2] = ang[2] + punch[2] * 1
 
-        tracepos = EyePos() - Vector(0, 0, 1)
+        tracepos = EyePos()
+        tracepos[3] = tracepos[3] - 1
         pos, dir = tracepos, ang:Forward()
         beamdir  = dir
     end
 
     local dist = 128
 
+    dir:Mul(33000)
+
+    local v2 = lazy.GetSet("laservec", Vector)
+    v2:Set(tracepos)
+    v2:Add(dir)
+
     local tl = {}
     tl.start  = tracepos
-    tl.endpos = tracepos + (dir * 33000)
+    tl.endpos = v2
     tl.filter = owner
+    tl.output = tlOut
 
     local tr = util.TraceLine(tl)
 
     tl.endpos = tracepos + (beamdir * dist)
+    tl.output = trOut
 
     local btr = util.TraceLine(tl)
 
@@ -135,7 +152,7 @@ function SWEP:DrawLaser(laser, model, color, world)
     local strength = laser.LaserStrength or 1
     local laserpos = solid and tr.StartPos or hitpos
 
-    laserpos = laserpos - (EyeAngles():Forward())
+    laserpos:Sub(EyeVector())
 
     if solid then return end
 

@@ -5,6 +5,7 @@ hook.Add("CreateTeams", "ArcCW_TrueNames", function()
         local wpn = weapons.GetStored(i.ClassName)
 
         if wpn.TrueName then
+        	wpn.FakeName = wpn.PrintName
             wpn.PrintName = wpn.TrueName
         end
     end

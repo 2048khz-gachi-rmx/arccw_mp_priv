@@ -2852,7 +2852,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 10, -1.26295),
+	        Pos = Vector(0, 8, -1.29),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 1.1,
 	        ScrollFunc = ArcCW.SCROLL_NONE,
@@ -2863,7 +2863,7 @@ do
 	att.Holosight = true
 	att.HolosightReticle = Material("hud/holosight/go_cmore.png", "mips smooth")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 2
+	att.HolosightSize = 1.3
 	att.HolosightBone = "holosight"
 
 	att.Mult_SightTime = 1.01

@@ -972,7 +972,7 @@ do
 
 	att.Mult_Recoil = 0.95
 
-	att.Mult_RPM = 1.5
+	--att.Mult_RPM = 1.5
 
 	att.Mult_ShootPitch = 0.95
 
@@ -2233,7 +2233,7 @@ do
 	local att = {}
 	ArcCW.SetShortName("go_foregrip_stubby")
 
-	att.PrintName = "Stubby Foregrip"
+	att.PrintName = "Short Foregrip"
 	att.Icon = Material("entities/acwatt_go_foregrip_stubby.png", "mips smooth")
 	att.Description = "Short foregrip offering marginally better weapon control, particularly in the lateral direction."
 
@@ -2253,7 +2253,7 @@ do
 	att.Mult_RecoilSide = 0.85
 
 	att.Mult_SightTime = 1.05
-	att.Mult_HipDispersion = 0.95
+	att.Mult_HipDispersion = 0.8
 	att.Mult_SpeedMult = 0.975
 
 	att.Override_HoldtypeActive = "smg"
