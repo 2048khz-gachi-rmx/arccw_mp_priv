@@ -173,11 +173,13 @@ function SWEP:CoolView(ply, pos, ang, fov)
 	local att = self:GetBuff_Override("Override_CamAttachment") or self.CamAttachment
 
 	if att and (!game.SinglePlayer() or SERVER) then
-		local attang = vm:GetAttachment(att).Ang
+		local attang = vm:GetAttachment(att)
 
-		attang = vm:WorldToLocalAngles(attang)
-		ang:Add(attang)
-		ang:Sub(self.Cam_Offset_Ang)
+		if attang then
+			attang = vm:WorldToLocalAngles(attang.Ang)
+			ang:Add(attang)
+			ang:Sub(self.Cam_Offset_Ang)
+		end
 		return
 	end
 
