@@ -75,12 +75,13 @@ function SWEP:ToggleCustomizeHUD(ic)
         self.LastEnterCustomize = UnPredictedCurTime()
         self.VM_CustChange = self.VM_CustCurrent
 
-        self:SetCustomizing(true)
-        self:SetState(ArcCW.STATE_CUSTOMIZE)
-
         self:ExitSights()
         self:SetShouldHoldType()
         self:ExitBipod()
+
+        self:SetCustomizing(true)
+        self:SetState(ArcCW.STATE_CUSTOMIZE)
+
         self:PlayAnimation(self:SelectAnimation("enter_inspect"), nil, true, nil, nil, true, false)
 
         if CLIENT then
