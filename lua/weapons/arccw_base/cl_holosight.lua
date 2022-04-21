@@ -643,6 +643,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	ang:RotateAroundAxis(ang:Forward(), -90)
 
 	local dir = ang:Up()
+	local posDelta = 1 - self.VM_SightsCurrent
 
 	local ep = EyePos()
 
@@ -650,10 +651,16 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	local d = (8 + pdiff)
 	d = hs.HolosightConstDist or d
 
-	pos = LerpVector(delta, ep, pos)
+	if self:GetReloading() then
+		local left = self:GetReloadingREAL() - CurTime()
+		local relFr = math.RemapClamp(left, 0.3, 0.7, 0, 1)
+		posDelta = Ease(relFr, 0.2)
+	end
+
+	pos = LerpVector(posDelta, ep, pos)
 
 	local vpA = self:GetOurViewPunchAngles()
-	local eyeangs = EyeAngles() -- + vpA
+	local eyeangs = EyeAngles()
 
 	local v, h = self:GetAimRecoil(true)
 
@@ -664,13 +671,14 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 		-- vpA[1]
 		- rang[1]
 	eyeangs[2] = eyeangs[2] + vpA[2] * 0.75 -- follow horizontal viewpunch
-
+	eyeangs:Add(self.SwayAngle / 16)
 	eyeangs:Normalize()
 
-	dir = LerpVector(delta, eyeangs:Forward(), dir:GetNormalized())
+	dir = LerpVector(posDelta, eyeangs:Forward(), dir:GetNormalized())
 
-	dir:Mul(d)
+	dir:Mul(d * 8)
 	pos:Add(dir)
+	pos:Add((-self.VMOffset or vector_origin) * 60)
 
 	--fuck:Sub(rang)
 	-- render.DrawSphere(pos, 4, 4, 4, color_white)

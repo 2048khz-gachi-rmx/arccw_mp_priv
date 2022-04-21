@@ -55,9 +55,6 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 
 	local sightedmult = (self:GetState() == ArcCW.STATE_SIGHTS and 0.1) or 1
 
-	VMPos:Set(EyePos)
-	VMAng:Set(EyeAng)
-
 	local lvv = t._LastVMZ
 	local lhv = t._LastVMY
 
@@ -258,6 +255,8 @@ function SWEP:Breath_StateMult(owner, t)
 	t.Breath_Intensity = t.Breath_Intensity * sightedmult
 end
 
+local cpy = Vector()
+
 function SWEP:Breath_Process(EyePos, EyeAng)
 	local t = self:GetTable()
 
@@ -336,11 +335,21 @@ function SWEP:Look_Process(EyePos, EyeAng)
 
 	angLook.y = angLook.y - t.VMLookLerp
 
+	if IsFirstTimePredicted() then
+		t.SwayAngle:Set(angLook)
+	end
+
 	VMAng:Add(angLook)
 end
 
 local velCpy = Vector()
 local angCpy = Angle()
+
+local offDlt = Vector()
+
+-- defaults
+SWEP.VMOffset = offDlt
+SWEP.SwayAngle = Angle()
 
 function SWEP:GetVMPosition(EyePos, EyeAng)
 	local velocity = self:GetOwner():GetVelocity()
@@ -350,6 +359,12 @@ function SWEP:GetVMPosition(EyePos, EyeAng)
 
 	local t = self:GetTable()
 
+	t.VMPos:Set(EyePos)
+	if IsFirstTimePredicted() then
+		offDlt:Set(EyePos)
+	end
+	t.VMAng:Set(EyeAng)
+
 	self:Move_Process(EyePos, EyeAng, velCpy, velocity)
 	self:Step_Process(EyePos, EyeAng, velCpy, velocity)
 	self:Breath_Process(EyePos, EyeAng)
@@ -358,6 +373,12 @@ function SWEP:GetVMPosition(EyePos, EyeAng)
 
 	t.LastEyeAng:Set(EyeAng)
 	t.LastVelocity:Set(velCpy)
+
+	
+	if IsFirstTimePredicted() then
+		offDlt:Sub(t.VMPos)
+		t.VMOffset = offDlt
+	end
 
 	return t.VMPos, t.VMAng
 end
@@ -524,7 +545,6 @@ function SWEP:CalculateVMPos(pos, ang)
 	local state  = self:GetState()
 	local sightTime = self:GetSightTime()
 	local sgtd = self:GetSightDelta()
-
 
 	oldpos:Set(pos)
 	oldang:Set(ang)
