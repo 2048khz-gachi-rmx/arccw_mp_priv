@@ -675,7 +675,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	eyeangs:Normalize()
 
 	dir = LerpVector(posDelta, eyeangs:Forward(), dir:GetNormalized())
-	render.DrawLine(pos - dir * 16, pos + dir * 16, color_white)
+
 	dir:Mul(d * 8)
 	pos:Add(dir)
 
