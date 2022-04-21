@@ -483,7 +483,7 @@ function SWEP:FormRTScope()
 end
 
 hook.Add("RenderScene", "ArcCW", function()
-	if GetConVar("arccw_cheapscopes"):GetBool() then return end
+	--if GetConVar("arccw_cheapscopes"):GetBool() then return end
 
 	local wpn = LocalPlayer():GetActiveWeapon()
 
@@ -565,9 +565,9 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	if hsmag and hsmag > 1 and delta < 1 and asight.NVScope then
 		local screen = rtmat
 
-		if GetConVar("arccw_cheapscopes"):GetBool() then
+		--[[if GetConVar("arccw_cheapscopes"):GetBool() then
 			screen = rtmat_cheap
-		end
+		end]]
 
 		if asight.NVScope then
 			self:FormNightVision(screen)
@@ -688,7 +688,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	if hsmag and hsmag > 1 and delta < 1 then
 		local screen = rtmat
 
-		if GetConVar("arccw_cheapscopes"):GetBool() then
+		if false and GetConVar("arccw_cheapscopes"):GetBool() then
 
 			screen = rtmat_cheap
 

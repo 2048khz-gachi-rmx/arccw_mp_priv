@@ -1277,10 +1277,6 @@ function SWEP:DrawWorldModel()
 	end
 end
 
-function SWEP:ShouldCheapScope()
-	if !self:GetConVar("arccw_cheapscopes"):GetBool() then return end
-end
-
 local b = bench("predraw", 600)
 local v1, a1 = Vector(), Angle()
 local v2, a2 = Vector(), Angle()
@@ -1322,11 +1318,11 @@ function SWEP:PreDrawViewModel(vm)
 		ArcCW:DrawPhysBullets()
 	end
 
-	if GetConVar("arccw_cheapscopes"):GetBool() and self:GetSightDelta() < 1 and asight.MagnifiedOptic then
+	if false and GetConVar("arccw_cheapscopes"):GetBool() and self:GetSightDelta() < 1 and asight.MagnifiedOptic then
 		self:FormCheapScope()
 	end
 
-	if self:GetSightDelta() < 1 and asight.ScopeTexture then
+	if false and self:GetSightDelta() < 1 and asight.ScopeTexture then
 		self:FormCheapScope()
 	end
 
