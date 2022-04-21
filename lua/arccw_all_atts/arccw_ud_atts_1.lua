@@ -11,7 +11,8 @@ do
 	att.PrintName = "Express-12 20\" Long Barrel"
 	att.AbbrevName = "20\" Long Barrel"
 	if GetConVar("arccw_truenames"):GetBool() then
-	    att.PrintName = "Remington 870 20\" Long Barrel"
+	    att.PrintName = "Remington 870 20\" Wingmaster Barrel"
+	    att.AbbrevName = "20\" Wingmaster Barrel"
 	end
 	att.Icon = Material("entities/att/acwatt_ud_870_barrel_long.png", "smooth mips")
 	att.Description = "Extended barrel with ring sight. Reduces pellet spread and improves range."
@@ -29,6 +30,7 @@ do
 	att.Mult_Sway = 1.5
 	att.Mult_SightTime = 1.25
 	att.Mult_SpeedMult = 0.95
+	att.Mult_HipDispersion = 1.25
 	att.Add_BarrelLength = 4
 	--att.Override_HoldtypeSights = "rpg"
 	att.ActivateElements = {"ud_870_barrel_long"}
@@ -66,6 +68,7 @@ do
 	att.Mult_Sway = 0.5
 	att.Mult_SightTime = 0.75
 	att.Mult_SpeedMult = 1.05
+	att.Mult_HipDispersion = 0.75
 	att.Add_BarrelLength = -4
 	att.A_Hook_Add_SightsDispersion = function(wep, data)
 	    if data and !wep.Attachments[1].Installed then
@@ -73,6 +76,22 @@ do
 	    end
 	end
 	att.ActivateElements = {"ud_870_barrel_sawnoff"}
+	ArcCW.LoadAttachmentType(att)
+end
+
+------
+-- ud_870_skin_dirty.lua
+------
+
+do
+	local att = {}
+	ArcCW.SetShortName("ud_870_skin_dirty")
+
+	att.PrintName = "Worn Nickel"
+	att.Icon = Material("", "smooth mips")
+	att.Description = "Been through a lot, yet ready for more."
+	att.Desc_Neutrals = {"uc.cosmetic"}
+	att.Slot = "ud_870_skin"
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -378,10 +397,12 @@ do
 	att.Override_Trivia_Calibre = "10mm Auto"
 	att.Mult_Damage = 1.15
 	att.Mult_DamageMin = 1.15
+	att.Mult_Penetration = 8 / 6
 	att.Mult_Recoil = 1.25
 	att.Mult_RecoilSide = 1.25
 	att.Mult_ReloadTime = 1.15
 	att.Mult_MalfunctionMean = 0.75
+	att.Override_PhysBulletMuzzleVelocity = 400
 	att.Mult_ClipSize = 0.9
 	att.Override_ShellScale = 1
 	att.Hook_GetShootSound = function(wep, sound)
@@ -443,11 +464,13 @@ do
 	att.Override_Ammo = "plinking"
 	att.Mult_Damage = 0.4
 	att.Mult_DamageMin = 0.4
+	att.Mult_Penetration = 3 / 6
 	att.Mult_Recoil = 0.25
 	att.Mult_VisualRecoilMult = 0.25
 	att.Mult_RPM = 1.5
 	att.Mult_Penetration = 0.1
 	att.Mult_ShootSpeedMult = 1.2
+	att.Override_PhysBulletMuzzleVelocity = 370
 	att.Mult_ClipSize = 1.2
 	att.Override_ShellModel = "models/weapons/arccw/uc_shells/22lr.mdl"
 	att.Override_ShellScale = 1
@@ -494,6 +517,7 @@ do
 	att.Mult_Damage = 1.1
 	att.Mult_AccuracyMOA = 0.5
 	att.Mult_Recoil = 1.15
+	att.Override_PhysBulletMuzzleVelocity = 410
 	att.Mult_ClipSize = 0.9
 	att.Override_ShellModel = "models/weapons/arccw/uc_shells/357sig.mdl"
 	att.Override_ShellScale = 1
@@ -526,7 +550,7 @@ do
 	end
 	att.SortOrder = 50
 	att.Icon = Material("entities/att/acwatt_ud_glock_caliber.png", "smooth mips")
-	att.Description = "An old and smaller pistol caliber that is somewhat obsolete.\nHas lower recoil but also lower range and weaker stopping power."
+	att.Description = "An old and smaller pistol caliber that is somewhat obsolete.\nHas lower recoil and reduced effective range."
 	att.Desc_Pros = {
 	}
 	att.Desc_Cons = {
@@ -536,10 +560,11 @@ do
 	att.Slot = "ud_glock_caliber"
 	att.AutoStats = true
 	att.Override_Trivia_Calibre = ".380 ACP"
-	att.Mult_Range = 0.75
-	att.Mult_Damage = 0.9
+	att.Mult_Range = 0.8
 	att.Mult_DamageMin = 0.9
 	att.Mult_Recoil = 0.65
+	att.Mult_Penetration = 3 / 6
+	att.Override_PhysBulletMuzzleVelocity = 312
 	att.Override_ShellModel = "models/weapons/arccw/uc_shells/357sig.mdl"
 	att.Override_ShellScale = 1
 	att.Hook_GetShootSound = function(wep, sound)
@@ -553,6 +578,8 @@ do
 	    if distancesound == wep.DistantShootSound then
 	        return "weapons/arccw_ud/glock/fire_dist_380.ogg" end
 	end
+	att.GivesFlags = {"cal_subsonic"}
+	att.ExcludeFlags = {"powder_subsonic"}
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -582,8 +609,10 @@ do
 	att.AutoStats = true
 	att.Override_Trivia_Calibre = ".40 S&W"
 	att.Mult_DamageMin = 1.35
-	att.Mult_RangeMin = 0.75
+	att.Mult_RangeMin = 0.5
 	att.Mult_Recoil = 1.15
+	att.Mult_Penetration = 8 / 6
+	att.Override_PhysBulletMuzzleVelocity = 300
 	att.Mult_ClipSize = .9
 	att.Override_ShellModel = "models/weapons/arccw/uc_shells/40sw.mdl"
 	att.Override_ShellScale = 1
@@ -598,6 +627,8 @@ do
 	    if distancesound == wep.DistantShootSound then
 	        return "weapons/arccw_ud/glock/fire_dist_40.ogg" end
 	end
+	att.GivesFlags = {"cal_subsonic"}
+	att.ExcludeFlags = {"powder_subsonic"}
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -626,12 +657,16 @@ do
 	att.Slot = "ud_glock_caliber"
 	att.AutoStats = true
 	att.Override_Trivia_Calibre = ".45 ACP"
-	att.Mult_Damage = 1.25
+	att.Mult_Damage = 1.5
+	att.Mult_DamageMin = 0.88
+	att.Mult_Penetration = 9 / 6
 	att.Mult_RangeMin = 0.5
 	att.Mult_Recoil = 1.5
 	att.Mult_RecoilSide = 1.5
-	att.Mult_MalfunctionMean = 0.75
+	att.Mult_MalfunctionMean = 0.6
+	att.Override_PhysBulletMuzzleVelocity = 320
 	att.Mult_ClipSize = 0.76
+	att.Mult_RPM = 0.7619
 	att.Hook_GetShootSound = function(wep, sound)
 	    if wep:GetBuff_Override("Silencer") then
 	        return "weapons/arccw_ud/glock/fire_supp_45.ogg" -- Placeholder
@@ -643,6 +678,8 @@ do
 	    if distancesound == wep.DistantShootSound then
 	        return "weapons/arccw_ud/glock/fire_dist_45.ogg" end
 	end
+	att.GivesFlags = {"cal_subsonic"}
+	att.ExcludeFlags = {"powder_subsonic"}
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -837,6 +874,43 @@ do
 end
 
 ------
+-- ud_glock_muzzle_kkm.lua
+------
+
+do
+	local att = {}
+	ArcCW.SetShortName("ud_glock_muzzle_kkm")
+
+	att.PrintName = "KKM Precision Compensator"
+	att.AbbrevName = "KKM Compensator"
+	att.Icon = Material("entities/att/kkm.png", "mips smooth")
+	att.Description = "Weapon-exclusive compensator that redirects propellant gasses to reduce weapon recoil.\nHighly effective, but reduces weapon cyclic rate."
+	att.Desc_Pros = {
+	}
+	att.Desc_Cons = {
+	}
+	att.AutoStats = true
+	att.AutoStats = true
+	att.Slot = {"ud_glock_muzzle"}
+	-- att.Slot = {"muzzle"}
+	att.SortOrder = 500
+	att.Model = "models/weapons/arccw/atts/uc_kkm_brake.mdl"
+	att.ModelOffset = Vector(0.07, 0, 0.165)
+	att.ModelScale = Vector(1.25, 1.25, 1.25)
+	att.OffsetAng = Angle(0, 0, 0)
+	att.IsMuzzleDevice = true
+	att.Mult_Recoil = 0.7
+	att.Mult_RecoilSide = 0.8
+	att.Add_BarrelLength = 2
+	att.Mult_SightTime = 1.1
+	att.Mult_Sway = 1.15
+	att.Mult_RPM = 0.85
+	att.Mult_ShootVol = 1.2
+	att.AttachSound = "arccw_uc/common/gunsmith/suppressor_thread.ogg"
+	ArcCW.LoadAttachmentType(att)
+end
+
+------
 -- ud_glock_skin_olive.lua
 ------
 
@@ -849,7 +923,6 @@ do
 	att.Description = "Olive drab finish for for your polymer handgun."
 	att.Desc_Neutrals = {"uc.cosmetic"}
 	att.Slot = "ud_glock_skin"
-	att.Free = true
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -866,7 +939,6 @@ do
 	att.Description = "Flat dark earth finish for your polymer handgun."
 	att.Desc_Neutrals = {"uc.cosmetic"}
 	att.Slot = "ud_glock_skin"
-	att.Free = true
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -1007,7 +1079,7 @@ do
 	    att.PrintName = "G18C Op. CS Slide"
 	end
 	att.Icon = Material("entities/att/acwatt_ud_glock_slide_cs.png", "smooth mips")
-	att.Description = "Custom-made 3 round burst slide, used by various counter-terrorism units and 'agents' around the world. The standard-length magazines are also tweaked for increased capacity."
+	att.Description = "Custom-made 3 round burst slide, used by various counter-terrorism units and 'agents' around the world. The standard-length magazines are also tweaked for increased capacity. These modifications make the weapon somewhat prone to jamming."
 	att.Desc_Pros = {
 	    "uc.3burst",
 	    "ud.glock.cs",
@@ -1026,12 +1098,12 @@ do
 	    {
 	        Mode = -3,
 	        Mult_RPM = 3,
-	        PostBurstDelay = 0.2,
+	        PostBurstDelay = 0.25,
 	        RunawayBurst = true,
 	        Override_ShotRecoilTable = {
-	            [1] = 0.85,
-	            [2] = 0.7,
-	            [3] = 0.5,
+	            [1] = 0.8,
+	            [2] = 0.5,
+	            [3] = 0.3,
 	        },
 	    },
 	    {
@@ -1275,6 +1347,7 @@ do
 	att.Mult_SpeedMult = 1.05
 	att.Mult_ShootSpeedMult = 1.2
 	att.Mult_RPM = 240 / 220
+	att.Mult_HipDispersion = 0.75
 	att.Add_BarrelLength = -6
 	att.ActivateElements = {"ud_autoshotgun_barrel_sawnoff"}
 	att.GivesFlags = {"nomuzzle"}
@@ -1283,6 +1356,7 @@ do
 	        data.add = data.add + 50
 	    end
 	end
+	att.Ignore = true
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -1313,6 +1387,7 @@ do
 	att.Mult_SightTime = 0.75
 	att.Mult_SpeedMult = 1.025
 	att.Mult_ShootSpeedMult = 1.1
+	att.Mult_HipDispersion = 0.75
 	att.Add_BarrelLength = -4
 	att.ActivateElements = {"ud_autoshotgun_barrel_short"}
 	ArcCW.LoadAttachmentType(att)
@@ -1326,28 +1401,56 @@ do
 	local att = {}
 	ArcCW.SetShortName("ud_m1014_barrel_sport")
 
-	att.PrintName = "18\" M4 Super 90 Competition Barrel"
-	att.AbbrevName = "18\" Competition Barrel"
+	att.PrintName = "19\" M4 Super 90 Competition Barrel"
+	att.AbbrevName = "19\" Competition Barrel"
 	att.Icon = Material("entities/att/acwatt_ud_m1014_barrel.png", "smooth mips")
-	att.Description = "Hardened barrel with integral muzzle brake. Abiding by competition restrictions, it has a reduced rate of fire."
+	att.Description = "Hardened barrel with slightly increased length, designed for target shooting. Abiding by competition restrictions, it has a reduced rate of fire."
 	att.Desc_Pros = {
 	}
 	att.Desc_Cons = {
-	    "uc.nomuzzle"
 	}
 	att.Desc_Neutrals = {
 	}
 	att.Slot = "ud_1014_barrel"
 	att.AutoStats = true
-	att.Add_BarrelLength = -1
-	att.Mult_RecoilSide = 0.75
-	att.Mult_Recoil = 0.85
-	att.Mult_SightTime = 0.9
-	att.Mult_Sway = 0.85
-	att.Mult_RangeMin = 0.5
+	att.Add_BarrelLength = 1
+	att.Mult_RecoilSide = 0.8
+	att.Mult_Recoil = 0.9
+	att.Mult_SightTime = 1.15
+	att.Mult_Sway = 1.2
+	att.Mult_AccuracyMOA = 0.9
+	att.Mult_RangeMin = 2
 	att.Mult_RPM = 180 / 220
+	att.Mult_HipDispersion = 1.15
 	att.ActivateElements = {"ud_autoshotgun_barrel_sport"}
-	att.GivesFlags = {"nomuzzle"}
+	--att.GivesFlags = {"nomuzzle"}
+	ArcCW.LoadAttachmentType(att)
+end
+
+------
+-- ud_m1014_handguard_sport.lua
+------
+
+do
+	local att = {}
+	ArcCW.SetShortName("ud_m1014_handguard_sport")
+
+	att.PrintName = "Sporting Handguard"
+	att.Icon = Material("", "smooth mips")
+	att.Description = "Aftermarket handguard with a rough grip surface. It's much lighter, but not as comfortable to grip."
+	att.Desc_Pros = {
+	}
+	att.Desc_Cons = {
+	}
+	att.Desc_Neutrals = {
+	}
+	att.Slot = "ud_1014_handguard"
+	att.AutoStats = true
+	att.SortOrder = 999
+	att.Mult_SightTime = 0.85
+	att.Mult_ShootSpeedMult = 0.9
+	att.Mult_SightedSpeedMult = 0.9
+	att.ActivateElements = {"ud_m1014_handguard_sport"}
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -1373,8 +1476,8 @@ do
 	att.Free = true
 	att.Mult_SpeedMult = 1.05
 	att.Mult_SightTime = 0.5
-	att.Mult_DrawTime = 0.6
-	att.Mult_HolsterTime = 0.6
+	att.Mult_DrawTime = 0.75
+	att.Mult_HolsterTime = 0.75
 	att.Mult_Recoil = 1.35
 	att.Mult_RecoilSide = 2
 	att.Mult_SightedSpeedMult = 1.2
@@ -1406,8 +1509,10 @@ do
 	att.Desc_Neutrals = {
 	}
 	att.Slot = "ud_1014_stock"
+	att.AttachSound = "arccw_uc/common/stockslide.ogg"
 	att.AutoStats = true
 	att.Free = true
+	att.IgnorePickX = true
 	att.Mult_Recoil = 1.1
 	att.Mult_RecoilSide = 1.25
 	att.Mult_SightedSpeedMult = 1.1
@@ -1415,6 +1520,37 @@ do
 	att.Mult_Sway = 1.5
 	att.Add_BarrelLength = -8
 	att.ActivateElements = {"ud_autoshotgun_stock_in"}
+	ArcCW.LoadAttachmentType(att)
+end
+
+------
+-- ud_m1014_stock_sport.lua
+------
+
+do
+	local att = {}
+	ArcCW.SetShortName("ud_m1014_stock_sport")
+
+	att.PrintName = "Sporting Stock"
+	att.Icon = Material("entities/att/acwatt_ud_m1014_stock_in.png", "smooth mips")
+	att.Description = "Solid, non-adjustable polymer stock. Provides a better brace at the cost of combat mobility."
+	att.Desc_Pros = {
+	}
+	att.Desc_Cons = {
+	}
+	att.Desc_Neutrals = {
+	}
+	att.Slot = "ud_1014_stock"
+	att.AutoStats = true
+	att.Mult_Recoil = .8
+	att.Mult_Sway = .8
+	att.Mult_SightedSpeedMult = .85
+	att.Mult_DrawTime = 1.25
+	att.Mult_HolsterTime = 1.25
+	att.ActivateElements = {"ud_autoshotgun_stock_sport"}
+	att.Hook_TranslateAnimation = function(wep, anim) 
+	    return anim .. "_stock"
+	end 
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -1688,7 +1824,7 @@ do
 	att.Slot = "ud_m16_barrel"
 	att.AutoStats = true
 	att.Mult_SightTime = 0.85
-	att.Mult_RPM = 1.601
+	att.Mult_RPM = 1.361
 	att.Mult_Recoil = 1.25
 	att.Mult_RecoilSide = 1.5
 	att.Mult_Range = 0.65
@@ -2228,177 +2364,8 @@ do
 	att.ActivateElements = {"ud_m16_upper_charm2"}
 	att.GivesFlags = {"ud_m16_retro"}
 	att.ExcludeFlags = {"ud_m16_not_retro", "ud_m16_a1"}
-	att.TopMount = 4
+	att.TopMount = 3
 	att.SortOrder = 1000
-	ArcCW.LoadAttachmentType(att)
-end
-
-------
--- ud_m16_charm_fs.lua
-------
-
-do
-	local att = {}
-	ArcCW.SetShortName("ud_m16_charm_fs")
-
-	att.PrintName = "Preserved Front Sight"
-	att.Icon = Material("entities/att/acwatt_ud_m16_charm_fs.png", "smooth mips")
-	att.Description = "Those irons aren't out of style yet."
-	att.Desc_Pros = {}
-	att.Desc_Cons = {}
-	att.Desc_Neutrals = {
-	    "ud.m16_fs.1",
-	    "ud.m16_fs.2",
-	}
-	att.Slot = "ud_m16_charm"
-	att.SortOrder = 999
-	att.ExcludeFlags = {"ud_m16_a1","sight_magpul"}
-	ArcCW.LoadAttachmentType(att)
-end
-
-------
--- ud_m16_charm_strap.lua
-------
-
-do
-	local att = {}
-	ArcCW.SetShortName("ud_m16_charm_strap")
-
-	att.PrintName = "MACV-SOG Wrapped Sling"
-	att.AbbrevName = "Wrapped Sling"
-	att.Icon = Material("entities/att/acwatt_ud_m16_charm_strap.png", "smooth mips")
-	att.Description = "Wrap your sling around the weapon to make it look cooler and more commando-like.\nIt almost looks like you're doing... Black Ops. Haha."
-	att.Desc_Pros = {
-	}
-	att.Desc_Cons = {
-	}
-	att.Desc_Neutrals = {
-	    "uc.cosmetic"
-	}
-	att.Slot = "ud_m16_charm"
-	att.AutoStats = true
-	att.SortOrder = 999
-	att.Free = true
-	att.ActivateElements = {"m16_strap"}
-	att.Ignore = true
-	ArcCW.LoadAttachmentType(att)
-end
-
-------
--- ud_m16_charm_tl.lua
-------
-
-do
-	local att = {}
-	ArcCW.SetShortName("ud_m16_charm_tl")
-
-	att.PrintName = "Tactical Laser Position"
-	att.Icon = Material("entities/att/arccw_ud_pointshoot.png", "smooth mips")
-	att.Description = "Give your AN/PEQ a reason to be thin."
-	att.Desc_Pros = {}
-	att.Desc_Cons = {}
-	att.Desc_Neutrals = {
-	    "ud.m16_tl.1",
-	    "ud.m16_tl.2",
-	    "ud.m16_nors"
-	}
-	att.Slot = "ud_m16_charm"
-	att.ActivateElements = {"bravo_dicks_going_fart"}
-	att.AdditionalSights = {
-	    {
-	        Pos = Vector(0, 20, -6),
-	        Ang = Angle(0, 0, -25),
-	        GlobalPos = false,
-	        GlobalAng = true,
-	        Magnification = 1
-	    }
-	}
-	att.SortOrder = 998
-	att.TacLaserPos = true
-	att.RequireFlags = {"tac"}
-	att.Ignore = true
-	ArcCW.LoadAttachmentType(att)
-end
-
-------
--- ud_m16_grip_ergo.lua
-------
-
-do
-	local att = {}
-	ArcCW.SetShortName("ud_m16_grip_ergo")
-
-	att.PrintName = "Ergonomic Grip"
-	att.Icon = Material("entities/att/acwatt_ud_m16_grip_ergo.png", "smooth mips")
-	att.Description = "Polymer grip with a comfortable shape, enabling faster handling."
-	att.Desc_Pros = {
-	}
-	att.Desc_Cons = {
-	}
-	att.Desc_Neutrals = {
-	}
-	att.Slot = "ud_m16_grip"
-	att.AutoStats = true
-	att.Mult_SightTime = 0.9
-	att.Mult_SightedSpeedMult = 0.95
-	--att.Mult_Recoil = 1
-	--att.Mult_SpeedMult = 1
-	att.ActivateElements = {"grip_ergo"}
-	ArcCW.LoadAttachmentType(att)
-end
-
-------
--- ud_m16_grip_skel.lua
-------
-
-do
-	local att = {}
-	ArcCW.SetShortName("ud_m16_grip_skel")
-
-	att.PrintName = "Skeletonized Grip"
-	att.Icon = Material("entities/att/acwatt_ud_m16_grip_skel.png", "smooth mips")
-	att.Description = "Lightweight grip, marginally reducing weapon weight."
-	att.Desc_Pros = {
-	}
-	att.Desc_Cons = {
-	}
-	att.Desc_Neutrals = {
-	}
-	att.Slot = "ud_m16_grip"
-	att.AutoStats = true
-	att.Mult_RecoilSide = 1.15
-	att.Mult_SightedSpeedMult = 1.05
-	--att.Mult_SightTime = 1
-	--att.Mult_Recoil = 1
-	--att.Mult_SpeedMult = 1
-	att.ActivateElements = {"grip_skel"}
-	ArcCW.LoadAttachmentType(att)
-end
-
-------
--- ud_m16_grip_wood.lua
-------
-
-do
-	local att = {}
-	ArcCW.SetShortName("ud_m16_grip_wood")
-
-	att.PrintName = "Wooden Grip"
-	att.Icon = Material("entities/att/acwatt_ud_m16_grip_default.png", "smooth mips")
-	att.Description = "For a classy look."
-	att.Desc_Pros = {
-	}
-	att.Desc_Cons = {
-	}
-	att.Desc_Neutrals = {
-	}
-	att.Slot = "ud_m16_grip"
-	att.AutoStats = true
-	att.Mult_RecoilSide = 0.85
-	att.Mult_SightedSpeedMult = 0.95
-	--att.Mult_Recoil = 1
-	--att.Mult_SpeedMult = 1
-	att.ActivateElements = {"grip_wood"}
 	ArcCW.LoadAttachmentType(att)
 end
 
