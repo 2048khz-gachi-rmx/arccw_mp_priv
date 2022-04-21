@@ -609,7 +609,12 @@ function SWEP:TranslateFOV(fov)
 		local relMult = Lerp(Ease(relFr, 2.3), 1, t.ReloadInSights_FOVMult)
 
 		-- very lazy way to animate fov going out when you start reloading
-		div = math.Approach(t.FOVDiv or 1, math.max(irons.Magnification * relMult, 1), FrameTime() * 0.15)
+		local toDiv = math.max(irons.Magnification * relMult, 1)
+		if self:GetReloading() then
+			div = math.Approach(t.FOVDiv or 1, toDiv, FrameTime() * 0.25)
+		else
+			div = toDiv
+		end
 	end
 
 	-- something about this doesn't work in multiplayer

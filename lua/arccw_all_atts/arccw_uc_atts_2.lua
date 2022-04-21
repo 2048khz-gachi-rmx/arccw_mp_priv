@@ -586,7 +586,7 @@ do
 	att.Holosight = true
 	att.HolosightReticle = Material("hud/scopes/uc_nvis_reticle1grid.png", "mips smooth")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 12
+	att.HolosightSize = 9
 	att.HolosightBone = "holosight"
 	att.HolosightPiece = "models/weapons/arccw/atts/uc_nvis_hsp.mdl"
 	att.Colorable = false

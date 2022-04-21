@@ -158,7 +158,7 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 
 	local ow = self:GetOwner()
 
-	local sightedmult = (state == ArcCW.STATE_SIGHTS and 0.25) or 1
+	local sightedmult = (state == ArcCW.STATE_SIGHTS and 0.5) or 1
 	local in_sprint = (state == ArcCW.STATE_SPRINT and t.VM_SprintCurrent) or 0
 
 	local sprint_freqmult = in_sprint * 0.8 + 1
@@ -198,28 +198,23 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 
 	if onground then
 		local xWave = math.sin(sb)
+		local yWave = math.cos(sb * 0.5)
+		local zWave = math.cos(sb * 0.75)
+
 		if bouncy then
 			xWave = Ease(math.abs(xWave), 0.2) * math.Sign(xWave)
+			yWave = Ease(math.abs(yWave), 0.2) * math.Sign(yWave)
+			zWave = Ease(math.abs(zWave), 0.2) * math.Sign(zWave)
 		end
 
 		VMPosOffset.x = xWave * (velocity * -0.0004 * sightedmult * swayxmult * sprint_posmult)
 			* t.StepRandomX * (0.7 + in_sprint * -0.2)
 
-		local yWave = math.cos(sb * 0.5)
-		if bouncy then
-			yWave = Ease(math.abs(yWave), 0.2) * math.Sign(yWave)
-		end
-
 		VMPosOffset.y = (yWave * velocity * -0.0006 * sightedmult  * swayymult)
 			* t.StepRandomY * (0.6 + in_sprint * 0.5) -- horizontal
 
-		local zWave = math.cos(sb * 0.75)
-		if bouncy then
-			zWave = Ease(math.abs(zWave), 0.2) * math.Sign(zWave)
-		end
-
-		--VMPosOffset.z = zWave * velocity * 0.001 * sightedmult * swayzmult
-		--	* (0.4 + in_sprint * 0.6)
+		--[[VMPosOffset.z = zWave * velocity * 0.001 * sightedmult * swayzmult
+			* (0.4 + in_sprint * 0.6)]]
 
 		VMPosOffset_Lerp:Add(VMPosOffset)
 

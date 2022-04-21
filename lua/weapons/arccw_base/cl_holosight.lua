@@ -675,10 +675,11 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	eyeangs:Normalize()
 
 	dir = LerpVector(posDelta, eyeangs:Forward(), dir:GetNormalized())
-
+	render.DrawLine(pos - dir * 16, pos + dir * 16, color_white)
 	dir:Mul(d * 8)
 	pos:Add(dir)
-	pos:Add((-self.VMOffset or vector_origin) * 60)
+
+	local eyeOff = (self.VMOffset or vector_origin) * d
 
 	--fuck:Sub(rang)
 	-- render.DrawSphere(pos, 4, 4, 4, color_white)
@@ -735,7 +736,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 	cam.End3D()
 
-	cam.Start3D()
+	cam.Start3D(ep + eyeOff)
 
 	local a = pos:ToScreen()
 	local x = math.Round(a.x)
@@ -806,7 +807,10 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	trvec[1], trvec[2] = x, y
 	scvec[1], scvec[2] = 1 + extend, 1 + extend
 
+	dir:Normalize()
+
 	mtrx:Identity()
+
 	mtrx:Translate(trvec)
 		mtrx:SetScale(scvec)
 		--mtrx:RotateNumber(0, -self:GetRecoilTilt(), 0)
