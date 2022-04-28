@@ -617,12 +617,6 @@ function SWEP:TranslateFOV(fov)
 		end
 	end
 
-	-- something about this doesn't work in multiplayer
-	-- if game.SinglePlayer() then self.CurrentFOV = self.CurrentFOV + (self.RecoilAmount * -0.1 * self:GetSightDelta()) end
-	-- it also fucking sucks
-
-	local enter = self.LastEnterSightTimeUnpred
-	local exit = self.LastExitSightTimeUnpred
 
 	t.FOVDiv = div
 	t.ApproachFOV = fov / div
@@ -630,6 +624,22 @@ function SWEP:TranslateFOV(fov)
 	local fovTime = math.Clamp(self:GetSightTime() * 1.2, 0.2, 0.6)
 	local from = t.SightsFOVChange or t.CurrentFOV
 	local to = t.ApproachFOV
+
+	if CLIENT then
+		local pass = UnPredictedCurTime()
+		local cFr = 0
+
+		local from = t.VM_CustChange
+		local isIn = t.LastEnterCustomize > t.LastExitCustomize
+		local sub = math.max(t.LastEnterCustomize, t.LastExitCustomize)
+		cFr = self:CalcSwitchableFrac(from, isIn and 1 or 0, pass - sub, 0.6)
+
+		to = to - 6 * cFr
+		app_vm = app_vm - 4 * cFr
+	end
+
+	local enter = self.LastEnterSightTimeUnpred
+	local exit = self.LastExitSightTimeUnpred
 
 	local timePoint = math.max(enter, exit)
 	local passed = UnPredictedCurTime() - timePoint

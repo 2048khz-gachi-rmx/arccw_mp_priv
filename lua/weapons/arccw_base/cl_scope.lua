@@ -281,9 +281,21 @@ function SWEP:GetRecoilViewAng()
 	fr = 1 - f2
 	ver = ver ^ 0.8
 
+	local rof = self:GetFiringDelay()
+	local pass = UnPredictedCurTime() - (self.UnpredRecoiledWhen or 0)
+	local rollfr
+	local rofFr = 0.4
+
+	if pass < rof * rofFr then
+		rollfr = math.RemapClamp(pass, 0, rof * rofFr, 0, 1)
+	else
+		rollfr = math.RemapClamp(pass, rof * rofFr, rof + 0.3, 1, 0)
+	end
+
 	ra[1] = -ver * Ease(fr, 2.3) * mult
 	ra[2] = -hor * Ease(fr, 1.6) / 2 * mult
-	ra[3] = Ease(fr, 2.6) * self.PunchDir * hor * 3 * mult
+	ra[3] = Ease(rollfr, 4.3) * math.sin(SysTime() * (1 / rof) * 3.4)
+		* (2.6 * math.abs(hor) + 1.2 * math.abs(ver)) --* self.PunchDir * hor * 3 * mult
 
 	return ra
 end
