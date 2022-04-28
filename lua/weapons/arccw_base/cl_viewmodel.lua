@@ -826,9 +826,9 @@ function SWEP:CalculateVMPos(pos, ang)
 			local angFr = math.RemapClamp(sprintFrac, 0, math.max(recovery * 0.6, 0.6), 1, 0)
 			local awv = math.sin(angFr * math.pi * 2)
 			local angOff = sprinting and 0 or (awv > 0 and awv / 4 or awv) * -16
-			print(angOff, sprintFrac)
+
 			addp = angOff
-			
+
 			if not sprinting then
 				sf = Ease(sf, 0.6) -- slow down the beginning
 			end
