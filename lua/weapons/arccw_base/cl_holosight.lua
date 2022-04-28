@@ -663,7 +663,6 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	local eyeangs = EyeAngles()
 
 	local v, h = self:GetAimRecoil(true)
-
 	local rang = self:GetRecoilViewAng()
 
 	eyeangs[1] = eyeangs[1]
