@@ -488,6 +488,10 @@ local function calculateSwitchableFrac(from, to, delta, maxdelta)
 	return math[from < to and "min" or "max"] (from + add * sign, to)
 end
 
+function SWEP:CalcSwitchableFrac(from, to, delta, max)
+	return calculateSwitchableFrac(from, to, delta, max)
+end
+
 local recoilAng = Angle()
 
 function SWEP:GetRecoilTilt()
@@ -728,17 +732,17 @@ function SWEP:CalculateVMPos(pos, ang)
 	local recovery = self:GetSprintTime() * 2 -- (t.VM_UseSightTime and t.VM_SprintRecovery * sightTime) or t.VM_SprintRecovery
 	local sprinted  = state == ArcCW.STATE_SPRINT or (UCT - t.LastExitSprintTimeUnpred) < recovery
 	local sprintFrac = 0
+	local sprinting = t.LastExitSprintTimeUnpred < t.LastEnterSprintTimeUnpred
 
 	if sprinted then
 		local from = t.VM_SprintChange
-		local exit = t.LastExitSprintTimeUnpred >= t.LastEnterSprintTimeUnpred
 
-		if exit then
+		if not sprinting then
 			-- lerping [0 <- x <- 1]
 			sprintFrac = calculateSwitchableFrac(from, 0, UCT - t.LastExitSprintTimeUnpred, recovery)
 		else
 			-- lerping [0 -> x -> 1]
-			sprintFrac = calculateSwitchableFrac(from, 1, UCT - t.LastEnterSprintTimeUnpred, recovery)
+			sprintFrac = calculateSwitchableFrac(from, 1, UCT - t.LastEnterSprintTimeUnpred, recovery / 2)
 		end
 	end
 
@@ -815,14 +819,29 @@ function SWEP:CalculateVMPos(pos, ang)
 		target.pos[2] = target.pos[2] + vm_forward
 		target.pos[3] = target.pos[3] + vm_up
 
-		LerpSource(1 - sprintFrac, target.pos, prePos)
+		local sf = sprintFrac
+		local addp = 0
+
+		if recovery > 0.5 then
+			local angFr = math.RemapClamp(sprintFrac, 0, math.max(recovery * 0.6, 0.6), 1, 0)
+			local awv = math.sin(angFr * math.pi * 2)
+			local angOff = sprinting and 0 or (awv > 0 and awv / 4 or awv) * -16
+			print(angOff, sprintFrac)
+			addp = angOff
+			
+			if not sprinting then
+				sf = Ease(sf, 0.6) -- slow down the beginning
+			end
+		end
+
+		LerpSource(1 - sf, target.pos, prePos)
 
 		target.ang:Set(holstered and (hang or sang) or (sang or hang))
 
 		if ang.p < -15 then target.ang.p = target.ang.p + ang.p + 15 end
 
-		target.ang.p = m_clamp(target.ang.p, -80, 80)
-		LerpSource(1 - sprintFrac, target.ang, preAng)
+		target.ang.p = m_clamp(target.ang.p + addp, -80, 80)
+		LerpSource(1 - sf, target.ang, preAng)
 	end
 
 	if sightedFrac > 0 then
