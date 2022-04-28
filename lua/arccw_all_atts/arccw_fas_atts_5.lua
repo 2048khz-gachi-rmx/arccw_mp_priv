@@ -28,7 +28,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 12, -1.6),
+	        Pos = Vector(0, 9, -1.6),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 1.5,
 	        ScrollFunc = ArcCW.SCROLL_ZOOM,
@@ -43,7 +43,7 @@ do
 	att.HolosightMagnificationMax = 5
 	att.HolosightReticle = Material("mifl_fas2_reticle/mildot.png", "mips smooth")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 11
+	att.HolosightSize = 10
 	att.HolosightBone = "holosight"
 	att.Colorable = false
 	att.HolosightBlackbox = true
@@ -84,7 +84,7 @@ do
 
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(0, 8.5, -1.6),
+	        Pos = Vector(0, 8, -1.6),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 1.2,
 	        ScrollFunc = ArcCW.SCROLL_ZOOM,
@@ -97,7 +97,7 @@ do
 	att.HolosightMagnificationMax = 4
 	att.HolosightReticle = Material("mifl_fas2_reticle/pso1.png", "mips smooth")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 15
+	att.HolosightSize = 10
 	att.HolosightBone = "holosight"
 	att.Colorable = true
 	att.HolosightBlackbox = true
@@ -165,7 +165,7 @@ do
 
 	att.PrintName = "Xleris Scope(6x)"
 	att.Icon = Material("entities/arccw_mifl_fas2_optic_xm25.png", "smooth")
-	att.Description = "Compact thermal scope. Still bulkier than normal scope."
+	att.Description = "Compact thermal scope. Still bulkier than a normal scope."
 
 	att.SortOrder = 6
 
@@ -201,7 +201,7 @@ do
 	att.HolosightMagnificationMin = 6
 	att.HolosightMagnificationMax = 6
 	att.HolosightNoFlare = true
-	att.HolosightSize = 15
+	att.HolosightSize = 8
 	att.HolosightBone = "holosight"
 	att.HolosightBlackbox = true
 	att.Colorable = true

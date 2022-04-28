@@ -1969,7 +1969,7 @@ do
 
 	att.Mult_Recoil = 1.35
 	att.Mult_HipDispersion = 1.5
-	att.Mult_AccuracyMOA = 0.6
+	att.Mult_AccuracyMOA = 0.7
 
 	att.Hook_Compatible = function(wep)
 	    if !wep:GetIsShotgun() then return false end

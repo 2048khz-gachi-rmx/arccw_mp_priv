@@ -55,9 +55,6 @@ function SWEP:Move_Process(EyePos, EyeAng, velocity, loc_vel)
 
 	local sightedmult = (self:GetState() == ArcCW.STATE_SIGHTS and 0.1) or 1
 
-	VMPos:Set(EyePos)
-	VMAng:Set(EyeAng)
-
 	local lvv = t._LastVMZ
 	local lhv = t._LastVMY
 
@@ -161,7 +158,7 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 
 	local ow = self:GetOwner()
 
-	local sightedmult = (state == ArcCW.STATE_SIGHTS and 0.25) or 1
+	local sightedmult = (state == ArcCW.STATE_SIGHTS and 0.5) or 1
 	local in_sprint = (state == ArcCW.STATE_SPRINT and t.VM_SprintCurrent) or 0
 
 	local sprint_freqmult = in_sprint * 0.8 + 1
@@ -201,28 +198,23 @@ function SWEP:Step_Process(EyePos, EyeAng, velocity)
 
 	if onground then
 		local xWave = math.sin(sb)
+		local yWave = math.cos(sb * 0.5)
+		local zWave = math.cos(sb * 0.75)
+
 		if bouncy then
 			xWave = Ease(math.abs(xWave), 0.2) * math.Sign(xWave)
+			yWave = Ease(math.abs(yWave), 0.2) * math.Sign(yWave)
+			zWave = Ease(math.abs(zWave), 0.2) * math.Sign(zWave)
 		end
 
 		VMPosOffset.x = xWave * (velocity * -0.0004 * sightedmult * swayxmult * sprint_posmult)
 			* t.StepRandomX * (0.7 + in_sprint * -0.2)
 
-		local yWave = math.cos(sb * 0.5)
-		if bouncy then
-			yWave = Ease(math.abs(yWave), 0.2) * math.Sign(yWave)
-		end
-
 		VMPosOffset.y = (yWave * velocity * -0.0006 * sightedmult  * swayymult)
 			* t.StepRandomY * (0.6 + in_sprint * 0.5) -- horizontal
 
-		local zWave = math.cos(sb * 0.75)
-		if bouncy then
-			zWave = Ease(math.abs(zWave), 0.2) * math.Sign(zWave)
-		end
-
-		--VMPosOffset.z = zWave * velocity * 0.001 * sightedmult * swayzmult
-		--	* (0.4 + in_sprint * 0.6)
+		--[[VMPosOffset.z = zWave * velocity * 0.001 * sightedmult * swayzmult
+			* (0.4 + in_sprint * 0.6)]]
 
 		VMPosOffset_Lerp:Add(VMPosOffset)
 
@@ -257,6 +249,8 @@ function SWEP:Breath_StateMult(owner, t)
 
 	t.Breath_Intensity = t.Breath_Intensity * sightedmult
 end
+
+local cpy = Vector()
 
 function SWEP:Breath_Process(EyePos, EyeAng)
 	local t = self:GetTable()
@@ -336,11 +330,21 @@ function SWEP:Look_Process(EyePos, EyeAng)
 
 	angLook.y = angLook.y - t.VMLookLerp
 
+	if IsFirstTimePredicted() then
+		t.SwayAngle:Set(angLook)
+	end
+
 	VMAng:Add(angLook)
 end
 
 local velCpy = Vector()
 local angCpy = Angle()
+
+local offDlt = Vector()
+
+-- defaults
+SWEP.VMOffset = offDlt
+SWEP.SwayAngle = Angle()
 
 function SWEP:GetVMPosition(EyePos, EyeAng)
 	local velocity = self:GetOwner():GetVelocity()
@@ -350,6 +354,12 @@ function SWEP:GetVMPosition(EyePos, EyeAng)
 
 	local t = self:GetTable()
 
+	t.VMPos:Set(EyePos)
+	if IsFirstTimePredicted() then
+		offDlt:Set(EyePos)
+	end
+	t.VMAng:Set(EyeAng)
+
 	self:Move_Process(EyePos, EyeAng, velCpy, velocity)
 	self:Step_Process(EyePos, EyeAng, velCpy, velocity)
 	self:Breath_Process(EyePos, EyeAng)
@@ -358,6 +368,12 @@ function SWEP:GetVMPosition(EyePos, EyeAng)
 
 	t.LastEyeAng:Set(EyeAng)
 	t.LastVelocity:Set(velCpy)
+
+	
+	if IsFirstTimePredicted() then
+		offDlt:Sub(t.VMPos)
+		t.VMOffset = offDlt
+	end
 
 	return t.VMPos, t.VMAng
 end
@@ -1262,10 +1278,6 @@ function SWEP:DrawWorldModel()
 	end
 end
 
-function SWEP:ShouldCheapScope()
-	if !self:GetConVar("arccw_cheapscopes"):GetBool() then return end
-end
-
 local b = bench("predraw", 600)
 local v1, a1 = Vector(), Angle()
 local v2, a2 = Vector(), Angle()
@@ -1307,11 +1319,11 @@ function SWEP:PreDrawViewModel(vm)
 		ArcCW:DrawPhysBullets()
 	end
 
-	if GetConVar("arccw_cheapscopes"):GetBool() and self:GetSightDelta() < 1 and asight.MagnifiedOptic then
+	if false and GetConVar("arccw_cheapscopes"):GetBool() and self:GetSightDelta() < 1 and asight.MagnifiedOptic then
 		self:FormCheapScope()
 	end
 
-	if self:GetSightDelta() < 1 and asight.ScopeTexture then
+	if false and self:GetSightDelta() < 1 and asight.ScopeTexture then
 		self:FormCheapScope()
 	end
 

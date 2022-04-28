@@ -670,7 +670,7 @@ do
 
 	att.Mult_Recoil = 1.35
 	att.Mult_HipDispersion = 1.5
-	att.Mult_AccuracyMOA = 0.6
+	att.Mult_AccuracyMOA = 0.7
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -886,6 +886,10 @@ do
 
 	att.Mult_SpeedMult = 0.9
 	att.Mult_SightedSpeedMult = 0.9
+	att.Hook_Compatible = function(wep)
+	    if wep:GetIsShotgun() then return false end
+	end
+
 	ArcCW.LoadAttachmentType(att)
 end
 
@@ -919,6 +923,10 @@ do
 	att.Mult_SightedSpeedMult = 1.5
 	att.Mult_SpeedMult = 1.25
 	att.Mult_DrawTime = 0.8
+
+	att.Hook_Compatible = function(wep)
+	    if wep:GetIsShotgun() then return false end
+	end
 
 	ArcCW.LoadAttachmentType(att)
 end

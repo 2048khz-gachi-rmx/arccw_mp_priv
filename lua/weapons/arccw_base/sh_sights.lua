@@ -601,16 +601,20 @@ function SWEP:TranslateFOV(fov)
 	local app_vm = t.ViewModelFOV + self:GetOwner():GetInfoNum("arccw_vm_fov", 0) + 10
 	local sght_vm = irons and irons.ViewModelFOV or 45
 
-	if self:GetState() == ArcCW.STATE_SIGHTS then
+	if self:GetSightDelta() == 0 or self:GetState() == ArcCW.STATE_SIGHTS then
 		fov = 75
-		local sgr = self:GetShotgunReloading()
-		div = math.max(irons.Magnification * (
-				(
-					(sgr == 2 or sgr == 4) or
-					self:GetReloadingREAL() - t.ReloadInSights_CloseIn > CurTime()
-				) and t.ReloadInSights_FOVMult
-				or 1
-			), 1)
+
+		local left = self:GetReloadingREAL() - CurTime()
+		local relFr = math.RemapClamp(left, 0, t.ReloadInSights_CloseIn, 0, 1)
+		local relMult = Lerp(Ease(relFr, 2.3), 1, t.ReloadInSights_FOVMult)
+
+		-- very lazy way to animate fov going out when you start reloading
+		local toDiv = math.max(irons.Magnification * relMult, 1)
+		if self:GetReloading() then
+			div = math.Approach(t.FOVDiv or 1, toDiv, FrameTime() * 0.25)
+		else
+			div = toDiv
+		end
 	end
 
 	-- something about this doesn't work in multiplayer
@@ -620,6 +624,7 @@ function SWEP:TranslateFOV(fov)
 	local enter = self.LastEnterSightTimeUnpred
 	local exit = self.LastExitSightTimeUnpred
 
+	t.FOVDiv = div
 	t.ApproachFOV = fov / div
 
 	local fovTime = math.Clamp(self:GetSightTime() * 1.2, 0.2, 0.6)

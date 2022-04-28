@@ -916,7 +916,6 @@ function SWEP:DoRecoil()
 	self:SetMaxRecoil(curRec + addRec)
 	self:SetMaxSideRecoil(curSideRec + addSideRec)
 
-
 	recv = recv * self.VisualRecoilMult
 
 	self:SetRecoiledWhen(CurTime())     -- we'll be using this to linearly lerp recoil to 0
@@ -1017,7 +1016,6 @@ function SWEP:PunchRecoil()
 	self._LastPunch = ct
 	local passed = ct - rWhen
 	local sincePassed = since - rWhen
-
 
 	local timedMethod = true --(mxR / rec) > self.RecoilTRecovery
 

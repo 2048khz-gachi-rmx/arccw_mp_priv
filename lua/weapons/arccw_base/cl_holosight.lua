@@ -483,7 +483,7 @@ function SWEP:FormRTScope()
 end
 
 hook.Add("RenderScene", "ArcCW", function()
-	if GetConVar("arccw_cheapscopes"):GetBool() then return end
+	--if GetConVar("arccw_cheapscopes"):GetBool() then return end
 
 	local wpn = LocalPlayer():GetActiveWeapon()
 
@@ -565,9 +565,9 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	if hsmag and hsmag > 1 and delta < 1 and asight.NVScope then
 		local screen = rtmat
 
-		if GetConVar("arccw_cheapscopes"):GetBool() then
+		--[[if GetConVar("arccw_cheapscopes"):GetBool() then
 			screen = rtmat_cheap
-		end
+		end]]
 
 		if asight.NVScope then
 			self:FormNightVision(screen)
@@ -643,6 +643,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	ang:RotateAroundAxis(ang:Forward(), -90)
 
 	local dir = ang:Up()
+	local posDelta = 1 - self.VM_SightsCurrent
 
 	local ep = EyePos()
 
@@ -650,10 +651,16 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	local d = (8 + pdiff)
 	d = hs.HolosightConstDist or d
 
-	pos = LerpVector(delta, ep, pos)
+	if self:GetReloading() then
+		local left = self:GetReloadingREAL() - CurTime()
+		local relFr = math.RemapClamp(left, 0.3, 0.7, 0, 1)
+		posDelta = Ease(relFr, 0.2)
+	end
+
+	pos = LerpVector(posDelta, ep, pos)
 
 	local vpA = self:GetOurViewPunchAngles()
-	local eyeangs = EyeAngles() -- + vpA
+	local eyeangs = EyeAngles()
 
 	local v, h = self:GetAimRecoil(true)
 
@@ -664,13 +671,15 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 		-- vpA[1]
 		- rang[1]
 	eyeangs[2] = eyeangs[2] + vpA[2] * 0.75 -- follow horizontal viewpunch
-
+	eyeangs:Add(self.SwayAngle / 16)
 	eyeangs:Normalize()
 
-	dir = LerpVector(delta, eyeangs:Forward(), dir:GetNormalized())
+	dir = LerpVector(posDelta, eyeangs:Forward(), dir:GetNormalized())
 
-	dir:Mul(d)
+	dir:Mul(d * 8)
 	pos:Add(dir)
+
+	local eyeOff = (self.VMOffset or vector_origin) * d
 
 	--fuck:Sub(rang)
 	-- render.DrawSphere(pos, 4, 4, 4, color_white)
@@ -679,7 +688,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	if hsmag and hsmag > 1 and delta < 1 then
 		local screen = rtmat
 
-		if GetConVar("arccw_cheapscopes"):GetBool() then
+		if false and GetConVar("arccw_cheapscopes"):GetBool() then
 
 			screen = rtmat_cheap
 
@@ -727,7 +736,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 
 	cam.End3D()
 
-	cam.Start3D()
+	cam.Start3D(ep + eyeOff)
 
 	local a = pos:ToScreen()
 	local x = math.Round(a.x)
@@ -798,7 +807,10 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 	trvec[1], trvec[2] = x, y
 	scvec[1], scvec[2] = 1 + extend, 1 + extend
 
+	dir:Normalize()
+
 	mtrx:Identity()
+
 	mtrx:Translate(trvec)
 		mtrx:SetScale(scvec)
 		--mtrx:RotateNumber(0, -self:GetRecoilTilt(), 0)

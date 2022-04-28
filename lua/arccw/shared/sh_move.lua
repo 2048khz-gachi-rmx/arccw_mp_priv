@@ -65,6 +65,8 @@ hook.Add("SetupMove", "ArcCW_SetupMove", ArcCW.Move)
 
 local ang = Angle()
 
+local sum = 0
+
 function ArcCW.CreateMove(cmd)
 	local ply = LocalPlayer()
 	local wpn = ply:GetActiveWeapon()
@@ -104,7 +106,10 @@ function ArcCW.CreateMove(cmd)
 	end
 
 	local recoil, siderecoil = wpn:PunchRecoil()
-	if recoil == 0 and siderecoil == 0 then return end
+
+	if recoil == 0 and siderecoil == 0 then
+		return
+	end
 
 	local ang2 = cmd:GetViewAngles()
 
