@@ -62,7 +62,6 @@ function SWEP:EnterSprint()
 	if self:GetState() == ArcCW.STATE_CUSTOMIZE then return end
 	if self:GetState() == ArcCW.STATE_SIGHTS then return end
 
-	
 	self:SetState(ArcCW.STATE_SPRINT)
 	self:_OnEnterSprint()
 end
@@ -113,7 +112,7 @@ function SWEP:EnterSights()
 	if !asight then return end
 	if self:GetState() != ArcCW.STATE_IDLE then return end
 	if self:GetCurrentFiremode().Mode == 0 then return end
-	if !self.ReloadInSights and (self:GetReloading() or self:GetOwner():KeyDown(IN_RELOAD)) then
+	if !self.ReloadInSights and (self:GetReloading(true) or self:GetOwner():KeyDown(IN_RELOAD)) then
 		return
 	end
 	if self:GetBuff_Hook("Hook_ShouldNotSight") then return end
@@ -593,18 +592,38 @@ function SWEP:TranslateFOV(fov)
 	--if !irons.Magnification then return fov end
 	--if irons.Magnification == 1 then return fov end
 
-	t.ApproachFOV = t.ApproachFOV or fov
-	t.CurrentFOV = t.CurrentFOV or fov
+	local curfov = fov
+
+	t.CurrentFOV = t.CurrentFOV or curfov
 
 	local div = 1
 
-	local app_vm = t.ViewModelFOV + self:GetOwner():GetInfoNum("arccw_vm_fov", 0) + 10
-	local sght_vm = irons and irons.ViewModelFOV or 45
+	local reg_vmfov = t.ViewModelFOV + self:GetOwner():GetInfoNum("arccw_vm_fov", 0) + 10
+	local sight_vmfov = irons and irons.ViewModelFOV or 45
+	local fovTime = math.Clamp(self:GetSightTime() * 1.2, 0.2, 0.6)
 
-	if self:GetSightDelta() == 0 or self:GetState() == ArcCW.STATE_SIGHTS then
-		fov = 75
+	if self:GetSightDelta() < 1 or self:GetState() == ArcCW.STATE_SIGHTS then
+		local enter = self.LastEnterSightTimeUnpred
+		local exit = self.LastExitSightTimeUnpred
+		local out = exit > enter
 
-		local left = self:GetReloadingREAL() - CurTime()
+		local from = fov
+		local to = 75
+
+		if out then
+			to = fov
+			from = 75
+		end
+
+		local timePoint = math.max(enter, exit)
+		local passed = UnPredictedCurTime() - timePoint
+		local fr = math.Clamp(passed / fovTime, 0, 1)
+
+		fr = math.ease.OutExpo(fr)
+
+		curfov = Lerp(fr, from, to)
+
+		--[[local left = self:GetReloadingREAL() - CurTime()
 		local relFr = math.RemapClamp(left, 0, t.ReloadInSights_CloseIn, 0, 1)
 		local relMult = Lerp(Ease(relFr, 2.3), 1, t.ReloadInSights_FOVMult)
 
@@ -614,16 +633,8 @@ function SWEP:TranslateFOV(fov)
 			div = math.Approach(t.FOVDiv or 1, toDiv, FrameTime() * 0.25)
 		else
 			div = toDiv
-		end
+		end]]
 	end
-
-
-	t.FOVDiv = div
-	t.ApproachFOV = fov / div
-
-	local fovTime = math.Clamp(self:GetSightTime() * 1.2, 0.2, 0.6)
-	local from = t.SightsFOVChange or t.CurrentFOV
-	local to = t.ApproachFOV
 
 	if CLIENT then
 		local pass = UnPredictedCurTime()
@@ -634,8 +645,8 @@ function SWEP:TranslateFOV(fov)
 		local sub = math.max(t.LastEnterCustomize, t.LastExitCustomize)
 		cFr = self:CalcSwitchableFrac(from, isIn and 1 or 0, pass - sub, 0.6)
 
-		to = to - 6 * cFr
-		app_vm = app_vm - 4 * cFr
+		curfov = curfov - 6 * cFr
+		reg_vmfov = reg_vmfov - 4 * cFr
 	end
 
 	local enter = self.LastEnterSightTimeUnpred
@@ -646,13 +657,12 @@ function SWEP:TranslateFOV(fov)
 	local fr = math.Clamp(passed / fovTime, 0, 1)
 
 	fr = math.ease.OutExpo(fr)
-	t.CurrentFOV = ubLerp(fr, from, to)
-
-	t.CurrentViewModelFOV = t.CurrentViewModelFOV or t.ViewModelFOV
 
 	local sightMult = math.Remap(self:GetSightDelta(), 0, 1, 1, 0.3)
 	local fr = t.VM_SightsCurrent and (1 - t.VM_SightsCurrent) or self:GetSightDelta()
-	t.CurrentViewModelFOV = Lerp(fr, sght_vm, app_vm) --math.Approach(t.CurrentViewModelFOV, app_vm, FrameTime() * (t.CurrentViewModelFOV - app_vm))
+	t.CurrentViewModelFOV = Lerp(fr, sight_vmfov, reg_vmfov) --math.Approach(t.CurrentViewModelFOV, app_vm, FrameTime() * (t.CurrentViewModelFOV - app_vm))
+
+	t.CurrentFOV = curfov
 
 	return t.CurrentFOV + self:GetRecoilFOV() * sightMult
 end
