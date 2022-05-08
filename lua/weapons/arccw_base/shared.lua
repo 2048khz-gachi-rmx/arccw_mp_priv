@@ -747,12 +747,16 @@ function SWEP:SetupDataTables()
 	-- 5 = cancelling empty
 	self:NetworkVar("Int", 6, "ShotgunReloading")
 
+	self:NetworkVar("Int", 7, "BurstCountWear")
+	self:NetworkVar("Int", 8, "BurstStopped")
+
 	self:NetworkVar("Bool", 0, "HeatLocked")
 	self:NetworkVar("Bool", 1, "NeedCycle")
 	self:NetworkVar("Bool", 2, "InBipod")
 	self:NetworkVar("Bool", 3, "InUBGL")
 	self:NetworkVar("Bool", 4, "InCustomize")
 	self:NetworkVar("Bool", 5, "GrenadePrimed")
+	self:NetworkVar("Bool", 6, "IsReloading") -- actual reload state; "ReloadingREAL" float merely means "busy"/"inoperable"
 
 	self:NetworkVar("Float", 0, "Heat")
 	self:NetworkVar("Float", 1, "WeaponOpDelay")
@@ -771,6 +775,8 @@ function SWEP:SetupDataTables()
 	self:NetworkVar("Float", 10, "MaxRecoil")
 	self:NetworkVar("Float", 11, "MaxSideRecoil")
 	self:NetworkVar("Float", 12, "RecoilFrac")
+
+	self:NetworkVar("Float", 13, "BurstStoppedTime")
 end
 
 function SWEP:OnRestore()
@@ -801,7 +807,7 @@ function SWEP:SetReloading( v )
 	end
 end
 
-function SWEP:GetReloading()
+function SWEP:GetReloading(actually_reloading)
 	local decide
 
 	if self:GetReloadingREAL() > CurTime() then
@@ -812,15 +818,35 @@ function SWEP:GetReloading()
 
 	self:GetBuff_Hook("Hook_GetReloading", decide)
 
+	if actually_reloading then
+		decide = decide and self:GetIsReloading()
+	end
+
 	return decide
 end
 
 function SWEP:SetBurstCount(b)
+	if b == 0 and self:GetBurstCountUM() ~= 0 then
+		self:SetBurstStopped(self:GetBurstCountUM())
+		self:SetBurstStoppedTime(CurTime())
+	elseif b ~= 0 then
+		self:SetBurstCountWear(math.max(self:GetBurstCountWear(), b))
+		self:SetBurstStopped(b)
+		if b ~= 0 and self:GetBurstCountUM() == 0 then
+			self:SetBurstStoppedTime(CurTime())
+		end
+	end
+
 	self:SetBurstCountUM(b)
 end
 
 function SWEP:GetBurstCount()
-	return self:GetBuff_Hook("Hook_GetBurstCount", self:GetBurstCountUM()) or self:GetBurstCountUM() or 0
+	return self:GetBuff_Hook("Hook_GetBurstCount", self:GetBurstCountUM()) or
+		self:GetBurstCountUM() or 0
+end
+
+function SWEP:GetBurstWear()
+	return self:GetBurstCountWear()
 end
 
 SWEP._LatestState = 0

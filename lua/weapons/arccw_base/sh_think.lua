@@ -5,17 +5,34 @@ end
 local lastUBGL = 0
 local LastAttack2 = false
 
+function SWEP:NextbotThink(owner)
+	local ct = CurTime()
+
+	if self:GetMagUpIn() != 0 and ct > self:GetMagUpIn() then
+		self:WhenTheMagUpIn()
+		self:SetMagUpIn( 0 )
+	end
+end
+
 function SWEP:Think()
 	local owner = self:GetOwner()
 	local t = self:GetTable()
+	local ct = CurTime()
+
+	if !IsValid(owner) or owner:IsNPC() then return end
+
+	if owner:IsNextBot() then
+		self:NextbotThink(owner)
+		return
+	end
 
 	if --[[IsFirstTimePredicted() and]] CLIENT then
 		--print(t._LatestState, CurTime() - t._LatestStateWhen, self:GetNWState())
-		if t._LatestStateWhen < CurTime() and self:GetNWState() ~= t._LatestState then
+		if t._LatestStateWhen < ct and self:GetNWState() ~= t._LatestState then
 			-- misprediction?
 			local key = self:GetNWState() .. "_RestoreHooks"
-			if self[key] then
-				for k,v in pairs(self[key]) do
+			if t[key] then
+				for k,v in pairs(t[key]) do
 					v(self)
 				end
 			end
@@ -24,26 +41,19 @@ function SWEP:Think()
 		end
 	end
 
-	if !IsValid(owner) or owner:IsNPC() then return end
-
-	if owner:IsNextBot() then
-		if self:GetMagUpIn() != 0 and CurTime() > self:GetMagUpIn() then
-			self:WhenTheMagUpIn()
-			self:SetMagUpIn( 0 )
-		end
-
-		return
-	end
-
 	local vm = owner:GetViewModel()
 
-	self.BurstCount = self:GetBurstCount()
+	t.BurstCount = self:GetBurstCount()
 
 	local sg = self:GetShotgunReloading()
+	local rel = self:GetReloading()
+
 	if (sg == 2 or sg == 4) and owner:KeyPressed(IN_ATTACK) then
 		self:SetShotgunReloading(sg + 1)
-	elseif (sg >= 2) and self:GetReloadingREAL() <= CurTime() then
+		rel = self:GetReloading()
+	elseif (sg >= 2) and self:GetReloadingREAL() <= ct then
 		self:ReloadInsert((sg >= 4) and true or false)
+		rel = self:GetReloading()
 	end
 
 	if CLIENT then
@@ -56,13 +66,19 @@ function SWEP:Think()
 
 	self:InBipod()
 
+	if !rel then
+		self:SetIsReloading(false)
+	end
+
 	-- Adding this delays bolting if the RPM is too low, but removing it may
 	-- reintroduce the double pump bug. Increasing the RPM allows you to shoot twice
 	-- on many multiplayer servers. Sure would be convenient if everything just worked nicely
 
-	if self:GetNeedCycle() and !self:GetReloading() and self:GetWeaponOpDelay() < CurTime() and self:GetNextPrimaryFire() < CurTime() and
-			(!GetConVar("arccw_clicktocycle"):GetBool() and (self:GetCurrentFiremode().Mode == 2 or !owner:KeyDown(IN_ATTACK))
-			or GetConVar("arccw_clicktocycle"):GetBool() and (self:GetCurrentFiremode().Mode == 2 or owner:KeyPressed(IN_ATTACK))) then
+	local cfm = self:GetCurrentFiremode()
+
+	if self:GetNeedCycle() and !rel and self:GetWeaponOpDelay() < ct and self:GetNextPrimaryFire() < ct and
+			(!GetConVar("arccw_clicktocycle"):GetBool() and (cfm.Mode == 2 or !owner:KeyDown(IN_ATTACK))
+			or GetConVar("arccw_clicktocycle"):GetBool() and (cfm.Mode == 2 or owner:KeyPressed(IN_ATTACK))) then
 		local anim = self:SelectAnimation("cycle")
 		anim = self:GetBuff_Hook("Hook_SelectCycleAnimation", anim) or anim
 		local mult = self:GetBuff_Mult("Mult_CycleTime")
@@ -75,7 +91,7 @@ function SWEP:Think()
 	end
 
 	if self:GetGrenadePrimed() and self.GrenadePrimeTime > 0 then
-		local heldtime = (CurTime() - self.GrenadePrimeTime)
+		local heldtime = (ct - self.GrenadePrimeTime)
 
 		local ft = self:GetBuff_Override("Override_FuseTime") or self.FuseTime
 
@@ -96,32 +112,38 @@ function SWEP:Think()
 		self:DoTriggerDelay()
 	end
 
-	if self:GetCurrentFiremode().RunawayBurst and self:Clip1() > 0 then
-		if self:GetBurstCount() > 0 then
+	if cfm.RunawayBurst and self:Clip1() > 0 then
+		if t.BurstCount > 0 then
 			self:PrimaryAttack()
 		end
 
-		if self:GetBurstCount() == self:GetBurstLength() then
+		if t.BurstCount == self:GetBurstLength() then
 			self:SetBurstCount(0)
-			if !self:GetCurrentFiremode().AutoBurst then
+			if !cfm.AutoBurst then
 				self.Primary.Automatic = false
 			end
 		end
 	end
 
 	if owner:KeyReleased(IN_ATTACK) then
-		if !self:GetCurrentFiremode().RunawayBurst then
+		if !cfm.RunawayBurst then
 			self:SetBurstCount(0)
 		end
 
-		if self:GetCurrentFiremode().Mode < 0 and !self:GetCurrentFiremode().RunawayBurst then
-			local postburst = self:GetCurrentFiremode().PostBurstDelay or 0
+		if cfm.Mode < 0 and !cfm.RunawayBurst then
+			local postburst = cfm.PostBurstDelay or 0
 
-			if (CurTime() + postburst) > self:GetWeaponOpDelay() then
-				--self:SetNextPrimaryFire(CurTime() + postburst)
-				self:SetWeaponOpDelay(CurTime() + postburst * self:GetBuff_Mult("Mult_PostBurstDelay") + self:GetBuff_Add("Add_PostBurstDelay"))
+			if (ct + postburst) > self:GetWeaponOpDelay() then
+				--self:SetNextPrimaryFire(ct + postburst)
+				self:SetWeaponOpDelay(ct + postburst * self:GetBuff_Mult("Mult_PostBurstDelay") + self:GetBuff_Add("Add_PostBurstDelay"))
 			end
 		end
+	end
+
+	local passed = ct - self:GetBurstStoppedTime()
+	if ct > self:GetNextPrimaryFire() and t.BurstCount == 0 then
+		local fr = Ease(math.RemapClamp(passed, 0, self:GetSightTime() * 2, 1, 0), 2.3)
+		self:SetBurstCountWear(math.max(self:GetBurstStopped() * fr, 0))
 	end
 
 	if self:InSprint(true) and self:GetState() != ArcCW.STATE_SPRINT then
@@ -130,7 +152,9 @@ function SWEP:Think()
 		self:ExitSprint()
 	end
 
-	if owner and owner:GetInfoNum("arccw_automaticreload", 0) == 1 and self:Clip1() == 0 and !self:GetReloading() and CurTime() > self:GetNextPrimaryFire() + 0.2 then
+	if owner and owner:GetInfoNum("arccw_automaticreload", 0) == 1 and
+			self:Clip1() == 0 and !rel and
+			CurTime() > self:GetNextPrimaryFire() + 0.2 then
 		self:Reload()
 	end
 
@@ -143,8 +167,8 @@ function SWEP:Think()
 				self:ChangeFiremode()
 			end
 		end
-	elseif (!(self:GetBuff_Override("Override_ReloadInSights") or self.ReloadInSights) and (self:GetReloading() or owner:KeyDown(IN_RELOAD))) then
-		if !(self:GetBuff_Override("Override_ReloadInSights") or self.ReloadInSights) and self:GetReloading() then
+	elseif (!(self:GetBuff_Override("Override_ReloadInSights") or self.ReloadInSights) and (rel or owner:KeyDown(IN_RELOAD))) then
+		if !(self:GetBuff_Override("Override_ReloadInSights") or self.ReloadInSights) and self:GetReloading(true) then
 			self:ExitSights()
 		end
 	end
@@ -260,22 +284,8 @@ function SWEP:Think()
 	if CLIENT then
 		if IsValid(ArcCW.InvHUD) then
 			ArcCW.InvHUD:PredThink()
-		-- elseif IsFirstTimePredicted() and self:IsCustomizing() then
-		--    self:OpenCustomizeHUD()
 		end
 	end
-
-	-- if CLIENT then
-		-- if !IsValid(ArcCW.InvHUD) then
-		--     gui.EnableScreenClicker(false)
-		-- end
-
-		-- if self:GetState() != ArcCW.STATE_CUSTOMIZE then
-		--     self:CloseCustomizeHUD()
-		-- else
-		--     self:OpenCustomizeHUD()
-		-- end
-	-- end
 
 	for i, k in pairs(self.Attachments) do
 		if !k.Installed then continue end
@@ -300,7 +310,7 @@ function SWEP:Think()
 
 	-- self:RefreshBGs()
 
-	if self:GetMagUpIn() != 0 and CurTime() > self:GetMagUpIn() then
+	if self:GetMagUpIn() != 0 and ct > self:GetMagUpIn() then
 		self:WhenTheMagUpIn()
 		self:SetMagUpIn( 0 )
 	end
@@ -313,7 +323,7 @@ function SWEP:Think()
 	--end
 
 
-	if self:GetNextIdle() != 0 and self:GetNextIdle() <= CurTime() then
+	if self:GetNextIdle() != 0 and self:GetNextIdle() <= ct then
 		if self.FullyHolstered then
 			-- Bruh
 			return
@@ -342,7 +352,7 @@ function SWEP:GetRecoilTimeFrac(recTime, unpred)
 	return math.Clamp(passed / (recTime or self.RecoilTRecovery), 0, 1)
 end
 
-function SWEP:GetAimRecoil(unpred)
+function SWEP:GetAimRecoil(unpred, linear)
 	local fr, v, h = self:LetMeHandleTheRecoil(unpred)
 	local recRiseFr = 0.22
 
@@ -356,18 +366,24 @@ function SWEP:GetAimRecoil(unpred)
 
 	if fr < recRiseFr then
 		recFrac = Ease(math.Remap(fr, 0, recRiseFr, 0, 1), 0.2)
-		from = v
-		to = self.LastAimRecoil or 0
+		to = v
+		from = self.LastAimRecoil or 0
 	else
 		recFrac = 1 - Ease(1 - math.Remap(fr, recRiseFr, 1, 1, 0), 0.4)
-		from = v
-		to = 0
+		to = v
+		from = 0
 	end
 
-	local rec = math.Round(math.max(Lerp(recFrac, to, from), 0), 5)
-	local sideRec = math.Round(math.max(h * recFrac, 0), 5)
+	local m = 1
+	-- uncomment for tarkov recoil, lol
+	--local m = 3 - math.min(2, self:GetBurstCountWear() * 0.4)
+	--m = math.sin( math.min(math.pi * 1.5, self:GetBurstCountWear() / 2) ) * 2
+	--m = linear and 1 or m
 
-	return rec, sideRec
+	local rec = math.Round(math.max(Lerp(recFrac, from, to), 0), 5) * m
+	local sideRec = math.Round(math.max(h * recFrac, 0), 5) * m
+
+	return rec, sideRec, recFrac, from, to
 end
 
 function SWEP:LetMeHandleTheRecoil(unpred)

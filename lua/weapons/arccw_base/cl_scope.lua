@@ -263,7 +263,8 @@ function SWEP:GetShakeAng(pred)
 			local fr, rec = self:LetMeHandleTheRecoil(true)
 			local sightMult = math.Remap(self:GetSightDelta(), 0, 1, 1, 0.5)
 
-			fr = Ease(1 - fr, 3.3) * 0.002 * sightMult
+			fr = Ease(1 - fr, 3.3) * 0.002
+				* sightMult * (0.6 + math.min(0.4, self:GetBurstCount() * 0.05))
 			angRand(shakeAng, fr * rec, fr * rec * 0.6)
 		end
 	end
@@ -292,11 +293,14 @@ function SWEP:GetRecoilViewAng()
 		rollfr = math.RemapClamp(pass, rof * rofFr, rof + 0.3, 1, 0)
 	end
 
+	local h, s, tm = self:GetAimRecoil()
+
+
 	ra[1] = -ver * Ease(fr, 2.3) * mult
 	ra[2] = -hor * Ease(fr, 1.6) / 2 * mult
 	ra[3] = Ease(rollfr, 4.3) * math.sin(SysTime() * (1 / rof) * 3.4)
 		* (2.6 * math.abs(hor) + 1.2 * math.abs(ver)) --* self.PunchDir * hor * 3 * mult
-
+		* (0.6 + math.min(0.4, self:GetBurstCount() * 0.05))
 	return ra
 end
 
