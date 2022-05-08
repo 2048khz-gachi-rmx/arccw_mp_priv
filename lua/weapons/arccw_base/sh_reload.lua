@@ -149,6 +149,7 @@ function SWEP:Reload()
         self:SetMagUpIn(CurTime() + reloadtime)
     end
 
+    self:SetIsReloading(true)
     self:SetClipInfo(load)
     if game.SinglePlayer() then
         self:CallOnClient("SetClipInfo", tostring(load))
