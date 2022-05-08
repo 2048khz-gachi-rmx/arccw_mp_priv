@@ -508,6 +508,7 @@ local function recoilMethod(self)
 	local ver, hor = self:GetAimRecoil(true)
 
 	recoilAng[1] = ver --(1 - Ease(fr, 0.6)) * max
+	recoilAng[2] = hor / 4
 	recoilAng[3] = self:GetRecoilTilt()
 
 	return recoilAng -- self:GetOurViewPunchAngles()
@@ -725,9 +726,6 @@ function SWEP:CalculateVMPos(pos, ang)
 		end
 	end
 
-	t.VM_SightsCurrent = sightedFrac
-
-
 	-- *2 makes no sense but works... eh?
 	local recovery = self:GetSprintTime() * 2 -- (t.VM_UseSightTime and t.VM_SprintRecovery * sightTime) or t.VM_SprintRecovery
 	local sprinted  = state == ArcCW.STATE_SPRINT or (UCT - t.LastExitSprintTimeUnpred) < recovery
@@ -746,7 +744,8 @@ function SWEP:CalculateVMPos(pos, ang)
 		end
 	end
 
-
+	sightedFrac = math.max(0, sightedFrac - sprintFrac)
+	t.VM_SightsCurrent = sightedFrac
 	t.VM_SprintCurrent = sprintFrac
 
 	local custRecovery = 0.3
@@ -824,8 +823,15 @@ function SWEP:CalculateVMPos(pos, ang)
 
 		if recovery > 0.8 then
 			local angFr = math.RemapClamp(sprintFrac, 0, math.max(recovery * 0.6, 0.6), 1, 0)
-			local awv = math.sin(angFr * math.pi * 2)
-			local angOff = sprinting and 0 or (awv > 0 and awv / 4 or awv) * -16
+			local downTill = 0.8
+			local awv = angFr < downTill and -math.sin(angFr * math.pi / downTill / 2)
+
+			if not awv then
+				local af = math.RemapClamp(angFr, downTill, 1, 0, 1)
+				awv = -1 + math.sin(af * math.pi) * 1
+			end
+
+			local angOff = sprinting and 0 or awv * 16
 
 			addp = angOff
 
@@ -1130,7 +1136,7 @@ function SWEP:CalculateVMPos(pos, ang)
 
 	if sght and sght.HolosightModel and rec ~= 0 then
 		local OU = oldang:ToUp(dirVec)
-		OU:Mul(rec / 4)
+		OU:Mul(rec / 4) --2)
 
 		pos:Add(OU)
 	end
