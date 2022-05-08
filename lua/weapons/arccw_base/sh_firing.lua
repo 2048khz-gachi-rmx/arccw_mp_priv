@@ -158,7 +158,7 @@ function SWEP:PrimaryAttack()
 	origDir:Set(dir) -- origin of the spread (ie its' center)
 
 	local delay = self:GetFiringDelay()
-	self.LastAimRecoil = self:GetAimRecoil()
+	self.LastAimRecoil = self:GetAimRecoil(false, true)
 
 	local curBullet = 0
 	local tInter = engine.TickInterval()
@@ -858,10 +858,11 @@ function SWEP:DoRecoil()
 
 	local minIntensity = 0.3
 
-	local globalMult = 0.75
+	local globalMult = 0.7 + math.min(0.2, self:GetBurstCountWear() * 0.05)
 
 	local irec = math.random() * (1 - minIntensity) + minIntensity
 	irec = irec * (math.random() < 0.5 and -1 or 1)
+	irec = irec * (0.6 + math.min(1.1, self:GetBurstCountWear() * 0.08))
 
 	local recu = 1
 
@@ -897,9 +898,10 @@ function SWEP:DoRecoil()
 	local curRec = math.min(self:GetRecoil(), self:GetMaxRecoil()) / 2
 	local addRec = self.Recoil * rmul * recu * rvert * globalMult
 
-	local curSideRec = self:GetSideRecoil()
+	local curSideRec = self:GetMaxSideRecoil() / 1.5
 	local addSideRec = self.RecoilSide * irec * recs * rmul * globalMult
 
+	--print(curRec, curSideRec, Realm())
 	if CLIENT and IsFirstTimePredicted() then
 		-- don't predict any of this: working with predicted CurTime() in sh_move will be a pain
 		self.UnpredRecoiledWhen = UnPredictedCurTime()
@@ -907,12 +909,13 @@ function SWEP:DoRecoil()
 		local unpunchedVLeft = self:GetMaxRecoil() - self._LastVerticalRec
 		self._CarryVerticalRec = self._CarryVerticalRec + (self:GetMaxRecoil() - unpunchedVLeft)
 
-		local unpunchedHLeft = self.MaxSideRecoilAmount - self._LastHorizontalRec
-		self._CarryHorizontalRec = self._CarryHorizontalRec + (curSideRec - unpunchedHLeft)
+		local unpunchedHLeft = self:GetMaxSideRecoil() - self._LastHorizontalRec
+		self._CarryHorizontalRec = self._CarryHorizontalRec + (self:GetMaxSideRecoil() - unpunchedHLeft)
 	end
 
 	self.MaxSideRecoilAmount = curSideRec + addSideRec
 
+	--print(curRec, addRec, curSideRec, addSideRec)
 	self:SetMaxRecoil(curRec + addRec)
 	self:SetMaxSideRecoil(curSideRec + addSideRec)
 
@@ -1013,6 +1016,7 @@ function SWEP:PunchRecoil()
 	local mxR, mxSR = self:GetMaxRecoil() - self._CarryVerticalRec,
 		self:GetMaxSideRecoil() - self._CarryHorizontalRec
 
+	--print("max siderecoil", mxSR, self:GetMaxSideRecoil(), self._CarryHorizontalRec)
 	self._LastPunch = ct
 	local passed = ct - rWhen
 	local sincePassed = since - rWhen
