@@ -895,10 +895,17 @@ function SWEP:DoRecoil()
 
 	if CLIENT and IsFirstTimePredicted() then self:OurViewPunch(punch) end
 
+	-- without the div, if recovery subtracts less than gain you will get more recoil with each shot, unbounded
+	-- this doesn't feel very good; the div makes it harder to go into that
 	local curRec = math.min(self:GetRecoil(), self:GetMaxRecoil()) / 2
 	local addRec = self.Recoil * rmul * recu * rvert * globalMult
 
-	local curSideRec = self:GetMaxSideRecoil() / 1.5
+	local curSideRec = self:GetMaxSideRecoil()
+	if math.abs(self:GetSideRecoil()) < math.abs(self:GetMaxSideRecoil()) then
+		curSideRec = self:GetSideRecoil()
+	end
+	curSideRec = curSideRec / 1.5
+
 	local addSideRec = self.RecoilSide * irec * recs * rmul * globalMult
 
 	--print(curRec, curSideRec, Realm())
@@ -915,7 +922,6 @@ function SWEP:DoRecoil()
 
 	self.MaxSideRecoilAmount = curSideRec + addSideRec
 
-	--print(curRec, addRec, curSideRec, addSideRec)
 	self:SetMaxRecoil(curRec + addRec)
 	self:SetMaxSideRecoil(curSideRec + addSideRec)
 
