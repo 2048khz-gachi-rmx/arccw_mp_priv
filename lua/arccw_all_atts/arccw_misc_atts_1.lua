@@ -1107,7 +1107,7 @@ do
 	att.Model = "models/weapons/fas2/attachments/acog.mdl"
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(-0.009, 7.1, -1.064),
+	        Pos = Vector(-0.009, 6.1, -1.064),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 1.1,
 	    }
@@ -1122,78 +1122,6 @@ do
 	att.HolosightPiece = "models/weapons/fas2/attachments/acog_hsp.mdl"
 	att.HolosightMagnification = 4
 	att.HolosightBlackbox = true
-	att.ActivateElements = {"mount"}
-	att.AttachSound = "fas2/cstm/attach.wav"
-	att.DetachSound = "fas2/cstm/detach.wav"
-	ArcCW.LoadAttachmentType(att)
-end
-
-------
--- fas2_scope_anpas.lua
-------
-
-do
-	local att = {}
-	ArcCW.SetShortName("fas2_scope_anpas")
-
-	att.PrintName = "AN/PAS-29"
-	att.Icon = Material("vgui/fas2atts/anpas")
-	att.Description = "The AN/PAS-29 is a night vision scope developed by COTI. There are rumors that these scopes were purchased in a large batch by military organization ''Ignis''."
-	att.Desc_Pros = {
-	    "Precision sight picture",
-	    "4x magnification",
-	    "Can be switched ON or OFF (Double E)"
-	}
-	att.Desc_Cons = {
-	    "Narrow sighting area",
-	    "Visible scope glint"
-	}
-	att.Slot = "fas2_scope"
-	att.Model = "models/weapons/fas2/attachments/anpas.mdl"
-	att.AdditionalSights = {
-	    {
-	        Pos = Vector(-0.025, 7, -1.3085),
-	        Ang = Angle(0, 0, 0),
-	        Magnification = 2,
-	        ScrollFunc = ArcCW.SCROLL_NONE,
-	        NVScope = true,
-	        NVScopeColor = Color(0, 255, 0),
-	        Contrast = 5,
-	        Brightness = 0,
-	        HolosightData = {
-	            Holosight = true,
-				HolosightMagnification = 4,
-				HolosightReticle = Material("sprites/fas2/scopes/anpas"),
-	            HolosightSize = 11,
-	            HolosightBlackbox = true,
-	            HolosightPiece = "models/weapons/fas2/attachments/anpas_hsp.mdl"
-	        },
-	    },
-	    {
-	        Pos = Vector(-0.025, 7, -1.3085),
-	        Ang = Angle(0, 0, 0),
-	        Magnification = 2,	
-	        HolosightData = {
-	            Holosight = true,
-				HolosightMagnification = 4,
-				HolosightReticle = Material("sprites/fas2/scopes/anpas"),
-	            HolosightSize = 11,
-	            HolosightBlackbox = true,
-	            HolosightPiece = "models/weapons/fas2/attachments/anpas_hsp.mdl"
-	        },
-	    },	
-	}
-	att.ScopeGlint = true
-	att.Mult_GlintMagnitude = 0.5
-	att.Holosight = true
-	att.HolosightReticle = Material("sprites/fas2/scopes/anpas")
-	att.HolosightNoFlare = true
-	att.HolosightSize = 11
-	att.HolosightBone = "holosight"
-	att.HolosightPiece = "models/weapons/fas2/attachments/anpas_hsp.mdl"
-	att.HolosightMagnification = 4
-	att.HolosightBlackbox = true
-	att.HolosightConstDist = 64
 	att.ActivateElements = {"mount"}
 	att.AttachSound = "fas2/cstm/attach.wav"
 	att.DetachSound = "fas2/cstm/detach.wav"
@@ -1225,7 +1153,7 @@ do
 	att.Model = "models/weapons/fas2/attachments/atnthor.mdl"
 	att.AdditionalSights = {
 	    {
-	        Pos = Vector(-0.008, 6.42, -1.227),
+	        Pos = Vector(0, 6.6, -1.227),
 	        Ang = Angle(0, 0, 0),
 	        Magnification = 0,
 	        -- ScrollFunc = ArcCW.SCROLL_ZOOM,
@@ -1241,7 +1169,7 @@ do
 	att.Holosight = true
 	att.HolosightReticle = Material("sprites/fas2/scopes/m110")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 8.5
+	att.HolosightSize = 5
 	att.HolosightBone = "holosight"
 	att.HolosightPiece = "models/weapons/fas2/attachments/atnthor_hsp.mdl"
 	att.HolosightMagnification = 0
@@ -1730,7 +1658,7 @@ do
 	att.Holosight = true
 	att.HolosightReticle = Material("sprites/fas2/sights/cmore")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 1.5
+	att.HolosightSize = 1
 	att.HolosightBone = "holosight"
 	att.HolosightNoHSP = true
 	att.AttachSound = "fas2/cstm/attach.wav"
@@ -1772,7 +1700,7 @@ do
 	att.Holosight = true
 	att.HolosightReticle = Material("sprites/fas2/sights/dot")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 1.5
+	att.HolosightSize = 1
 	att.HolosightBone = "holosight"
 	att.HolosightNoHSP = true
 	att.ActivateElements = {"mount"}
@@ -1814,7 +1742,7 @@ do
 	att.Holosight = true
 	att.HolosightReticle = Material("sprites/fas2/sights/eotech")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 1.5
+	att.HolosightSize = 1
 	att.HolosightBone = "holosight"
 	att.HolosightNoHSP = true
 	att.ActivateElements = {"mount"}
@@ -1856,7 +1784,7 @@ do
 	att.Holosight = true
 	att.HolosightReticle = Material("sprites/fas2/sights/cobrards")
 	att.HolosightNoFlare = true
-	att.HolosightSize = 1.5
+	att.HolosightSize = 1
 	att.HolosightBone = "holosight"
 	att.HolosightNoHSP = true
 	att.ActivateElements = {"mount"}
