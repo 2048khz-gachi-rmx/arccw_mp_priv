@@ -669,7 +669,7 @@ function SWEP:DrawHolosight(hs, hsm, hsp, asight)
 		- v * self.RecoilAimOffsetMult
 		-- vpA[1]
 		- rang[1]
-	eyeangs[2] = eyeangs[2] + vpA[2] * 0.75 -- follow horizontal viewpunch
+	eyeangs[2] = eyeangs[2] + vpA[2] * 0.25 -- follow horizontal viewpunch
 	eyeangs:Add(self.SwayAngle / 16)
 	eyeangs:Normalize()
 
