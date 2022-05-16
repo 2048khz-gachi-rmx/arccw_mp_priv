@@ -354,9 +354,9 @@ end
 
 function SWEP:GetAimRecoil(unpred, linear)
 	local fr, v, h = self:LetMeHandleTheRecoil(unpred)
-	local recRiseFr = 0.22
+	local recRiseFr = 0.2
 
-	local recoverTime = math.min(self:GetFiringDelay(), 0.1) -- recovery will look weird on slow-firing guns
+	local recoverTime = math.min(self:GetFiringDelay(), 0.1) * 1.1 -- recovery will look weird on slow-firing guns
 															-- (like the csgo deagle)
 
 	fr = self:GetRecoilTimeFrac(recoverTime / recRiseFr, unpred)
