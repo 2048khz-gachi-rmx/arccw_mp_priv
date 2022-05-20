@@ -86,6 +86,10 @@ end
 local unrand = Vector()
 local origDir = Vector()
 
+local function SuppressHE(...)
+	if SERVER then SuppressHostEvents(...) end
+end
+
 function SWEP:PrimaryAttack()
 	counter = 0
 	local owner = self:GetOwner()
@@ -207,11 +211,7 @@ function SWEP:PrimaryAttack()
 		local dist = (hitpos - src):Length() * ArcCW.HUToM
 		local pen  = self:GetBuff("Penetration")
 
-		if SERVER then
-			debugoverlay.Cross(hitpos, 5, 5, Color(0, 0, 255), true)
-		else
-			debugoverlay.Cross(hitpos, 5, 5, Color(255, 0, 0), true)
-		end
+		ArcCW:Debug("bullets", debugoverlay.Cross, hitpos, CLIENT and 3 or 5, 5, RealmColor():Copy():MulHSV(1, 1, 0.8), true)
 
 		--[[if !game.SinglePlayer() and CLIENT and !(tracernum == 0 or clip % tracernum != 0) then
 			local fx = EffectData()
@@ -263,7 +263,9 @@ function SWEP:PrimaryAttack()
 
 		if SERVER then self:TryBustDoor(trent, dmg) end
 
-		self:DoPenetration(tr, hit.penleft, { [trent:EntIndex()] = hit.damage })
+		SuppressHE(NULL) -- remove suppression for penetration decals; client doesnt do penetration anyhow
+			self:DoPenetration(tr, hit.penleft, { [trent:EntIndex()] = hit.damage })
+		SuppressHE(owner)
 
 		effect = self:GetBuff_Override("Override_ImpactEffect") or effect
 
@@ -291,8 +293,6 @@ function SWEP:PrimaryAttack()
 	local extraspread = AngleRand() * self:GetDispersion() / 360 / 60
 
 	local projectiledata = {}
-
-	local shouldsupp = SERVER and !game.SinglePlayer()
 
 	if shpatt or shpattov or shootent then
 		if shootent then
@@ -386,7 +386,7 @@ function SWEP:PrimaryAttack()
 
 	owner:DoAnimationEvent(self:GetBuff_Override("Override_AnimShoot") or self.AnimShoot)
 
-	if shouldsupp then SuppressHostEvents(owner) end
+	SuppressHE(owner)
 
 	self:DoEffects()
 
@@ -421,7 +421,7 @@ function SWEP:PrimaryAttack()
 	self:GetBuff_Hook("Hook_PostFireBullets")
 	hook.Run("ArcCW_FiredBullets", self, bullet)
 
-	if shouldsupp then SuppressHostEvents(nil) end
+	SuppressHE(nil)
 end
 
 function SWEP:TryBustDoor(ent, dmg)

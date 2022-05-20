@@ -2,10 +2,31 @@ local mth      = math
 local m_rand   = mth.Rand
 local m_lerp   = Lerp
 
+function ArcCW:Debug(name, fn, fn2, ...)
+	local cv = GetConVar("arccw_debug_" .. name)
+	if not cv then
+		cv = CreateConVar("arccw_debug_" .. name, 0, FCVAR_ARCHIVE + FCVAR_CLIENTCMD_CAN_EXECUTE)
+	end
+
+	local int = cv:GetInt()
+	if int == 0 then return end
+
+	if isnumber(fn) then
+		if int < fn then return end
+		fn2(...)
+	else
+		fn(fn2, ...)
+	end
+end
+
+local function dbg(...)
+	ArcCW:Debug("pen", ...)
+end
+
 function ArcCW:GetRicochetChance(penleft, tr)
     if !GetConVar("arccw_enable_ricochet"):GetBool() then return 0 end
-    local degree = tr.HitNormal:Dot((tr.StartPos - tr.HitPos):GetNormalized())
 
+    local degree = tr.HitNormal:Dot((tr.StartPos - tr.HitPos):GetNormalized())
     local ricmult = ArcCW.PenTable[tr.MatType] or 1
 
     -- 0 at 1
@@ -28,10 +49,9 @@ function ArcCW:IsPenetrating(ptr, ptrent)
     elseif IsValid(ptrent) then
         local mins, maxs = ptrent:WorldSpaceAABB()
         local withinbounding = ptr.HitPos:WithinAABox(mins, maxs)
-        if  GetConVar("developer"):GetInt() >= 2 and withinbounding then
-            --debugoverlay.Box(Vector(0, 0, 0), mins, maxs, 5, Color(255, 255, 255, 50))
-            debugoverlay.Cross(ptr.HitPos, 2, 5, Color(255, 255, 0), true)
-        end
+
+        --debugoverlay.Box(Vector(0, 0, 0), mins, maxs, 5, Color(255, 255, 255, 50))
+        dbg(2, debugoverlay.Cross, ptr.HitPos, 2, 5, Color(255, 255, 0), true)
 
         if withinbounding then return true end
         --[[]
@@ -114,7 +134,7 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
         local d = math.Rand(0.25, 0.95)
 
         penleft = penleft * d
-        debugoverlay.Text(td.endpos - Vector(0, 0, 8), "RICOCHET", 5)
+        dbg(2, debugoverlay.Text, td.endpos - Vector(0, 0, 8), "RICOCHET", 5)
         endpos = hitpos -- back out of the wall for the ricochet
         skip = true
     end
@@ -143,13 +163,13 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
         -- Damage is handled in abullet.Callback anyways
         ptrent = ptr.Entity
 
-        if GetConVar("developer"):GetBool() then
-            local pdeltap = penleft / bullet.Penetration
-            local colorlr = m_lerp(pdeltap, 0, 255)
 
-            debugoverlay.Line(endpos, endpos + (dir * pentracelen), 10,
-                Color(255, colorlr, colorlr), true)
-        end
+        local pdeltap = penleft / bullet.Penetration
+        local colorlr = m_lerp(pdeltap, 0, 255)
+
+        dbg(2, debugoverlay.Line, endpos, endpos + (dir * pentracelen), 10,
+            Color(255, colorlr, colorlr), true)
+
 
         endpos = endpos + (dir * pentracelen)
 
@@ -170,7 +190,7 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
    -- debugoverlay.Cross(endpos, 8, 4, Colors.Sky, true)
 
     if penleft <= 0 then
-    	debugoverlay.Text(endpos + Vector(0, 0, 4), "Dead", 5)
+    	dbg(2, debugoverlay.Text, endpos + Vector(0, 0, 4), "Dead", 5)
     end
 
     if penleft > 0 then
@@ -245,11 +265,9 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
 
                 ArcCW:DoPenetration(btr, damage, bullet, penleft, false, alreadypenned)
 
-                if GetConVar("developer"):GetBool() then
-                    --debugoverlay.Cross(endpos, 8, 4, Colors.Sky, true)
-                    --debugoverlay.Cross(btr.HitPos, 8, 4, Colors.Red, true)
-                    --debugoverlay.Line(endpos, btr.HitPos, 10, Color(150, 150, 150), true)
-                end
+                dbg(2, debugoverlay.Cross, endpos, 8, 4, Colors.Sky, true)
+                dbg(2, debugoverlay.Cross, btr.HitPos, 8, 4, Colors.Red, true)
+                dbg(2, debugoverlay.Line, endpos, btr.HitPos, 10, Color(150, 150, 150), true)
 
                 -- if !game.SinglePlayer() and CLIENT then
                     local fx = EffectData()
