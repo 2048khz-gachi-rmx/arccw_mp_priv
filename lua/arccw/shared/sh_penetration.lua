@@ -128,7 +128,8 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
 
         dir = (2 * degree * tr.HitNormal) + tr.Normal
         ang = dir:Angle()
-        ang = ang + (AngleRand() * (1 - degree) * 15 / 360)
+        ang = ang + (AngleRand() * (1 - degree) * 1 / 360)
+
         dir = ang:Forward()
 
         local d = math.Rand(0.25, 0.95)
@@ -173,7 +174,7 @@ function ArcCW:DoPenetration(tr, damage, bullet, penleft, physical, alreadypenne
 
         endpos = endpos + (dir * pentracelen)
 
-        dir = dir + (VectorRand() * 0.025 * penmult * pentracelen)
+        dir = dir + (VectorRand() * 0.01 * penmult * pentracelen)
         dir:Normalize()
     end
 
