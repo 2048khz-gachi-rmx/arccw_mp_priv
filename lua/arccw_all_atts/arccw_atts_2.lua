@@ -197,12 +197,12 @@ do
 	att.Override_Firemodes = {
 	    {
 	        Mode = -2,
-	        Mult_RPM = 2,
+	        Mult_RPM = 1.6,
 	        RunawayBurst = true,
-	        PostBurstDelay = 0.1,
+	        PostBurstDelay = 0.25,
 	        Override_ShotRecoilTable = {
 	            [0] = 0.25,
-	            [1] = 1.25
+	            [1] = 1.75
 	        }
 	    },
 	    {
