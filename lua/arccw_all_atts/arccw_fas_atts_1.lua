@@ -457,6 +457,7 @@ do
 	att.Mult_SightTime = 1.2
 	att.Mult_HipDispersion = 1.3
 	att.Mult_AccuracyMOA = 0.4
+	att.Mult_Recoil = 1.25
 
 	att.Mult_RPM = 1.3
 
@@ -500,7 +501,7 @@ do
 	att.Mult_Range = 0.5
 	att.Mult_SightTime = 0.7
 	att.Mult_RPM = 1.4
-	att.Mult_Recoil = 1.3
+	att.Mult_Recoil = 1.5
 	att.Mult_AccuracyMOA = 2
 	att.Mult_DrawSpeeed = 1.5
 	att.Mult_HolsterSpeed = 1.5
@@ -817,8 +818,8 @@ do
 	att.Mult_DamageMin = 0.85
 	att.Mult_Penetration = 0.8
 	att.Mult_Range = 0.8
-	att.Mult_Recoil = 0.7
-	att.Mult_RecoilSide = 0.75
+	att.Mult_Recoil = 0.8
+	att.Mult_RecoilSide = 0.85
 	att.Mult_RPM = 1.2
 
 	att.Override_Ammo = "smg1"
