@@ -298,7 +298,7 @@ function SWEP:GetRecoilViewAng()
 
 	ra[1] = -ver * Ease(fr, 2.3) * mult
 	ra[2] = -hor * Ease(fr, 1.6) / 2 * mult
-	ra[3] = Ease(rollfr, 4.3) * math.sin(SysTime() * (1 / rof) * 3.4)
+	ra[3] = Ease(rollfr, 8) * math.sin(SysTime() * (1 / rof) * 3.4)
 		* (2.6 * math.abs(hor) + 1.2 * math.abs(ver)) --* self.PunchDir * hor * 3 * mult
 		* (0.6 + math.min(0.4, self:GetBurstCount() * 0.05))
 	return ra

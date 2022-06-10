@@ -1125,7 +1125,7 @@ function SWEP:CalculateVMPos(pos, ang)
 	local OF = oldang:ToForward(dirVec)
 
 	local bk = 1 - Ease(self:GetRecoilFrac(), 0.3)
-	OF:Mul(-math.min(bk, 1) * math.max(0.5, self:GetMaxRecoil()))
+	OF:Mul(-math.min(bk, 1) * math.max(0.5, self:GetMaxRecoil() * 3))
 
 	--OF:Mul(-math.min(self.RecoilPunchBack, 1) * 1.5)
 	pos:Add(OF)

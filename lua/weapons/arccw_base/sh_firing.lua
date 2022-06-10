@@ -281,9 +281,10 @@ function SWEP:PrimaryAttack()
 
 		if decal then util.Decal(decal, tr.StartPos, hitpos - (hitnormal * 16), self:GetOwner()) end
 
-		if GetConVar("developer"):GetInt() >= 2 then
-			debugoverlay.Text(hitpos, string.format("%ddmg/%dm(%d%%)", dmg:GetDamage(), dist, math.Round((1 - self:GetRangeFraction(dist)) * 100)), 5)
-		end
+		ArcCW:Debug("bullets", 3,
+			debugoverlay.Text,
+			hitpos, string.format("%ddmg/%dm(%d%%)", dmg:GetDamage(), dist, (1 - self:GetRangeFraction(dist)) * 100),
+			5)
 	end
 
 	local shootent = self:GetBuff("ShootEntity", true) --self:GetBuff_Override("Override_ShootEntity", self.ShootEntity)
