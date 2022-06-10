@@ -818,8 +818,8 @@ do
 	att.Mult_Penetration = 0.8
 	att.Mult_Range = 0.8
 	att.Mult_Recoil = 0.7
-	att.Mult_RecoilSide = 0.5
-	att.Mult_RPM = 1.35
+	att.Mult_RecoilSide = 0.75
+	att.Mult_RPM = 1.2
 
 	att.Override_Ammo = "smg1"
 
