@@ -1,21 +1,18 @@
 
-local vec = Vector()
-
 function ArcCW.Move(ply, mv, cmd)
 	local wpn = ply:GetActiveWeapon()
+	local t = wpn:IsValid() and wpn:GetTable()
 
-	if !wpn.ArcCW then return end
+	if not t or not t.ArcCW then return end
 
-	local s = 1
 
-	local sm = math.Clamp(wpn.SpeedMult * wpn:GetBuff_Mult("Mult_SpeedMult") * wpn:GetBuff_Mult("Mult_MoveSpeed"), 0, 1)
+	local s = math.Clamp(t.SpeedMult * wpn:GetBuff_Mult("Mult_SpeedMult") * wpn:GetBuff_Mult("Mult_MoveSpeed"), 0, 1)
 
-	-- look, basically I made a bit of an oopsy and uh this is the best way to fix that
-	s = s * sm
+	local fwd, up, side = cmd:GetForwardMove(), cmd:GetUpMove(), cmd:GetSideMove()
 
-	vec:SetUnpacked(cmd:GetForwardMove(), cmd:GetUpMove(), cmd:GetSideMove())
+	local basespd = math.sqrt(fwd^2 + up^2 + side^2)
+	if basespd == 0 then return end
 
-	local basespd = vec:Length()
 	basespd = math.min(basespd, mv:GetMaxClientSpeed())
 
 	local shootmove = wpn:GetBuff("ShootSpeedMult")
@@ -58,7 +55,6 @@ function ArcCW.Move(ply, mv, cmd)
 	mv:SetMaxClientSpeed(basespd * s)
 
 	wpn.StrafeSpeed = math.Clamp(mv:GetSideSpeed(), -1, 1)
-
 end
 
 hook.Add("SetupMove", "ArcCW_SetupMove", ArcCW.Move)

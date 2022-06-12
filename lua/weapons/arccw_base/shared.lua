@@ -893,73 +893,68 @@ local cvar = GetConVar("arccw_override_nearwall")
 local filter = {}
 local vec = Vector()
 
+local trOut = {}
+local trIn = {
+	output = trOut,
+}
+
 function SWEP:BarrelHitWall(visual)
 	cvar = cvar or GetConVar("arccw_override_nearwall")
 	local t = self:GetTable()
 
-	if cvar:GetBool() then
-		local offset = t.BarrelOffsetHip
+	if not cvar:GetBool() then
+		return 0
+	end
 
-		if vrmod and vrmod.IsPlayerInVR(self:GetOwner()) then
-			return 0 -- Never block barrel in VR
-		end
+	local offset = t.BarrelOffsetHip
 
-		if self:GetState() == ArcCW.STATE_SIGHTS then
-			offset = t.BarrelOffsetSighted
-		end
+	if self:GetState() == ArcCW.STATE_SIGHTS then
+		offset = t.BarrelOffsetSighted
+	end
 
-		local ow = self:GetOwner()
-		local dir = ow:EyeAngles()
-		local src = ow:EyePos()
+	local ow = self:GetOwner()
+	local dir = ow:EyeAngles()
+	local src = ow:EyePos()
 
-		dir:ToRight(vec):Mul(offset[1])
-		src:Add(vec)
+	dir:ToRight(vec):Mul(offset[1])
+	src:Add(vec)
 
-		dir:ToForward(vec):Mul(offset[2])
-		src:Add(vec)
+	dir:ToForward(vec):Mul(offset[2])
+	src:Add(vec)
 
-		dir:ToUp(vec):Mul(-offset[3])
-		src:Add(vec)
+	dir:ToUp(vec):Mul(-offset[3])
+	src:Add(vec)
 
-		local mask = MASK_SOLID
+	local mask = MASK_SOLID
 
-		filter[1] = ow
+	filter[1] = ow
 
-		--[[if t.Shields and #t.Shields > 0 then
-			table.Add(filter, t.Shields)
-		end]]
+	--[[if t.Shields and #t.Shields > 0 then
+		table.Add(filter, t.Shields)
+	end]]
 
-		local barrelLength = t.BarrelLength + self:GetBuff_Add("Add_BarrelLength")
-		local max = 0
+	local barrelLength = t.BarrelLength + self:GetBuff_Add("Add_BarrelLength")
+	local max = 0
 
-		if visual then
-			--[[local hmin, hmax = ow:GetHull()
-			-- it's probably guaranteed that mins are - and maxs are + but I'M NOT TAKIN ANY CHANCES
-			max = math.max(
-				math.abs(hmin[1]), math.abs(hmin[2]),
-				math.abs(hmax[1]), math.abs(hmax[2])
-			) / 2]] max = 16
-		end
+	if visual then
+		--[[local hmin, hmax = ow:GetHull()
+		-- it's probably guaranteed that mins are - and maxs are + but I'M NOT TAKIN ANY CHANCES
+		max = math.max(
+			math.abs(hmin[1]), math.abs(hmin[2]),
+			math.abs(hmax[1]), math.abs(hmax[2])
+		) / 2]] max = 16
+	end
 
-		local tr = ow:GetEyeTrace()
+	trIn.filter = filter
+	trIn.mask = mask
+	trIn.start = src
+	trIn.endpos = dir:Forward():CMul(barrelLength + max):CAdd(src)
 
-		--[[
-		util.TraceLine({
-			start = src,
-			endpos = src + (dir:Forward() * (barrelLength + max)),
-			filter = filter,
-			mask = mask
-		})
-		]]
+	local tr = util.TraceLine(trIn)
 
-		if tr.Hit and tr.Fraction * 32768 < barrelLength + max
-			and not tr.Entity.ArcCWProjectile then
-
-			local l = tr.Fraction * 32768 - max
-			return 1 - math.max(l / barrelLength, 0)
-		else
-			return 0
-		end
+	if tr.Hit and not tr.Entity.ArcCWProjectile then
+		local l = tr.Fraction * (barrelLength + max)
+		return 1 - math.max(l / barrelLength, 0)
 	else
 		return 0
 	end

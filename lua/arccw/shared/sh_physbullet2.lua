@@ -145,7 +145,11 @@ end)
 
 end
 
+local hk = false
+
 function ArcCW:DoPhysBullets()
+	if not last then return end
+
     local new = {}
     for _, i in pairs(ArcCW.PhysBullets) do
         ArcCW:ProgressPhysBullet(i, FrameTime())
@@ -157,8 +161,6 @@ function ArcCW:DoPhysBullets()
 
     ArcCW.PhysBullets = new
 end
-
-hook.Add("Think", "ArcCW_DoPhysBullets", ArcCW.DoPhysBullets)
 
 local function indim(vec, maxdim)
     if math.abs(vec.x) > maxdim or math.abs(vec.y) > maxdim or math.abs(vec.z) > maxdim then
@@ -457,8 +459,20 @@ function ArcCW:DrawPhysBullets()
     cam.End3D()
 end
 
-hook.Add("PreDrawEffects", "ArcCW_DrawPhysBullets", ArcCW.DrawPhysBullets)
-
 hook.Add("PostCleanupMap", "ArcCW_CleanPhysBullets", function()
     ArcCW.PhysBullets = {}
+end)
+
+timer.Create("ArccW_PhysRecache", 1, 0, function()
+	local en = GetConVar("arccw_bullet_enable"):GetBool()
+
+	if en and not hk then
+		hook.Add("Think", "ArcCW_DoPhysBullets", ArcCW.DoPhysBullets)
+		hook.Add("PreDrawEffects", "ArcCW_DrawPhysBullets", ArcCW.DrawPhysBullets)
+		hk = true
+	elseif not en and hk then
+		hook.Remove("Think", "ArcCW_DoPhysBullets")
+		hook.Remove("PreDrawEffects", "ArcCW_DrawPhysBullets")
+		hk = false
+	end
 end)

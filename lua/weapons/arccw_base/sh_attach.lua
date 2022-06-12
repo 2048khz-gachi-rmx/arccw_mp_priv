@@ -1,5 +1,5 @@
 -- Used to prevent stack overflow. Set false here so luarefresh clears it
-ArcCW.BuffStack = false
+local ArcCW_BuffStack = false
 
 ArcCW.ConVar_BuffMults = {
 	["Mult_Damage"] = "arccw_mult_damage",
@@ -34,6 +34,8 @@ SWEP.TickCache_Tick_Mults = {}
 
 SWEP.AttCache_Hooks = {}
 
+
+-- let this serve as a reminder of the time i went fucking insane over GC
 local string_pool = {
 	mul = {"Mult_"}, --  .. stat
 	add = {"Add_"}, --  .. stat
@@ -132,14 +134,14 @@ function SWEP:GetBuff(buff, defaultnil, defaultvar)
 		result = 1
 	end
 
-	local override = self:GetBuff_Override(getString(Override_, buff))
+	local override = self:GetBuff_Override("Override_" .. buff)
 	if override != nil then
 		result = override
 	end
 
 	if isnumber(result) then
-		result = self:GetBuff_Add(getString(Add_, buff)) + result
-		result = self:GetBuff_Mult(getString(Mult_ , buff)) * result
+		result = self:GetBuff_Add("Add_" .. buff) + result
+		result = self:GetBuff_Mult("Mult_ " .. buff) * result
 	end
 
 	return result
@@ -332,19 +334,19 @@ function SWEP:GetBuff_Override(buff, default)
 		current = ov[1]
 		winningslot = ov[2]
 
-		if !ArcCW.BuffStack then
+		if !ArcCW_BuffStack then
 			SHARED_DATA.buff = buff
 			SHARED_DATA.current = current
 			SHARED_DATA.winningslot = winningslot
 
-			ArcCW.BuffStack = true
+			ArcCW_BuffStack = true
 
-			local out = self:GetBuff_Hook(getString(O_Hook_, buff), SHARED_DATA)
+			local out = self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA)
 
 			current = out and out.current or current
 			winningslot = out and out.winningslot or winningslot
 
-			ArcCW.BuffStack = false
+			ArcCW_BuffStack = false
 
 		end
 
@@ -386,9 +388,9 @@ function SWEP:GetBuff_Override(buff, default)
 		end
 	end
 
-	if !ArcCW.BuffStack then
+	if !ArcCW_BuffStack then
 
-		ArcCW.BuffStack = true
+		ArcCW_BuffStack = true
 
 		local cfm = self:GetCurrentFiremode()
 
@@ -400,13 +402,13 @@ function SWEP:GetBuff_Override(buff, default)
 			end
 		end
 
-		ArcCW.BuffStack = false
+		ArcCW_BuffStack = false
 
 	end
 
-	if !ArcCW.BuffStack then
+	if !ArcCW_BuffStack then
 
-		ArcCW.BuffStack = true
+		ArcCW_BuffStack = true
 
 		for i, e in pairs(self:GetActiveElements()) do
 			local ele = self.AttachmentElements[e]
@@ -421,7 +423,7 @@ function SWEP:GetBuff_Override(buff, default)
 			end
 		end
 
-		ArcCW.BuffStack = false
+		ArcCW_BuffStack = false
 
 	end
 
@@ -440,20 +442,20 @@ function SWEP:GetBuff_Override(buff, default)
 		current = true
 	end
 
-	if !ArcCW.BuffStack then
+	if !ArcCW_BuffStack then
 		SHARED_DATA.buff = buff
 		SHARED_DATA.current = current
 		SHARED_DATA.winningslot = winningslot
 
-		ArcCW.BuffStack = true
+		ArcCW_BuffStack = true
 
 		--current = (self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA) or {}).current or current
-		current = self:GetBuff_Hook(getString(O_Hook_, buff), SHARED_DATA)
+		current = self:GetBuff_Hook("O_Hook_" .. buff, SHARED_DATA)
 		if current then current = current.current end
 
 		--current = current and current.current or current
 
-		ArcCW.BuffStack = false
+		ArcCW_BuffStack = false
 
 	end
 
@@ -472,16 +474,16 @@ function SWEP:GetBuff_Mult(buff)
 	if tbl.TickCache_Mults[buff] then
 		mult = tbl.TickCache_Mults[buff]
 
-		if !ArcCW.BuffStack then
+		if !ArcCW_BuffStack then
 			SHARED_DATA_MULT.buff = buff
 			SHARED_DATA_MULT.mult = mult
 
-			ArcCW.BuffStack = true
+			ArcCW_BuffStack = true
 
-			mult = self:GetBuff_Hook(getString(M_Hook_, buff), SHARED_DATA_MULT)
+			mult = self:GetBuff_Hook("M_Hook_" .. buff, SHARED_DATA_MULT)
 			mult = mult and mult.mult or mult
 
-			ArcCW.BuffStack = false
+			ArcCW_BuffStack = false
 
 		end
 
@@ -538,14 +540,14 @@ function SWEP:GetBuff_Mult(buff)
 	SHARED_DATA_MULT.buff = buff
 	SHARED_DATA_MULT.mult = mult
 
-	if !ArcCW.BuffStack then
+	if !ArcCW_BuffStack then
 
-		ArcCW.BuffStack = true
+		ArcCW_BuffStack = true
 
-		mult = self:GetBuff_Hook(getString(M_Hook_, buff), SHARED_DATA_MULT)
+		mult = self:GetBuff_Hook("M_Hook_" .. buff, SHARED_DATA_MULT)
 		mult = mult and mult.mult or mult
 
-		ArcCW.BuffStack = false
+		ArcCW_BuffStack = false
 
 	end
 
@@ -562,14 +564,14 @@ function SWEP:GetBuff_Add(buff)
 		SHARED_DATA_ADD.buff = buff
 		SHARED_DATA_ADD.add = add
 
-		if !ArcCW.BuffStack then
+		if !ArcCW_BuffStack then
 
-			ArcCW.BuffStack = true
+			ArcCW_BuffStack = true
 
-			add = self:GetBuff_Hook(getString(A_Hook_, buff), SHARED_DATA_ADD)
+			add = self:GetBuff_Hook("A_Hook_" .. buff, SHARED_DATA_ADD)
 			add = add.add or add
 
-			ArcCW.BuffStack = false
+			ArcCW_BuffStack = false
 
 		end
 
@@ -622,14 +624,14 @@ function SWEP:GetBuff_Add(buff)
 	SHARED_DATA_ADD.buff = buff
 	SHARED_DATA_ADD.add = add
 
-	if !ArcCW.BuffStack then
+	if !ArcCW_BuffStack then
 
-		ArcCW.BuffStack = true
+		ArcCW_BuffStack = true
 
-		add = self:GetBuff_Hook(getString(A_Hook_, buff), SHARED_DATA_ADD)
+		add = self:GetBuff_Hook("A_Hook_" .. buff, SHARED_DATA_ADD)
 		add = add.add or add
 
-		ArcCW.BuffStack = false
+		ArcCW_BuffStack = false
 
 	end
 

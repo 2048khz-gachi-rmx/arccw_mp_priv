@@ -504,12 +504,11 @@ function SWEP:GetRecoilTilt()
 	return fr * self.PunchDir
 end
 
-local function recoilMethod(self)
-	local ver, hor = self:GetAimRecoil(true)
-
-	recoilAng[1] = ver --(1 - Ease(fr, 0.6)) * max
-	recoilAng[2] = hor / 4
-	recoilAng[3] = self:GetRecoilTilt()
+local function recoilMethod(self, ver, hor)
+	recoilAng:SetUnpacked(ver, hor / 4, self:GetRecoilTilt())
+	--recoilAng[1] = ver --(1 - Ease(fr, 0.6)) * max
+	--recoilAng[2] = hor / 4
+	--recoilAng[3] = self:GetRecoilTilt()
 
 	return recoilAng -- self:GetOurViewPunchAngles()
 end
@@ -521,6 +520,25 @@ local tempVec = Vector()
 local tempAng = Angle()
 
 local target = {}
+
+-- this sux
+local vm_right   = GetConVar("arccw_vm_right"):GetFloat()
+local vm_up      = GetConVar("arccw_vm_up"):GetFloat()
+local vm_forward = GetConVar("arccw_vm_forward"):GetFloat()
+local vm_fov     = GetConVar("arccw_vm_fov"):GetFloat()
+
+cvars.AddChangeCallback("arccw_vm_right", function(_, o, n)
+	vm_right = n
+end)
+cvars.AddChangeCallback("arccw_vm_up", function(_, o, n)
+	vm_up = n
+end)
+cvars.AddChangeCallback("arccw_vm_forward", function(_, o, n)
+	vm_forward = n
+end)
+cvars.AddChangeCallback("arccw_vm_fov", function(_, o, n)
+	vm_fov = n
+end)
 
 function SWEP:CalculateVMPos(pos, ang)
 	GCMark("acw vm calc")
@@ -572,11 +590,6 @@ function SWEP:CalculateVMPos(pos, ang)
 		if self:GetBuff_Override("Override_ReloadPos") or t.ReloadPos then target.pos = t.ReloadPos end
 		if self:GetBuff_Override("Override_ReloadAng") or t.ReloadAng then target.ang = t.ReloadAng end
 	end
-
-	local vm_right   = GetConVar("arccw_vm_right"):GetFloat()
-	local vm_up      = GetConVar("arccw_vm_up"):GetFloat()
-	local vm_forward = GetConVar("arccw_vm_forward"):GetFloat()
-	local vm_fov     = GetConVar("arccw_vm_fov"):GetFloat()
 
 	local crouching = owner:Crouching() or owner:KeyDown(IN_DUCK)
 	local crotchTime = t.VM_CrouchTime -- lul
@@ -1125,14 +1138,14 @@ function SWEP:CalculateVMPos(pos, ang)
 	local OF = oldang:ToForward(dirVec)
 
 	local bk = 1 - Ease(self:GetRecoilFrac(), 0.3)
-	OF:Mul(-math.min(bk, 1) * math.max(0.5, self:GetMaxRecoil() * 3))
+	OF:Mul(-math.min(bk, 1) * math.max(0.5, self:GetMaxRecoil() * 4))
 
 	--OF:Mul(-math.min(self.RecoilPunchBack, 1) * 1.5)
 	pos:Add(OF)
 
 	-- position recoil only if not aiming through irons
 	local sght = self:GetActiveSights()
-	local rec = self:GetAimRecoil(true)
+	local rec, hor = self:GetAimRecoil(true)
 
 	if sght and sght.HolosightModel and rec ~= 0 then
 		local OU = oldang:ToUp(dirVec)
@@ -1145,7 +1158,7 @@ function SWEP:CalculateVMPos(pos, ang)
 	vpa[1] = 0
 	vpa:Mul(0.5) -- (1 - this)% of recoil is kept
 
-	oldang:Add(recoilMethod(self))
+	oldang:Add(recoilMethod(self, rec, hor))
 	oldang:Add(vpa)
 
 	local aepx, aepy, aepz = actual.evpos:Unpack()
@@ -1173,7 +1186,7 @@ function SWEP:CalculateVMPos(pos, ang)
 		OU:Mul(aepz)
 		pos:Add(OU)
 
-	ang:Sub(recoilMethod(self))
+	ang:Sub(recoilMethod(self, rec, hor))
 	ang:Add(vpa) -- i have no clue why adding it twice cancels it out bro
 
 	-- t.ShakeAngle:Mul(1)
