@@ -951,7 +951,7 @@ function SWEP:BarrelHitWall(visual)
 	trIn.endpos = dir:Forward():CMul(barrelLength + max):CAdd(src)
 
 	local tr = util.TraceLine(trIn)
-
+	-- test
 	if tr.Hit and not tr.Entity.ArcCWProjectile then
 		local l = tr.Fraction * (barrelLength + max)
 		return 1 - math.max(l / barrelLength, 0)
