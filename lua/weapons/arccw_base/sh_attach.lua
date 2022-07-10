@@ -138,8 +138,8 @@ function SWEP:GetBuff(buff, defaultnil, defaultvar)
 	end
 
 	if isnumber(result) then
-		result = self:GetBuff_Add(getString(Add_, buff)) + result
-		result = self:GetBuff_Mult(getString(Mult_ , buff)) * result
+		result = self:GetBuff_Add("Add_" .. buff) + result
+		result = self:GetBuff_Mult("Mult_" .. buff) * result
 	end
 
 	return result
