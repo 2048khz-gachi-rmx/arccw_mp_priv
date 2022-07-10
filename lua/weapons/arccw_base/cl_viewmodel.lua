@@ -561,7 +561,7 @@ function SWEP:CalculateVMPos(pos, ang)
 	-- local asight = self:GetActiveSights()
 
 	local state  = self:GetState()
-	local sightTime = self:GetSightTime()
+	local sightTime = self:GetSightTime() + (self:GetIsReloading() and 0.5 or 0)
 	local sgtd = self:GetSightDelta()
 
 
@@ -587,8 +587,8 @@ function SWEP:CalculateVMPos(pos, ang)
 	target.bob  = 2
 
 	if self:GetReloading() then
-		if self:GetBuff_Override("Override_ReloadPos") or t.ReloadPos then target.pos = t.ReloadPos end
-		if self:GetBuff_Override("Override_ReloadAng") or t.ReloadAng then target.ang = t.ReloadAng end
+		if self:GetBuff_Override("Override_ReloadPos") or t.ReloadPos then target.pos:Set(t.ReloadPos) end
+		if self:GetBuff_Override("Override_ReloadAng") or t.ReloadAng then target.ang:Set(t.ReloadAng) end
 	end
 
 	local crouching = owner:Crouching() or owner:KeyDown(IN_DUCK)
@@ -986,7 +986,7 @@ function SWEP:CalculateVMPos(pos, ang)
 		target.bob  = target.bob + int
 	end
 
-	if !isangle(target.ang) then
+	if not isangle(target.ang) then
 		target.ang = Angle(target.ang)
 	end
 
