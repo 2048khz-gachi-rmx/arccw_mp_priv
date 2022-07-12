@@ -169,6 +169,12 @@ if CLIENT then
         local amt = net.ReadUInt(ArcCW.GetBitNecessity())
         for i = 1, amt do
             local id = net.ReadUInt(ArcCW.GetBitNecessity())
+            local att = ArcCW.AttachmentIDTable[id]
+            if not att then
+            	printf("!! Failed to blacklist att. with ID %s clientside; it's missing... !!", id)
+            	continue
+            end
+
             ArcCW.AttachmentBlacklistTable[ArcCW.AttachmentIDTable[id]] = true
         end
         for i, v in pairs(ArcCW.AttachmentTable) do
