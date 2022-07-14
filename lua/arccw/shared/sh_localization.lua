@@ -152,8 +152,6 @@ if CLIENT then
             for phrase, str in pairs(L) do
                 language.Add(phrase, str)
             end
-
-            print("Loaded ArcCW cl_language file " .. v .. " with " .. table.Count(L) .. " strings.")
             L = nil
         end
 
@@ -194,8 +192,6 @@ function ArcCW.LoadLanguages()
                 ArcCW.AddStringToLang(str, phrase)
             end
         end
-
-        print("Loaded ArcCW language file " .. v .. " with " .. table.Count(L) .. " strings.")
         L = nil
     end
 

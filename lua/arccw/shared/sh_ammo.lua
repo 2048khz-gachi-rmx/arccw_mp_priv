@@ -46,7 +46,7 @@ function ArcCW:AddGrenadeAmmo()
                     game.AddAmmoType({
                         name = class,
                     })
-                    print("ArcCW adding ammo type " .. class)
+
                     if CLIENT then
                         language.Add(class .. "_ammo", wpntbl.PrintName)
                     end
