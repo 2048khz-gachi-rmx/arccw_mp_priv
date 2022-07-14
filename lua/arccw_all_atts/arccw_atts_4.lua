@@ -2770,7 +2770,7 @@ do
 
 	att.HolosightBlackbox = true
 
-	att.HolosightMagnification = 2
+	att.HolosightMagnification = 10
 
 	att.Mult_SightTime = 1.25
 	att.Mult_SpeedMult = 0.925
